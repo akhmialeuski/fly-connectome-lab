@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Research datasets and generated artifacts
+/datasets/
+/data/raw/
+/data/external/
+/data/interim/
+/artifacts/
+/results/
+/outputs/
+/runs/
+/checkpoints/
+/models/
+/uploads/
+/uploaded-images/
+/cache/
+/mlruns/
+/wandb/
+/tensorboard/
+
