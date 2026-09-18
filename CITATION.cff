@@ -5,7 +5,7 @@ type: software
 repository-code: https://github.com/akhmialeuski/fly-connectome-lab
 license: Apache-2.0
 authors:
-  - name: akhmialeuski
+  - name: Anatol Khmialeuski
 abstract: >-
   Documentation foundation for reproducible computational experiments built on
   Drosophila connectomes, starting with MaleCNS v1.0.
