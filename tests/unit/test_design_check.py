@@ -118,6 +118,7 @@ class TestClassifier:
         assert model.score(X=x, y=y) == 1
         assert scores == {'0.1': 1.0, '1.0': 1.0}
         assert model.named_steps['classifier'].C == 0.1
+        assert model.named_steps['classifier'].tol == 1e-4
 
     def test_nonconvergence(self) -> None:
         """Surface optimizer failure instead of publishing an unconverged result."""
