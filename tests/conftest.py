@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.synthetic import make_synthetic_brain
+from tests.synthetic import make_synthetic_brain, make_synthetic_celeba
 
 
 @pytest.fixture(autouse=True)
@@ -31,3 +31,17 @@ def synthetic_brain_dir(tmp_path: Path) -> Path:
     path = tmp_path / 'brain'
     make_synthetic_brain(path=path)
     return path
+
+
+@pytest.fixture
+def synthetic_celeba_dir(tmp_path: Path) -> Path:
+    """Create synthetic faces in the official CelebA annotation layout.
+
+    :param tmp_path: Test-owned temporary directory.
+    :type tmp_path: Path
+    :returns: Parent containing the generated celeba directory.
+    :rtype: Path
+    """
+    root = tmp_path / 'dataset'
+    make_synthetic_celeba(root=root)
+    return root
