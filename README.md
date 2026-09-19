@@ -4,7 +4,7 @@
 
 ## Status
 
-This repository is currently a documentation foundation for planned experiments. It does not yet contain experiment code, datasets, models, or generated results.
+Experiment code is being developed in milestone "POC 1 — Sequential Visual Memory".
 
 ## What is a connectome?
 
@@ -28,6 +28,17 @@ The project is expected to grow toward:
 
 - a CLI for running experiments reproducibly; and
 - a local web interface for result visualization and interactive inference.
+
+## Development
+
+```bash
+uv sync --frozen
+uv run flystate --help
+uv run flystate paths --json
+uv run pytest
+```
+
+All generated data lives under `FLYSTATE_HOME` (default: the working directory).
 
 ## Project scope
 
