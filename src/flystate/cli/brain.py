@@ -1,5 +1,6 @@
 """Brain acquisition and inspection commands."""
 
+from pathlib import Path
 from typing import Annotated, Never
 from zipfile import BadZipFile
 
@@ -7,6 +8,7 @@ import flybrain
 import typer
 
 from flystate.brain import files
+from flystate.brain.benchmark import default_threads, run_benchmark
 from flystate.cli.common import RUNTIME_ERROR, emit
 from flystate.log import get_logger
 from flystate.settings import get_paths
@@ -106,3 +108,103 @@ def info_command(
         _failure(error=error, as_json=as_json)
     if not valid:
         raise typer.Exit(code=RUNTIME_ERROR)
+
+
+def _positive_csv(value: str) -> tuple[int, ...]:
+    """Parse an ordered, unique grid of positive integer arguments.
+
+    :param value: Comma-separated positive integers.
+    :type value: str
+    :returns: Deduplicated values in input order.
+    :rtype: tuple[int, ...]
+    :raises typer.BadParameter: If a token is absent, noninteger, or nonpositive.
+    """
+    try:
+        values = tuple(dict.fromkeys(int(token.strip()) for token in value.split(',')))
+        if min(values) < 1:
+            raise ValueError('Values must be positive.')
+        return values
+    except ValueError as error:
+        raise typer.BadParameter('Expected comma-separated positive integers.') from error
+
+
+@app.command(name='benchmark')
+def benchmark_command(
+    threads: Annotated[
+        str | None, typer.Option('--threads', help='Comma-separated thread grid.')
+    ] = None,
+    batch: Annotated[str, typer.Option('--batch', help='Comma-separated batch-size grid.')] = '1,4',
+    warmup: Annotated[int, typer.Option('--warmup', min=0)] = 50,
+    steps: Annotated[int, typer.Option('--steps', min=1)] = 300,
+    sustained_seconds: Annotated[float, typer.Option('--sustained-seconds', min=0.001)] = 300,
+    input_neurons: Annotated[int, typer.Option('--input-neurons', min=1)] = 3872,
+    seed: Annotated[int, typer.Option('--seed', min=0)] = 0,
+    brain_dir: Annotated[
+        Path | None, typer.Option('--brain-dir', help='Explicit installed brain.')
+    ] = None,
+    as_json: Annotated[bool, typer.Option('--json')] = False,
+) -> None:
+    """Measure CPU throughput, sustained performance, and experiment budgets.
+
+    :param threads: Optional comma-separated Numba thread grid.
+    :type threads: Optional[str]
+    :param batch: Comma-separated batch-size grid.
+    :type batch: str
+    :param warmup: Untimed input steps per grid cell.
+    :type warmup: int
+    :param steps: Timed steps per grid cell.
+    :type steps: int
+    :param sustained_seconds: Duration for testing the winning pair.
+    :type sustained_seconds: float
+    :param input_neurons: Distinct stimulated visual projection neurons.
+    :type input_neurons: int
+    :param seed: Input and episode seed.
+    :type seed: int
+    :param brain_dir: Override the installed connectome directory.
+    :type brain_dir: Optional[Path]
+    :param as_json: Emit one JSON report on stdout.
+    :type as_json: bool
+    """
+    thread_grid = _positive_csv(value=threads) if threads is not None else default_threads()
+    batch_grid = _positive_csv(value=batch)
+    paths = get_paths()
+    try:
+        report = run_benchmark(
+            paths=paths,
+            brain_dir=brain_dir or paths.brain,
+            threads=thread_grid,
+            batches=batch_grid,
+            warmup=warmup,
+            steps=steps,
+            sustained_seconds=sustained_seconds,
+            input_neurons=input_neurons,
+            seed=seed,
+        )
+    except (OSError, ValueError, RuntimeError, KeyError, BadZipFile, EOFError) as error:
+        _failure(error=error, as_json=as_json)
+    if as_json:
+        emit(result=report, as_json=True)
+    else:
+        rows = ['threads  batch  ms/step  ms/episode-step  CPU %  mean Hz  RSS MB']
+        rows.extend(
+            f'{row["threads"]:7d}  {row["batch"]:5d}  {row["ms_per_step"]:7.3f}  '
+            f'{row["ms_per_episode_step"]:15.3f}  {row["cpu_percent"]:5.1f}  '
+            f'{row["mean_rate_hz"]:7.3f}  {row["rss_mb"]:6.1f}'
+            for row in report['grid']
+        )
+        emit(
+            result={
+                'grid': '\n' + '\n'.join(rows),
+                **{
+                    key: report[key]
+                    for key in (
+                        'best',
+                        'sustained',
+                        'episode_estimates',
+                        'trace_build_estimates',
+                        'report_path',
+                    )
+                },
+            },
+            as_json=False,
+        )
