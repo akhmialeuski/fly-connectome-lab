@@ -3,7 +3,10 @@
 from pathlib import Path
 
 import numpy as np
+from PIL import Image, ImageDraw
 from scipy import sparse
+
+from flystate.datasets.celeba import LANDMARK_HEADER
 
 
 def make_synthetic_brain(
@@ -63,3 +66,61 @@ def make_synthetic_brain(
         group_escape_L=np.array(object=[0], dtype=np.int64),
         group_escape_R=np.array(object=[1], dtype=np.int64),
     )
+
+
+def make_synthetic_celeba(
+    root: Path, identities: int = 8, images_per_identity: int = 25, seed: int = 0
+) -> None:
+    """Generate local JPEGs and all official annotation formats without real face data.
+
+    :param root: Parent of the torchvision-style celeba directory.
+    :type root: Path
+    :param identities: Positive number of synthetic identities.
+    :type identities: int
+    :param images_per_identity: Positive image count per identity.
+    :type images_per_identity: int
+    :param seed: Deterministic image and geometry seed.
+    :type seed: int
+    :raises ValueError: If either dataset dimension is nonpositive.
+    """
+    if min(identities, images_per_identity) < 1:
+        raise ValueError('Synthetic identity and image counts must be positive.')
+    directory = root / 'celeba'
+    images = directory / 'img_align_celeba'
+    images.mkdir(parents=True, exist_ok=True)
+    generator = np.random.default_rng(seed=seed)
+    template = np.array(
+        object=[[69, 109], [106, 113], [87, 132], [73, 152], [108, 154]], dtype=np.float64
+    )
+    identity_lines: list[str] = []
+    landmark_lines = [str(identities * images_per_identity), ' '.join(LANDMARK_HEADER)]
+    partition_lines: list[str] = []
+    for index in range(identities * images_per_identity):
+        identity = index // images_per_identity + 1
+        filename = f'{index + 1:06d}.jpg'
+        angle = np.deg2rad(generator.uniform(low=-10, high=10))
+        rotation = np.array(
+            object=[[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
+        )
+        scale = generator.uniform(low=0.9, high=1.1)
+        shift = generator.uniform(low=-5, high=5, size=2)
+        landmarks = (
+            (template - template.mean(axis=0)) @ rotation.T * scale + template.mean(axis=0) + shift
+        )
+        background = generator.integers(low=90, high=230, size=(218, 178, 3), dtype=np.uint8)
+        image = Image.fromarray(obj=background)
+        draw = ImageDraw.Draw(im=image)
+        for x, y in landmarks[:2]:
+            draw.ellipse(xy=(x - 5, y - 3, x + 5, y + 3), fill=(20, 20, 20))
+        image.save(fp=images / filename, format='JPEG', quality=85)
+        identity_lines.append(f'{filename} {identity}')
+        landmark_lines.append(
+            f'{filename} ' + ' '.join(f'{value:.6f}' for value in landmarks.ravel())
+        )
+        partition_lines.append(f'{filename} {(0, 0, 0, 1, 2)[index % 5]}')
+    for name, lines in (
+        ('identity_CelebA.txt', identity_lines),
+        ('list_landmarks_align_celeba.txt', landmark_lines),
+        ('list_eval_partition.txt', partition_lines),
+    ):
+        (directory / name).write_text(data='\n'.join(lines) + '\n', encoding='utf-8')
