@@ -12,6 +12,7 @@ from flystate.cli.dataset import app as dataset_app
 from flystate.cli.doctor import doctor_command
 from flystate.cli.episode import app as episode_app
 from flystate.cli.experiment import app as experiment_app
+from flystate.cli.trace import app as trace_app
 from flystate.log import configure_logging
 from flystate.settings import get_paths
 
@@ -39,15 +40,7 @@ def main(
     configure_logging(verbosity=-1 if quiet else verbose)
 
 
-def group_help() -> None:
-    """Inspect the available commands in this group."""
-
-
-for group_name in ('trace',):
-    group = typer.Typer(no_args_is_help=True, help=f'{group_name.capitalize()} commands.')
-    group.callback()(group_help)
-    app.add_typer(typer_instance=group, name=group_name)
-
+app.add_typer(typer_instance=trace_app, name='trace')
 app.add_typer(typer_instance=experiment_app, name='experiment')
 app.add_typer(typer_instance=brain_app, name='brain')
 app.add_typer(typer_instance=dataset_app, name='dataset')
