@@ -14,7 +14,7 @@ from sklearn.preprocessing import StandardScaler
 from threadpoolctl import threadpool_limits
 
 MAX_LOGISTIC_ITERATIONS: int = 5000
-LOGISTIC_TOLERANCE: float = 1e-6
+LOGISTIC_TOLERANCE: float = 1e-4
 
 
 def _projection(x: NDArray, components: int, seed: int) -> tuple[Pipeline, NDArray]:
