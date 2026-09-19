@@ -4,7 +4,7 @@ from collections import Counter
 from dataclasses import asdict
 from pathlib import Path
 from statistics import median
-from typing import Annotated, Never
+from typing import Annotated, Literal, Never
 
 import numpy as np
 import typer
@@ -16,6 +16,7 @@ from flystate.datasets.align import align_face, map_landmarks, similarity_transf
 from flystate.datasets.celeba import OFFICIAL_COUNTS, CelebAAdapter, sample_id_for
 from flystate.datasets.errors import DatasetError
 from flystate.datasets.preprocess import prepare_dataset
+from flystate.evaluation.design_check import design_check
 from flystate.experiments.config import ConfigError, load_config
 from flystate.log import get_logger
 from flystate.settings import get_paths, output_path
@@ -255,3 +256,40 @@ def prepare_command(config: Path, as_json: Annotated[bool, typer.Option('--json'
         },
         as_json=as_json,
     )
+
+
+@app.command(name='design-check')
+def design_check_command(
+    config: Path,
+    split: Annotated[Literal['val', 'test'], typer.Option('--split')] = 'val',
+    as_json: Annotated[bool, typer.Option('--json')] = False,
+) -> None:
+    """Measure whether all windows identify faces better than the last window.
+
+    :param config: Experiment YAML path.
+    :type config: Path
+    :param split: Validation by default; test only for a frozen protocol.
+    :type split: Literal['val', 'test']
+    :param as_json: Emit exactly the saved JSON report.
+    :type as_json: bool
+    """
+    try:
+        result = design_check(cfg=load_config(path=config), paths=get_paths(), split=split)
+    except ConfigError as error:
+        _failure(error=error, as_json=as_json, code=CONFIG_ERROR)
+    except (DatasetError, OSError, ValueError, Warning) as error:
+        _failure(error=error, as_json=as_json)
+    if as_json:
+        emit(result=result, as_json=True)
+    else:
+        typer.echo(message='baseline             accuracy       95% interval       n_eval')
+        for name, baseline in result['baselines'].items():
+            typer.echo(
+                message=f'{name:21} {baseline["accuracy"]:8.2%} '
+                f'[{baseline["ci_low"]:.2%}, {baseline["ci_high"]:.2%}] '
+                f'{result["n_eval"]:8}'
+            )
+        typer.echo(
+            message=f'Gap: {result["gap_pp"]:.2f} pp; {result["status"]}: {result["message"]}'
+        )
+        typer.echo(message=f'Report: {result["output"]}')
