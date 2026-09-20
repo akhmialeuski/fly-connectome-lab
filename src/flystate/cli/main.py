@@ -14,6 +14,7 @@ from flystate.cli.doctor import doctor_command
 from flystate.cli.episode import app as episode_app
 from flystate.cli.evaluate import evaluate_command
 from flystate.cli.experiment import app as experiment_app
+from flystate.cli.serve import serve_command
 from flystate.cli.trace import app as trace_app
 from flystate.cli.train import train_command
 from flystate.log import configure_logging
@@ -52,6 +53,7 @@ app.command(name='doctor')(doctor_command)
 app.command(name='train')(train_command)
 app.command(name='evaluate')(evaluate_command)
 app.command(name='compare')(compare_command)
+app.command(name='serve')(serve_command)
 
 
 @app.command(name='paths')

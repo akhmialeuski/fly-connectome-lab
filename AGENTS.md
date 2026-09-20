@@ -6,13 +6,13 @@ Instructions for AI coding agents working in this repository. Read this file com
 
 `fly-connectome-lab` runs reproducible machine-learning experiments on the MaleCNS v1.0 *Drosophila* connectome. All code lives in one Python package, `flystate`, with one command-line entry point, `flystate`.
 
-Current milestone: **POC 1 — Sequential Visual Memory**. A frozen MaleCNS spiking network, simulated by the `flybrain` package, sees an aligned CelebA face as a sequence of 32×32 windows. After every window a linear readout predicts the identity. The experiment compares a persistent brain state against a reset of the brain state before every window.
+POC 1 — Sequential Visual Memory is implemented. The user has now explicitly authorized a local web interface for exploring and visualizing its results. This extends the earlier POC 1 scope to a read-only results API and browser viewer. The scientific experiment protocol and completed artifacts remain unchanged.
 
 The complete T01-T16 milestone is assigned. Work in dependency order using stacked pull requests, without merging them. Laptop measurements and T16 are included in the assignment. Do not wait for earlier pull requests to merge before implementing their dependants.
 
 ## Hard scope limits for POC 1
 
-Do not add, not even partially or as a stub: a web API or UI (FastAPI, React), LFW, MedMNIST, VGGFace2, Fashion-MNIST, lesion experiments, ConnecTorch, PyTorch, GPU or CuPy code, Rust, Docker, Jupyter notebooks.
+The original POC 1 web-interface restriction is superseded by the user's explicit viewer request. Continue to exclude LFW, MedMNIST, VGGFace2, Fashion-MNIST, lesion experiments, ConnecTorch, PyTorch, GPU or CuPy code, Rust, Docker, and Jupyter notebooks. Serve the viewer on loopback, preserve artifact immutability, and ship browser assets locally without CDN dependencies.
 
 ## Environment
 
