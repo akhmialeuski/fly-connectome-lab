@@ -5,6 +5,7 @@ from statistics import NormalDist
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.stats import binomtest, chi2
 
 from flystate.hashing import stable_int
 
@@ -71,3 +72,63 @@ def bootstrap_mean_interval(
         means[start:stop] = values[indices].mean(axis=1)
     low, high = np.percentile(a=means, q=[2.5, 97.5], method='linear')
     return float(low), float(high)
+
+
+def mcnemar(n01: int, n10: int) -> dict[str, float | int | str]:
+    """Test paired classification discordances with the specified small-count rule.
+
+    :param n01: Images correct in A only.
+    :type n01: int
+    :param n10: Images correct in B only.
+    :type n10: int
+    :returns: Discordance counts, two-sided p-value, and method.
+    :rtype: dict[str, float | int | str]
+    :raises ValueError: If either count is negative or not an integer.
+    """
+    if type(n01) is not int or type(n10) is not int or min(n01, n10) < 0:
+        raise ValueError('McNemar discordances must be nonnegative integers.')
+    total = n01 + n10
+    method = 'exact' if total < 25 else 'chi2_cc'
+    if total == 0:
+        probability = 1.0
+    elif total < 25:
+        probability = float(binomtest(k=n01, n=total, p=0.5).pvalue)
+    else:
+        statistic = (abs(n01 - n10) - 1) ** 2 / total
+        probability = float(chi2.sf(x=statistic, df=1))
+    return {'n01': n01, 'n10': n10, 'p': probability, 'method': method}
+
+
+def paired_bootstrap_diff(
+    correct_a: NDArray, correct_b: NDArray, samples: int, seed: int
+) -> dict[str, float]:
+    """Bootstrap paired correctness differences over independent sample identities.
+
+    :param correct_a: Boolean correctness vector for run A, shape (N,).
+    :type correct_a: NDArray
+    :param correct_b: Boolean correctness vector for run B in the same order.
+    :type correct_b: NDArray
+    :param samples: Positive number of bootstrap resamples.
+    :type samples: int
+    :param seed: Explicit nonnegative bootstrap seed.
+    :type seed: int
+    :returns: Observed difference and percentile interval in percentage points.
+    :rtype: dict[str, float]
+    :raises ValueError: If paired vector shapes or types are invalid.
+    """
+    if (
+        correct_a.ndim != 1
+        or correct_b.shape != correct_a.shape
+        or correct_a.dtype != np.bool_
+        or correct_b.dtype != np.bool_
+    ):
+        raise ValueError('Paired correctness must be equally sized boolean vectors.')
+    differences = correct_a.astype(np.float64) - correct_b.astype(np.float64)
+    low, high = bootstrap_mean_interval(
+        values=differences, samples=samples, seed=seed, namespace='compare'
+    )
+    return {
+        'diff_pp': float(differences.mean() * 100),
+        'ci_low_pp': low * 100,
+        'ci_high_pp': high * 100,
+    }
