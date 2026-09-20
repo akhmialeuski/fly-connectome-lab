@@ -24,9 +24,9 @@ dataset:
 episodes:
   task: classification
   window: 32
-  steps: 8
+  steps: 16
   trajectory:
-    strategy: random
+    strategy: raster
     max_overlap: 0.25
     seed: 0
 encoder:
@@ -37,20 +37,20 @@ encoder:
   position:
     enabled: true
     neurons_per_axis: 16
-  amplitude: 0.1
+  amplitude: 0.05
   seed: 0
 brain:
   backend: flybrain
   dt_s: 0.02
   sensory_input: false
   warmup_steps: 25
-  steps_per_observation: 5
+  steps_per_observation: 10
   noise:
     enabled: true
     rate_hz: 1.2
     amplitude: 0.22
-  threads: null
-  batch_size: 4
+  threads: 4
+  batch_size: 1
 memory:
   mode: reset
 readout:
