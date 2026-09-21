@@ -1,0 +1,86 @@
+[
+  {
+    "attempt": "smoke-01-pixels-persistent-last-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 5.551115123125783e-16
+  },
+  {
+    "attempt": "smoke-03-encoded-persistent-last-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-05-neural-persistent-last-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 1.5543122344752192e-15,
+    "anchor_run": "20260920-071344-celeba-smoke-9406ee",
+    "anchor_max_probability_error": 1.5543122344752192e-15
+  },
+  {
+    "attempt": "smoke-06-neural-reset-last-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 1.27675647831893e-15,
+    "anchor_run": "20260920-071430-celeba-smoke-400cac",
+    "anchor_max_probability_error": 1.27675647831893e-15
+  },
+  {
+    "attempt": "smoke-07-neural-reset-all-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 9.992007221626409e-16
+  },
+  {
+    "attempt": "smoke-08-neural-persistent-all-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 8.881784197001252e-16
+  },
+  {
+    "attempt": "smoke-09-neural-persistent-last-both-pca20-true",
+    "prediction_rows": 340,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-10-neural-persistent-last-both-pca120-true",
+    "prediction_rows": 340,
+    "max_probability_error": 6.661338147750939e-16
+  },
+  {
+    "attempt": "smoke-11-neural-persistent-last-both-pca240-true",
+    "prediction_rows": 340,
+    "max_probability_error": 5.273559366969494e-16
+  },
+  {
+    "attempt": "smoke-12-neural-persistent-last-both-pca0-true",
+    "prediction_rows": 340,
+    "max_probability_error": 0.0
+  },
+  {
+    "attempt": "smoke-13-neural-persistent-last-spike_trace-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 3.885780586188048e-16
+  },
+  {
+    "attempt": "smoke-14-neural-persistent-last-voltage-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 9.992007221626409e-16
+  },
+  {
+    "attempt": "smoke-15-encoded-persistent-all-both-pca60-permuted",
+    "prediction_rows": 340,
+    "max_probability_error": 1.9984014443252818e-15
+  },
+  {
+    "attempt": "smoke-16-neural-persistent-last-both-pca60-permuted",
+    "prediction_rows": 340,
+    "max_probability_error": 1.2212453270876722e-15
+  },
+  {
+    "attempt": "smoke-17-encoded-persistent-all-both-pca60-memorization",
+    "prediction_rows": 20,
+    "max_probability_error": 8.673617379884035e-18
+  },
+  {
+    "attempt": "smoke-18-neural-persistent-last-both-pca60-memorization",
+    "prediction_rows": 20,
+    "max_probability_error": 2.220446049250313e-16
+  }
+]

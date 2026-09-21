@@ -1,0 +1,31 @@
+{
+  "id": "smoke-02-pixels-persistent-all-both-pca60-true",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-02-pixels-persistent-all-both-pca60-true",
+    "--json",
+    "--phase",
+    "probe",
+    "--representation",
+    "pixels",
+    "--history",
+    "all",
+    "--features",
+    "both",
+    "--components",
+    "60",
+    "--label-mode",
+    "true"
+  ],
+  "started_utc": "2026-09-21T15:17:32.227567+00:00",
+  "completed_utc": "2026-09-21T15:18:06.122837+00:00",
+  "exit_code": 1,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762887728",
+  "publication_error": null
+}

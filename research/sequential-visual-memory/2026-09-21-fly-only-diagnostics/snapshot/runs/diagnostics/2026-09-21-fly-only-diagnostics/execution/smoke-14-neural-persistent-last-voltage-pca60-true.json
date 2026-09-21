@@ -1,0 +1,31 @@
+{
+  "id": "smoke-14-neural-persistent-last-voltage-pca60-true",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-14-neural-persistent-last-voltage-pca60-true",
+    "--json",
+    "--phase",
+    "probe",
+    "--representation",
+    "neural",
+    "--history",
+    "last",
+    "--features",
+    "voltage",
+    "--components",
+    "60",
+    "--label-mode",
+    "true"
+  ],
+  "started_utc": "2026-09-21T15:25:56.615610+00:00",
+  "completed_utc": "2026-09-21T15:26:29.241757+00:00",
+  "exit_code": 0,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763009403",
+  "publication_error": null
+}
