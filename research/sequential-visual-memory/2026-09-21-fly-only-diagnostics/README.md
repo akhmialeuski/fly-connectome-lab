@@ -6,15 +6,15 @@ Implementation: [#41](https://github.com/akhmialeuski/fly-connectome-lab/pull/41
 
 ## Scope and current status
 
-This snapshot preserves two completed cohort audits and all 18 preregistered smoke
-probe attempts: 16 fitted diagnostic models and two optimizer failures. The four
-main-cohort anchors and subsequent causal investigations are still pending in
-this snapshot. Results are exploratory. No historical-test or reserved-image
+This snapshot preserves two completed cohort audits and all 22 preregistered smoke/main
+probe attempts: 18 fitted diagnostic models and four optimizer failures. Numerical
+convergence and subsequent causal investigations are still pending in this snapshot. Results are exploratory. No historical-test or reserved-image
 predictions were scored, and no fly dynamics or synaptic weights changed.
 
 The [protocol](protocol.md) was
 [posted before scoring](https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5759062409).
-The [smoke result table](snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/smoke-summary.md)
+The [main result table](provenance/main-summary.md),
+[smoke result table](snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/smoke-summary.md)
 and [interpretation](provenance/smoke-conclusions.md) preserve successful and failed
 experiments. The same reports are posted to their research issues.
 
@@ -23,6 +23,9 @@ experiments. The same reports are posted to their research issues.
 - Persistent neural PCA60: 280/280 training correct, 4/60 validation correct;
   chance is 5%. All parameter arrays reproduce the historical final-observation
   model exactly. This is memorization without established useful generalization.
+- Main neural anchors: persistent-last scores 1/300 validation correct (0.33%);
+  reset-all scores 2/300 (0.67%), against 1% chance. Both reproduce the historical
+  model probabilities. Their input controls also fail the strict iteration budget.
 - Pixel-last: 10/60 validation correct; encoded-last: 11/60. Pixel-all and
   encoded-all true-label controls reached the 5,000-iteration optimizer limit at
   tolerance 1e-6. Their missing scores are not zero accuracy.
@@ -53,10 +56,12 @@ Completed probes include training/validation probabilities, metrics, feature
 statistics, CV scores, and numeric scaler/PCA/classifier coefficients. Failed
 attempts retain their exception and pre-failure evidence; no completed model is
 claimed for them. `execution/` includes issue-comment readback verification and
-independent replay of all 4,800 stored prediction rows from the 16 models.
+independent replay of all 8,200 stored prediction rows from the 18 models, recorded in separate
+smoke and main replay reports.
 
-Large model NPZ files use Git LFS. JSON, Parquet, YAML, Markdown, and logs remain
-readable evidence. No source photographs, transformed image arrays, input feature
+Large model NPZ files and main training-prediction Parquet files use Git LFS.
+JSON, YAML, Markdown, and logs remain directly readable; Parquet tables can be
+inspected after fetching their payloads. No source photographs, transformed image arrays, input feature
 matrices, or downloaded connectome files are stored here.
 
 Source data and historical neural traces come from the

@@ -1,19 +1,24 @@
 {
   "schema_version": 1,
   "study": "2026-09-21-fly-only-diagnostics",
-  "status": "P0 and smoke diagnostics archived; main anchors pending",
+  "status": "P0 and original smoke/main probes archived; numerical and causal follow-ups pending",
   "issue": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40",
   "parent_issue": "https://github.com/akhmialeuski/fly-connectome-lab/issues/39",
-  "scientific_code_commit": "aa36121ac96c51361e33d0b8267445a3ab31030b",
   "parent_study": "../2026-09-20-celeba-poc1",
   "audits": 2,
-  "probe_attempts": 18,
-  "completed_probes": 16,
-  "failed_probes": 2,
+  "probe_attempts": 22,
+  "completed_probes": 18,
+  "failed_probes": 4,
   "final_test_scored": false,
   "working_relative_path": "runs/diagnostics/2026-09-21-fly-only-diagnostics",
   "readout_scope": "Only diagnostic readouts fitted; neural dynamics and synapses unchanged",
   "publication_verification": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/publication-verification.json",
   "prediction_replay": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/replay-verification.json",
-  "provenance_caveat": "Per-attempt git_dirty may be null when the read-only Git status timeout expires on the mounted Windows checkout; the source commit remains recorded. An independent status command verified a clean checkout before execution."
+  "provenance_caveat": "Per-attempt git_dirty may be null when the read-only Git status timeout expires on the mounted Windows checkout; the source commit remains recorded. An independent status command verified a clean checkout before execution.",
+  "initial_scientific_code_commit": "aa36121ac96c51361e33d0b8267445a3ab31030b",
+  "source_commits": [
+    "aa36121ac96c51361e33d0b8267445a3ab31030b",
+    "d12c494172c6a6c148d6c8cfaabc43e0fb160a0e"
+  ],
+  "main_prediction_replay": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/replay-verification-main.json"
 }

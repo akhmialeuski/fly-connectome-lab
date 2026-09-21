@@ -1,0 +1,87 @@
+{
+  "archive_commit": "d12c494172c6a6c148d6c8cfaabc43e0fb160a0e",
+  "models": [
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-01-pixels-persistent-last-both-pca60-true/model",
+      "sha256": "4369ba315b47ef49620fa200198e248a8ec4dce294b5ac1dd73bc07f0632242a",
+      "bytes": 1559984
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-03-encoded-persistent-last-both-pca60-true/model",
+      "sha256": "2de321075e0a5d55375bd71c3bb17abcc6ce717c484bd63977c87ccd8c28b01b",
+      "bytes": 1963184
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-05-neural-persistent-last-both-pca60-true/model",
+      "sha256": "6eff84cbff9c262ae0eae9e889f4a84c239efb163fdaf7fe472c5ca8a8c8f57c",
+      "bytes": 1336208
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-06-neural-reset-last-both-pca60-true/model",
+      "sha256": "561067601c66336805dc090adfc988bbe2d067917906d59ee6f04a9163797e98",
+      "bytes": 1336208
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-07-neural-reset-all-both-pca60-true/model",
+      "sha256": "deb6d3dd78720bed2083d8a9c302cfaafeff550bcc1ddf2319e3b917fa5212cd",
+      "bytes": 21203888
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-08-neural-persistent-all-both-pca60-true/model",
+      "sha256": "9f1cd04fa4bf148c3efe1ab25bd8ca7b2fd1dddec65c7228cd74cbb30ce941d7",
+      "bytes": 21203888
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-09-neural-persistent-last-both-pca20-true/model",
+      "sha256": "35c5d44ff11ef46e7f873807ba11720c68cace75bd5abd6cb267f2be583398e0",
+      "bytes": 488848
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-10-neural-persistent-last-both-pca120-true/model",
+      "sha256": "433325938e0c15aa15961ce62f86a13070212c1fcfeb5cfda81a19fa24569e6e",
+      "bytes": 2607248
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-11-neural-persistent-last-both-pca240-true/model",
+      "sha256": "2038d281c72d991b2ac48b8d0664b76cbdc5a3aeef358b104d86887d7c841de6",
+      "bytes": 5149328
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-12-neural-persistent-last-both-pca0-true/model",
+      "sha256": "759629ae2410a43b167213dde7587175910c2b7c4dc57ace1b9042dd5646e144",
+      "bytes": 464116
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-13-neural-persistent-last-spike_trace-pca60-true/model",
+      "sha256": "b0d598f6f4927ceea6f53035834ba089cde8ba04e5ac29bf31ffca6c33310f2f",
+      "bytes": 673952
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-14-neural-persistent-last-voltage-pca60-true/model",
+      "sha256": "8ee2b761cb6f1d13843072b8a45d4616b0646898e0a2b80cc375b6c9af6f0db3",
+      "bytes": 673952
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-15-encoded-persistent-all-both-pca60-permuted/model",
+      "sha256": "e7992f2574f9481b3dcee7a7d5120d17d16f72d21c40beb0da9e8e1a95677db3",
+      "bytes": 31235504
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-16-neural-persistent-last-both-pca60-permuted/model",
+      "sha256": "6d5136d472c225809276616bc7a07c2b0eb0706d9ab7fec15a7cabd71730bfca",
+      "bytes": 1336208
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-17-encoded-persistent-all-both-pca60-memorization/model",
+      "sha256": "31c0d9b8df2a288c31b53cbd693758a8737d72d2aaafce7c64455ac1cdeb1e8b",
+      "bytes": 10906168
+    },
+    {
+      "model": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-18-neural-persistent-last-both-pca60-memorization/model",
+      "sha256": "41c5857578aa9c7f2bca1f90c5c717a7d97f73e9b7fdaa4134c1c6c6a333d5b3",
+      "bytes": 465144
+    }
+  ],
+  "remote_payload_count": 16,
+  "remote_payload_bytes": 102603828
+}

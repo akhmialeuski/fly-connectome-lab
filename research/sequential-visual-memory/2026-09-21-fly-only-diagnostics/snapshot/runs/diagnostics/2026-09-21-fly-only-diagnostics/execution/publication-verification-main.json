@@ -1,0 +1,22 @@
+[
+  {
+    "attempt": "main-01-pixels-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763209476",
+    "body_verified": true
+  },
+  {
+    "attempt": "main-02-encoded-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763238353",
+    "body_verified": true
+  },
+  {
+    "attempt": "main-03-neural-persistent-last-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763260816",
+    "body_verified": true
+  },
+  {
+    "attempt": "main-04-neural-reset-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763321313",
+    "body_verified": true
+  }
+]

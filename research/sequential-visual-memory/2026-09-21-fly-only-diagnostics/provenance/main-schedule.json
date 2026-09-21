@@ -1,0 +1,42 @@
+[
+  {
+    "id": "main-01-pixels-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "phase": "probe",
+    "representation": "pixels",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "main-02-encoded-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "phase": "probe",
+    "representation": "encoded",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "main-03-neural-persistent-last-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "main-04-neural-reset-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-080049-celeba-reset-72aac7/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  }
+]
