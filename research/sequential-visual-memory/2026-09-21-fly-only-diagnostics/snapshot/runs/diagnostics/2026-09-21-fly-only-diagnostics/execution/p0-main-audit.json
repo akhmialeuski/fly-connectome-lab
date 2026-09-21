@@ -1,0 +1,21 @@
+{
+  "id": "p0-main-audit",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/p0-main-audit",
+    "--json",
+    "--phase",
+    "audit"
+  ],
+  "started_utc": "2026-09-21T15:16:14.526990+00:00",
+  "completed_utc": "2026-09-21T15:16:49.384384+00:00",
+  "exit_code": 0,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762869013",
+  "publication_error": null
+}

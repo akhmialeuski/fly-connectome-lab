@@ -1,0 +1,31 @@
+{
+  "id": "smoke-17-encoded-persistent-all-both-pca60-memorization",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-17-encoded-persistent-all-both-pca60-memorization",
+    "--json",
+    "--phase",
+    "probe",
+    "--representation",
+    "encoded",
+    "--history",
+    "all",
+    "--features",
+    "both",
+    "--components",
+    "60",
+    "--label-mode",
+    "memorization"
+  ],
+  "started_utc": "2026-09-21T15:28:25.036080+00:00",
+  "completed_utc": "2026-09-21T15:28:55.489235+00:00",
+  "exit_code": 0,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763043990",
+  "publication_error": null
+}
