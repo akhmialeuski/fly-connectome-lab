@@ -14,7 +14,7 @@ from flystate.diagnostics.artifacts import attempt, export_classifier, feature_s
 from flystate.diagnostics.data import load_representation
 from flystate.experiments.config import ExperimentConfig
 from flystate.hashing import stable_int
-from flystate.readouts.fitting import fit_classifier
+from flystate.readouts.fitting import MAX_LOGISTIC_ITERATIONS, fit_classifier
 from flystate.readouts.training import accuracy_metrics
 from flystate.settings import Paths
 from flystate.storage.json import write_json
@@ -72,6 +72,7 @@ def run_probe(
     features: str,
     components: int | None,
     label_mode: str,
+    max_iterations: int = MAX_LOGISTIC_ITERATIONS,
 ) -> dict[str, Any]:
     """Run one preregistered diagnostic while retaining failures and all fitted coefficients.
 
@@ -91,6 +92,8 @@ def run_probe(
     :type components: Optional[int]
     :param label_mode: True training labels, permuted labels, or training-only memorization.
     :type label_mode: str
+    :param max_iterations: Explicit solver budget; increasing it requires a new attempt.
+    :type max_iterations: int
     :returns: Completed diagnostic report; no final-test metrics are computed.
     :rtype: dict[str, Any]
     :raises ValueError: If protocol parameters are unsupported.
@@ -106,6 +109,7 @@ def run_probe(
         'tolerance': 1e-6,
         'c_grid': cfg.readout.c_grid,
         'cv_folds': cfg.readout.cv_folds,
+        'max_iterations': max_iterations,
     }
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
         if label_mode not in LABEL_MODES:
@@ -155,6 +159,7 @@ def run_probe(
                 cv_folds=cfg.readout.cv_folds,
                 seed=cfg.seed,
                 tolerance=1e-6,
+                max_iterations=max_iterations,
             )
             model_meta = export_classifier(model=model, directory=directory / 'model')
             scores = {}

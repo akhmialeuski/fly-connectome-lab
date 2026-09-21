@@ -11,6 +11,7 @@ from typer.testing import CliRunner
 from flystate.cli.main import app
 from flystate.diagnostics.artifacts import attempt, export_classifier, feature_statistics
 from flystate.diagnostics.audit import audit_cohort, duplicate_kind
+from flystate.diagnostics.convergence import diagnose_convergence
 from flystate.diagnostics.data import load_representation
 from flystate.diagnostics.probes import run_probe
 from flystate.experiments.config import ExperimentConfig, effective_yaml
@@ -233,3 +234,93 @@ class TestCohortAudit:
         assert not historical.intersection(row['filename'] for row in reserve)
         assert result['graph']['effective_stored_edges'] <= result['graph']['source_stored_edges']
         assert (output / 'source-signatures.parquet').exists()
+
+
+class TestConvergenceDiagnosis:
+    """Preserve failed fold coefficients and keep numerical diagnosis independent of validation."""
+
+    def test_first_failure(self, tiny_experiment: ExperimentConfig) -> None:
+        """Exhaust a tiny budget, increase it on the same fold, then verify preserved evidence.
+
+        :param tiny_experiment: Offline cohort and encoder.
+        :type tiny_experiment: ExperimentConfig
+        """
+        paths = get_paths()
+        output = paths.runs / 'convergence'
+        report = diagnose_convergence(
+            cfg=tiny_experiment,
+            paths=paths,
+            output=output,
+            representation='encoded',
+            history='last',
+            features='both',
+            components=10,
+            budgets=(1, 1000),
+        )
+        assert report['failure_reproduced']
+        assert report['first_failure']['fold'] == 1
+        assert report['first_failure']['training_rows'] == 14
+        assert report['validation_predictions_scored'] == 0
+        assert not report['budget_measurements'][0]['converged']
+        assert report['budget_measurements'][1]['converged']
+        assert not list(output.glob('*predictions*'))
+        meta = json.loads(s=(output / 'fold-1-budget-1/model.json').read_text())
+        assert not meta['converged'] and 'not a selected readout' in meta['purpose']
+        assert (output / 'fold-1-budget-1000/weights.npz').is_file()
+
+    @pytest.mark.parametrize('budgets', [(), (0, 1), (2, 1), (1, 1)])
+    def test_invalid_budgets(
+        self, tiny_experiment: ExperimentConfig, budgets: tuple[int, ...]
+    ) -> None:
+        """Reject invalid iteration schedules while retaining an immutable failure manifest.
+
+        :param tiny_experiment: Offline source configuration.
+        :type tiny_experiment: ExperimentConfig
+        :param budgets: Invalid iteration schedule.
+        :type budgets: tuple[int, ...]
+        """
+        paths = get_paths()
+        output = paths.runs / 'invalid-convergence'
+        with pytest.raises(expected_exception=ValueError):
+            diagnose_convergence(
+                cfg=tiny_experiment,
+                paths=paths,
+                output=output,
+                representation='pixels',
+                history='last',
+                features='both',
+                components=10,
+                budgets=budgets,
+            )
+        assert json.loads(s=(output / 'manifest.json').read_text())['status'] == 'failed'
+
+    def test_cli(self, tiny_experiment: ExperimentConfig, tmp_path: Path) -> None:
+        """Run a convergent small problem through the CLI and reject altered-label diagnosis.
+
+        :param tiny_experiment: Offline cohort and encoder.
+        :type tiny_experiment: ExperimentConfig
+        :param tmp_path: Configuration directory.
+        :type tmp_path: Path
+        """
+        config = tmp_path / 'convergence.yaml'
+        config.write_text(data=effective_yaml(cfg=tiny_experiment))
+        runner = CliRunner()
+        args = [
+            'diagnose',
+            'run',
+            str(config),
+            '--phase',
+            'convergence',
+            '--representation',
+            'encoded',
+            '--components',
+            '10',
+            '--output',
+            'runs/cli-convergence',
+            '--json',
+        ]
+        result = runner.invoke(app=app, args=args)
+        assert result.exit_code == 0, result.output
+        assert not json.loads(s=result.stdout)['failure_reproduced']
+        invalid = runner.invoke(app=app, args=[*args, '--label-mode', 'permuted'])
+        assert invalid.exit_code == 2
