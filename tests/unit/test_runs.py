@@ -2,6 +2,7 @@
 
 import json
 import re
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -27,6 +28,52 @@ from flystate.storage.runs import (
 
 class TestRuns:
     """Exercise immutable completion and safe artifact paths without fitting a model."""
+
+    @pytest.mark.parametrize(
+        'error',
+        [
+            subprocess.TimeoutExpired(cmd=['git', 'status'], timeout=5),
+            subprocess.CalledProcessError(returncode=1, cmd=['git', 'status']),
+            OSError('Git became unavailable'),
+        ],
+    )
+    def test_git_status_failure_preserves_commit(self, error: Exception) -> None:
+        """Read a commit, fail the status probe, and preserve identity with unknown dirty state.
+
+        :param error: Failure after the successful commit lookup.
+        :type error: Exception
+        """
+        commit = 'a' * 40
+        completed = subprocess.CompletedProcess(
+            args=['git', 'rev-parse', 'HEAD'], returncode=0, stdout=f'{commit}\n'
+        )
+        with patch(
+            target='flystate.storage.environment.subprocess.run', side_effect=[completed, error]
+        ) as run:
+            assert git_state() == {'git_commit': commit, 'git_dirty': None}
+        assert run.call_args.kwargs['args'] == [
+            'git',
+            '--no-optional-locks',
+            'status',
+            '--porcelain',
+        ]
+
+    @pytest.mark.parametrize('status,dirty', [('', False), (' M README.md\n', True)])
+    def test_git_status_success(self, status: str, dirty: bool) -> None:
+        """Supply successful Git probes and verify clean and modified working-tree provenance.
+
+        :param status: Porcelain status output.
+        :type status: str
+        :param dirty: Expected working-tree change flag.
+        :type dirty: bool
+        """
+        commit = 'a' * 40
+        results = [
+            subprocess.CompletedProcess(args=[], returncode=0, stdout=output)
+            for output in (f'{commit}\n', status)
+        ]
+        with patch(target='flystate.storage.environment.subprocess.run', side_effect=results):
+            assert git_state() == {'git_commit': commit, 'git_dirty': dirty}
 
     def test_lifecycle(self) -> None:
         """Reserve colliding IDs, write artifacts, complete a run, and reject every write helper."""

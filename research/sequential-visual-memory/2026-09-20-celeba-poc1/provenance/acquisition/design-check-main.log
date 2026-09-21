@@ -1,0 +1,5 @@
+12:08:00 [info     ] dataset_prepared               cache_key=78198a687823975530e798fc73ce4555e186a4aef66293b6651b5d686066959d samples=2000
+12:08:00 [info     ] fit_pixel_baseline             baseline=single_window step=1
+12:10:06 [info     ] fit_pixel_baseline             baseline=single_window step=2
+12:11:59 [info     ] fit_pixel_baseline             baseline=single_window step=3
+12:12:57 [error    ] dataset_failed                 detail='lbfgs failed to converge after 5000 iteration(s) (status=1):\nSTOP: TOTAL NO. OF ITERATIONS REACHED LIMIT\n\nIncrease the number of iterations to improve the convergence (max_iter=5000).\nYou might also want to scale the data as shown in:\n    https://scikit-learn.org/stable/modules/preprocessing.html\nPlease also refer to the documentation for alternative solver options:\n    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression'

@@ -238,4 +238,10 @@ __marimo__/
 
 # flystate local data (see AGENTS.md)
 /data/
+/.local/
 *.zarr/
+
+# Explicitly published computed research evidence; source datasets remain excluded.
+!research/**/features.zarr/
+!research/**/features.zarr/**
+!research/**/provenance/acquisition/*.log

@@ -1,0 +1,1 @@
+{"main":{"identical_first_observation_features":true,"identical_first_observation_predictions":true,"paired_images":2000,"test_images":300},"smoke":{"identical_first_observation_features":true,"identical_first_observation_predictions":true,"paired_images":400,"test_images":60}}

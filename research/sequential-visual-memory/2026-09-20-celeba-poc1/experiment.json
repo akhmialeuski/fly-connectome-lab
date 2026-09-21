@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "experiment_family": "sequential-visual-memory",
+  "study_id": "2026-09-20-celeba-poc1",
+  "title": "CelebA sequential visual memory: first frozen comparison",
+  "training_code_commit": "5c3fb076e84abd58f8320e52382ca6647034541c",
+  "status": "completed",
+  "conclusion": "Single-seed main test accuracy is near chance; paired tests do not establish a persistent-memory advantage.",
+  "runs": [
+    {
+      "run_id": "20260920-071344-celeba-smoke-9406ee",
+      "path": "snapshot/runs/20260920-071344-celeba-smoke-9406ee",
+      "cache_key": "ebe95201e2e7df78c79160aa7f281431284297438dbacbe953ef5587f2aa3183",
+      "dataset_fingerprint": "92adc8cc97da3de2e8af26e08ceb7cd37f5dbaa92fb60bc50c46f43527de794d",
+      "config_hash": "9406ee5b0f5b2ba794b71bad4def5d906248af35165f49a8fceb7f0c96fe82b3",
+      "mode": "persistent",
+      "validation_accuracy": 0.06666666666666667,
+      "model_sha256": "e665b62cd20a862362ac37e3364cd7bcc0462280219c953f1c6a8a7eda5a872b",
+      "evaluations": [
+        "snapshot/runs/20260920-071344-celeba-smoke-9406ee/evals/20260920-071514-test"
+      ]
+    },
+    {
+      "run_id": "20260920-071430-celeba-smoke-400cac",
+      "path": "snapshot/runs/20260920-071430-celeba-smoke-400cac",
+      "cache_key": "3c0a65a6b2341cb5b3565ef547598403708c7a77c9df927b1ad2d439c349514d",
+      "dataset_fingerprint": "92adc8cc97da3de2e8af26e08ceb7cd37f5dbaa92fb60bc50c46f43527de794d",
+      "config_hash": "400cac6ffa356142b5068bd0d5e692e2a21a75b493e6aea3961379bf9909afd2",
+      "mode": "reset",
+      "validation_accuracy": 0.03333333333333333,
+      "model_sha256": "5271e7073ba56fa3e20e354e9338eb291e7085d72be0c08e523d1ae29f8d07d8",
+      "evaluations": [
+        "snapshot/runs/20260920-071430-celeba-smoke-400cac/evals/20260920-071533-test"
+      ]
+    },
+    {
+      "run_id": "20260920-075340-celeba-persistent-541c94",
+      "path": "snapshot/runs/20260920-075340-celeba-persistent-541c94",
+      "cache_key": "ba13581528aebd5cdd492bf08987d6fd75fc2c2e92e661fa19023300f90e33cb",
+      "dataset_fingerprint": "b42902f2ef40b6ed3ccb19916e94efcb30457c29275ed8d00bedd626e09d86fc",
+      "config_hash": "541c9465b7a1ba18dfc583cc7b47b6a644d7a730860e0e272fe90e768cf95acf",
+      "mode": "persistent",
+      "validation_accuracy": 0.0033333333333333335,
+      "model_sha256": "4f9a5e86444d394110e5228598d2b3e1a2b70eb1316e3db2dadf834bf28e0420",
+      "evaluations": [
+        "snapshot/runs/20260920-075340-celeba-persistent-541c94/evals/20260920-083302-test"
+      ]
+    },
+    {
+      "run_id": "20260920-080049-celeba-reset-72aac7",
+      "path": "snapshot/runs/20260920-080049-celeba-reset-72aac7",
+      "cache_key": "635ebc0a3fdb57b6a8e6841f56a80f376481bc2405def98ec9b0bd9e5dde8487",
+      "dataset_fingerprint": "b42902f2ef40b6ed3ccb19916e94efcb30457c29275ed8d00bedd626e09d86fc",
+      "config_hash": "72aac79cd2a174ad4cd716ad1cb61626e6f70ffac7a47908fe00da8883d149b6",
+      "mode": "reset",
+      "validation_accuracy": 0.01,
+      "model_sha256": "5b8a9b2fe36508d97b035598c9b07aaa4bd5cbd328fba5a1d7fd136a7c59cb4f",
+      "evaluations": [
+        "snapshot/runs/20260920-080049-celeba-reset-72aac7/evals/20260920-083323-test"
+      ]
+    },
+    {
+      "run_id": "20260920-080640-celeba-reset-concat-c29bf2",
+      "path": "snapshot/runs/20260920-080640-celeba-reset-concat-c29bf2",
+      "cache_key": "635ebc0a3fdb57b6a8e6841f56a80f376481bc2405def98ec9b0bd9e5dde8487",
+      "dataset_fingerprint": "b42902f2ef40b6ed3ccb19916e94efcb30457c29275ed8d00bedd626e09d86fc",
+      "config_hash": "c29bf201c2001f043da1ef6902ec9e1fe1edcb67312e3d8297b8047736d8496f",
+      "mode": "reset_concat",
+      "validation_accuracy": 0.006666666666666667,
+      "model_sha256": "b51a1eb9ba1594bf5a37496ae9078ee28db8d4fda0cc1e2c9001073be2df8cb2",
+      "evaluations": [
+        "snapshot/runs/20260920-080640-celeba-reset-concat-c29bf2/evals/20260920-083343-test"
+      ]
+    }
+  ],
+  "trace_caches": [
+    {
+      "key": "11bfe37ad9d622bf4a8e9b6277e0addb7f6652e0369a6b63b6b0a69c306c5116",
+      "path": "snapshot/cache/features/11bfe37ad9d622bf4a8e9b6277e0addb7f6652e0369a6b63b6b0a69c306c5116",
+      "purpose": "earlier_engineering_probe",
+      "samples": 400,
+      "observations": 8,
+      "features": 2628,
+      "status": "completed"
+    },
+    {
+      "key": "3c0a65a6b2341cb5b3565ef547598403708c7a77c9df927b1ad2d439c349514d",
+      "path": "snapshot/cache/features/3c0a65a6b2341cb5b3565ef547598403708c7a77c9df927b1ad2d439c349514d",
+      "purpose": "frozen_protocol",
+      "samples": 400,
+      "observations": 16,
+      "features": 2628,
+      "status": "completed"
+    },
+    {
+      "key": "5df063b66d36bc5209a2c20b5c91486e8338a925f6bc9b8b755fdaf560486f2a",
+      "path": "snapshot/cache/features/5df063b66d36bc5209a2c20b5c91486e8338a925f6bc9b8b755fdaf560486f2a",
+      "purpose": "earlier_engineering_probe",
+      "samples": 400,
+      "observations": 8,
+      "features": 2628,
+      "status": "completed"
+    },
+    {
+      "key": "635ebc0a3fdb57b6a8e6841f56a80f376481bc2405def98ec9b0bd9e5dde8487",
+      "path": "snapshot/cache/features/635ebc0a3fdb57b6a8e6841f56a80f376481bc2405def98ec9b0bd9e5dde8487",
+      "purpose": "frozen_protocol",
+      "samples": 2000,
+      "observations": 16,
+      "features": 2628,
+      "status": "completed"
+    },
+    {
+      "key": "ba13581528aebd5cdd492bf08987d6fd75fc2c2e92e661fa19023300f90e33cb",
+      "path": "snapshot/cache/features/ba13581528aebd5cdd492bf08987d6fd75fc2c2e92e661fa19023300f90e33cb",
+      "purpose": "frozen_protocol",
+      "samples": 2000,
+      "observations": 16,
+      "features": 2628,
+      "status": "completed"
+    },
+    {
+      "key": "ebe95201e2e7df78c79160aa7f281431284297438dbacbe953ef5587f2aa3183",
+      "path": "snapshot/cache/features/ebe95201e2e7df78c79160aa7f281431284297438dbacbe953ef5587f2aa3183",
+      "purpose": "frozen_protocol",
+      "samples": 400,
+      "observations": 16,
+      "features": 2628,
+      "status": "completed"
+    }
+  ],
+  "pixel_policy": "No original or transformed images are included; preprocessing contains only indexes, fitted templates, and hashes.",
+  "external_inputs": "external-inputs.json",
+  "integrity_inventory": "checksums.sha256",
+  "viewer_code_commit": "25f8b1203935d7c3533d84e27ebcd28a571b0cdc",
+  "archived_on": "2026-09-21"
+}
