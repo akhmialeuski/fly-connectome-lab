@@ -99,8 +99,13 @@ class TestStatistics:
 class TestClassifier:
     """Verify fold-local preprocessing, deterministic C selection, and input guards."""
 
-    def test_fold_isolation(self) -> None:
-        """Record projection inputs, fit a classifier, then match every fold and final refit."""
+    @pytest.mark.parametrize('components', [100, None])
+    def test_fold_isolation(self, components: int | None) -> None:
+        """Record projection inputs, fit a classifier, then match every fold and final refit.
+
+        :param components: PCA cap or scaling without PCA.
+        :type components: Optional[int]
+        """
         x = np.random.default_rng(seed=0).normal(size=(24, 5))
         y = np.repeat(a=[0, 1], repeats=12)
         x[:, 0] += y * 10
@@ -108,7 +113,12 @@ class TestClassifier:
             target=fitting, attribute='_projection', wraps=fitting._projection
         ) as spy:
             model, scores = fitting.fit_classifier(
-                x_train=x, y_train=y, pca_components=100, c_grid=[1.0, 0.1], cv_folds=3, seed=0
+                x_train=x,
+                y_train=y,
+                pca_components=components,
+                c_grid=[1.0, 0.1],
+                cv_folds=3,
+                seed=0,
             )
         splits = list(StratifiedKFold(n_splits=3, shuffle=True, random_state=0).split(X=x, y=y))
         assert spy.call_count == 4
