@@ -45,7 +45,9 @@ def _projection(x: NDArray, components: int | None, seed: int) -> tuple[Pipeline
     return projection, projection.fit_transform(X=x)
 
 
-def _classifier(c_value: float, seed: int, tolerance: float) -> LogisticRegression:
+def _classifier(
+    c_value: float, seed: int, tolerance: float, max_iterations: int | None = None
+) -> LogisticRegression:
     """Construct the shared deterministic regularized classifier.
 
     :param c_value: Positive inverse regularization strength.
@@ -54,11 +56,16 @@ def _classifier(c_value: float, seed: int, tolerance: float) -> LogisticRegressi
     :type seed: int
     :param tolerance: Positive optimizer convergence tolerance.
     :type tolerance: float
+    :param max_iterations: Explicit iteration cap, or the original protocol default.
+    :type max_iterations: Optional[int]
     :returns: Unfitted logistic regression estimator.
     :rtype: LogisticRegression
     """
     return LogisticRegression(
-        C=c_value, max_iter=MAX_LOGISTIC_ITERATIONS, tol=tolerance, random_state=seed
+        C=c_value,
+        max_iter=MAX_LOGISTIC_ITERATIONS if max_iterations is None else max_iterations,
+        tol=tolerance,
+        random_state=seed,
     )
 
 
@@ -70,6 +77,7 @@ def fit_classifier(
     cv_folds: int,
     seed: int,
     tolerance: float = LOGISTIC_TOLERANCE,
+    max_iterations: int | None = None,
 ) -> tuple[Pipeline, dict[str, float]]:
     """Choose C using fold-local transforms, then refit on all training rows.
 
@@ -87,6 +95,8 @@ def fit_classifier(
     :type seed: int
     :param tolerance: Positive optimizer tolerance; pixels default to 1e-4.
     :type tolerance: float
+    :param max_iterations: Explicit iteration cap, or the original protocol default.
+    :type max_iterations: Optional[int]
     :returns: Fitted scaler/PCA/classifier pipeline and mean CV accuracy for each C.
     :rtype: tuple[Pipeline, dict[str, float]]
     :raises ValueError: If features, class support, or hyperparameters are invalid.
@@ -107,6 +117,7 @@ def fit_classifier(
         or tolerance <= 0
         or (pca_components is not None and pca_components < 1)
         or cv_folds < 2
+        or (max_iterations is not None and max_iterations < 1)
         or not candidates
         or any(not np.isfinite(value) or value <= 0 for value in candidates)
     ):
@@ -124,7 +135,9 @@ def fit_classifier(
             )
             held_out_features = projection.transform(X=x[held_out])
             for value in candidates:
-                classifier = _classifier(c_value=value, seed=seed, tolerance=tolerance)
+                classifier = _classifier(
+                    c_value=value, seed=seed, tolerance=tolerance, max_iterations=max_iterations
+                )
                 classifier.fit(X=train_features, y=y_train[train])
                 scores[value].append(
                     float(classifier.score(X=held_out_features, y=y_train[held_out]))
@@ -132,7 +145,9 @@ def fit_classifier(
         means = {value: float(np.mean(a=values)) for value, values in scores.items()}
         best = min(candidates, key=lambda value: (-means[value], value))
         projection, transformed = _projection(x=x, components=pca_components, seed=seed)
-        classifier = _classifier(c_value=best, seed=seed, tolerance=tolerance)
+        classifier = _classifier(
+            c_value=best, seed=seed, tolerance=tolerance, max_iterations=max_iterations
+        )
         classifier.fit(X=transformed, y=y_train)
     pipeline = Pipeline(steps=[*projection.steps, ('classifier', classifier)])
     return pipeline, {str(value): means[value] for value in candidates}

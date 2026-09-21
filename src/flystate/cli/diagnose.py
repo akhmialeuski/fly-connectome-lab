@@ -7,9 +7,11 @@ import typer
 
 from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
 from flystate.diagnostics.audit import audit_cohort
+from flystate.diagnostics.convergence import diagnose_convergence
 from flystate.diagnostics.probes import run_probe
 from flystate.experiments.config import ConfigError, load_config
 from flystate.log import get_logger
+from flystate.readouts.fitting import MAX_LOGISTIC_ITERATIONS
 from flystate.settings import get_paths
 
 app = typer.Typer(
@@ -27,6 +29,7 @@ def diagnose_command(
     features: Annotated[str, typer.Option('--features')] = 'both',
     components: Annotated[int, typer.Option('--components')] = 60,
     label_mode: Annotated[str, typer.Option('--label-mode')] = 'true',
+    max_iterations: Annotated[int, typer.Option('--max-iterations')] = MAX_LOGISTIC_ITERATIONS,
     overrides: Annotated[list[str] | None, typer.Option('--set')] = None,
     as_json: Annotated[bool, typer.Option('--json')] = False,
 ) -> None:
@@ -36,7 +39,7 @@ def diagnose_command(
     :type config: Path
     :param output: New directory relative to FLYSTATE_HOME or inside it.
     :type output: Path
-    :param phase: Audit or probe.
+    :param phase: Audit, probe, or training-only convergence diagnosis.
     :type phase: str
     :param representation: Pixels, encoded input, or neural features.
     :type representation: str
@@ -48,6 +51,8 @@ def diagnose_command(
     :type components: int
     :param label_mode: True, permuted, or memorization labels.
     :type label_mode: str
+    :param max_iterations: Probe iteration cap; the original protocol uses 5000.
+    :type max_iterations: int
     :param overrides: Optional original experiment overrides.
     :type overrides: Optional[list[str]]
     :param as_json: Emit exactly one JSON result.
@@ -57,12 +62,30 @@ def diagnose_command(
     try:
         cfg = load_config(path=config, overrides=overrides or ())
         paths = get_paths()
-        if phase not in {'audit', 'probe'} or components < 0:
-            raise ConfigError('Phase must be audit/probe and components must be nonnegative.')
-        result = (
-            audit_cohort(cfg=cfg, paths=paths, output=output)
-            if phase == 'audit'
-            else run_probe(
+        if (
+            phase not in {'audit', 'probe', 'convergence'}
+            or components < 0
+            or max_iterations < 1
+            or (phase == 'convergence' and label_mode != 'true')
+        ):
+            raise ConfigError(
+                'Use audit/probe/convergence, nonnegative components, positive iterations, '
+                'and true labels for convergence diagnosis.'
+            )
+        if phase == 'audit':
+            result = audit_cohort(cfg=cfg, paths=paths, output=output)
+        elif phase == 'convergence':
+            result = diagnose_convergence(
+                cfg=cfg,
+                paths=paths,
+                output=output,
+                representation=representation,
+                history=history,
+                features=features,
+                components=components or None,
+            )
+        else:
+            result = run_probe(
                 cfg=cfg,
                 paths=paths,
                 output=output,
@@ -71,8 +94,8 @@ def diagnose_command(
                 features=features,
                 components=components or None,
                 label_mode=label_mode,
+                max_iterations=max_iterations,
             )
-        )
     except (Exception, KeyboardInterrupt) as error:
         code = (
             CONFIG_ERROR

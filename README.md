@@ -216,3 +216,24 @@ perceptual review candidates, and reserve up to three unused photographs per
 identity after conservative screening. Incomplete reserve coverage does not
 constitute a balanced confirmation test. Follow the issue's preregistered order
 and record failures as well as successes; use a new attempt name for any retry.
+
+For a failed true-label probe, `--phase convergence` reconstructs the original
+training folds and identifies the first fold/C that exhausts 5,000 iterations.
+It records the regularized objective, exact gradient, warnings, and numeric fold
+coefficients, then independently fits that same problem with a 20,000-iteration
+cap and, only if necessary, 50,000. It never scores validation predictions.
+These fold exports are explicitly diagnostic and are not selected readouts.
+A missing reproduced failure or another stopping limit is reported as such.
+
+```bash
+uv run flystate diagnose run "$FLYSTATE_HOME/runs/<original-run>/config.yaml" \
+  --phase convergence --representation encoded --history all --components 60 \
+  --output runs/diagnostics/<study>/encoded-convergence --json
+```
+
+Only after numerical diagnosis and a recorded protocol amendment, a fresh probe
+may use `--max-iterations 50000`. This changes the iteration cap; the 1e-6 tolerance,
+solver, regularization, folds, and preprocessing remain the same. Other solver
+limits remain unchanged. The default cap stays 5,000, and an unconverged full probe
+still fails rather than publishing an accuracy. Preserve the original failed
+attempt and give any retry a new output directory.
