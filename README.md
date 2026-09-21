@@ -171,3 +171,48 @@ Normal working data remains outside Git or in ignored paths. Add future complete
 ## Maintainer
 
 Maintainer: <https://github.com/akhmialeuski>
+
+## Fly-only recognition diagnostics
+
+Research roadmap [#39](https://github.com/akhmialeuski/fly-connectome-lab/issues/39)
+tracks the sequential investigation. The first campaign
+[#40](https://github.com/akhmialeuski/fly-connectome-lab/issues/40) compares information
+at the pixels, fixed encoder, and neural readout stages. Pixel/encoder classifiers
+are diagnostic controls; the experiment continues to use the fly connectome.
+These are exploratory training/validation measurements. Previously inspected test
+images and the newly reserved photographs are excluded from probe fitting/scoring.
+
+Set `FLYSTATE_HOME` to the existing data home and use the original run's effective
+configuration to retain its exact cohort and trace identity:
+
+```bash
+export FLYSTATE_HOME=/path/to/flystate-home
+uv run flystate diagnose run "$FLYSTATE_HOME/runs/<original-run>/config.yaml" \
+  --phase audit --output runs/diagnostics/<study>/audit --json
+uv run flystate diagnose run "$FLYSTATE_HOME/runs/<original-run>/config.yaml" \
+  --representation neural --history last --features both --components 60 \
+  --output runs/diagnostics/<study>/neural-last-pca60 --json
+```
+
+Available representations are `pixels`, `encoded`, and `neural`; histories are
+`last` and `all`. Neural feature blocks are `both`, `spike_trace`, and `voltage`.
+Use `--components 0` for a classifier without PCA. `--label-mode permuted`
+permutes training labels only; `--label-mode memorization` measures a small
+training-only subset and must not be interpreted as generalization.
+
+Every attempt requires a fresh output directory. It records configuration,
+source hashes, environment, status (including exceptions), resource measurements,
+and a SHA-256 inventory. Successful probes also save CV scores, training and
+validation predictions, feature statistics, and numeric model coefficients.
+`model/weights.npz` can be opened with `numpy.load(..., allow_pickle=False)`:
+standardize with `(x - scaler_mean) / scaler_scale`; when `has_pca` is true in
+`model/model.json`, subtract `pca_mean` and multiply by `pca_components.T`.
+Compute logits with `z @ coef.T + intercept`, then softmax for multiclass or
+sigmoid for the positive binary class. Columns follow the saved `classes` array.
+No photograph or input feature matrix is saved in these diagnostic results.
+
+Audits preserve original splits, report exact duplicates separately from
+perceptual review candidates, and reserve up to three unused photographs per
+identity after conservative screening. Incomplete reserve coverage does not
+constitute a balanced confirmation test. Follow the issue's preregistered order
+and record failures as well as successes; use a new attempt name for any retry.

@@ -17,21 +17,21 @@ MAX_LOGISTIC_ITERATIONS: int = 5000
 LOGISTIC_TOLERANCE: float = 1e-4
 
 
-def _projection(x: NDArray, components: int, seed: int) -> tuple[Pipeline, NDArray]:
+def _projection(x: NDArray, components: int | None, seed: int) -> tuple[Pipeline, NDArray]:
     """Fit preprocessing on one training fold only.
 
     :param x: Finite float64 training features of shape (N,F).
     :type x: NDArray
-    :param components: Maximum PCA components.
-    :type components: int
+    :param components: Maximum PCA components, or null for scaling without PCA.
+    :type components: Optional[int]
     :param seed: Explicit sklearn random seed.
     :type seed: int
     :returns: Fitted transform and projected training matrix.
     :rtype: tuple[Pipeline, NDArray]
     """
-    projection = Pipeline(
-        steps=[
-            ('scaler', StandardScaler()),
+    steps: list[tuple[str, StandardScaler | PCA]] = [('scaler', StandardScaler())]
+    if components is not None:
+        steps.append(
             (
                 'pca',
                 PCA(
@@ -39,9 +39,9 @@ def _projection(x: NDArray, components: int, seed: int) -> tuple[Pipeline, NDArr
                     svd_solver='full',
                     random_state=seed,
                 ),
-            ),
-        ]
-    )
+            )
+        )
+    projection = Pipeline(steps=steps)
     return projection, projection.fit_transform(X=x)
 
 
@@ -65,7 +65,7 @@ def _classifier(c_value: float, seed: int, tolerance: float) -> LogisticRegressi
 def fit_classifier(
     x_train: NDArray,
     y_train: NDArray,
-    pca_components: int,
+    pca_components: int | None,
     c_grid: Sequence[float],
     cv_folds: int,
     seed: int,
@@ -77,8 +77,8 @@ def fit_classifier(
     :type x_train: NDArray
     :param y_train: Integer class labels (N,), with at least two samples per class.
     :type y_train: NDArray
-    :param pca_components: Maximum PCA dimension, bounded separately in every fold.
-    :type pca_components: int
+    :param pca_components: Maximum PCA dimension per fold, or null to retain scaled features.
+    :type pca_components: Optional[int]
     :param c_grid: Positive finite candidate inverse regularization strengths.
     :type c_grid: Sequence[float]
     :param cv_folds: Requested stratified fold count, at least two.
@@ -105,7 +105,7 @@ def fit_classifier(
     if (
         not np.isfinite(tolerance)
         or tolerance <= 0
-        or pca_components < 1
+        or (pca_components is not None and pca_components < 1)
         or cv_folds < 2
         or not candidates
         or any(not np.isfinite(value) or value <= 0 for value in candidates)
