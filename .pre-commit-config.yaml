@@ -25,7 +25,10 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-yaml
+      # Immutable scientific records are protected by their archived SHA-256 inventory.
       - id: end-of-file-fixer
+        exclude: ^research/[^/]+/[^/]+/(snapshot|preprocessing|provenance|environment)/
       - id: trailing-whitespace
+        exclude: ^research/[^/]+/[^/]+/(snapshot|preprocessing|provenance|environment)/
       - id: check-added-large-files
         args: ['--maxkb=500']

@@ -38,15 +38,18 @@ def environment_report() -> dict[str, Any]:
 def git_state() -> dict[str, str | bool | None]:
     """Inspect current source identity without modifying a checkout or assuming Git exists.
 
-    :returns: Commit and dirty state, both null outside an accessible Git repository.
+    :returns: Commit and dirty state, independently null when their lookup fails.
     :rtype: dict[str, str | bool | None]
     """
     try:
         commit = subprocess.run(
             args=['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True, timeout=5
         ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return {'git_commit': None, 'git_dirty': None}
+    try:
         status = subprocess.run(
-            args=['git', 'status', '--porcelain'],
+            args=['git', '--no-optional-locks', 'status', '--porcelain'],
             capture_output=True,
             text=True,
             check=True,
@@ -54,4 +57,4 @@ def git_state() -> dict[str, str | bool | None]:
         ).stdout
         return {'git_commit': commit, 'git_dirty': bool(status.strip())}
     except (OSError, subprocess.SubprocessError):
-        return {'git_commit': None, 'git_dirty': None}
+        return {'git_commit': commit, 'git_dirty': None}

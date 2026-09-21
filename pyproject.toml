@@ -48,6 +48,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/flystate"]
 
+[tool.hatch.build.targets.sdist]
+exclude = ["/research/**"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

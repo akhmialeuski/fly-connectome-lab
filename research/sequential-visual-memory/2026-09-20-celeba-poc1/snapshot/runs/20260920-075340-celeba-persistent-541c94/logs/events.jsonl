@@ -1,0 +1,17 @@
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 1, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:53:42.869294Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 2, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:54:09.757687Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 3, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:54:38.531614Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 4, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:55:04.652151Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 5, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:55:28.175707Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 6, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:55:57.619828Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 7, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:56:19.996812Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 8, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:56:43.426356Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 9, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:57:04.997551Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 10, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:57:28.223018Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 11, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:57:50.995491Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 12, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:58:14.448995Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 13, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:58:40.117761Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 14, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:59:03.502069Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 15, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:59:26.837137Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "training", "t": 16, "event": "fit_readout", "level": "info", "timestamp": "2026-09-20T07:59:54.794409Z"}
+{"run_id": "20260920-075340-celeba-persistent-541c94", "phase": "completed", "final_val_accuracy": 0.0033333333333333335, "event": "training_completed", "level": "info", "timestamp": "2026-09-20T08:00:26.334544Z"}
