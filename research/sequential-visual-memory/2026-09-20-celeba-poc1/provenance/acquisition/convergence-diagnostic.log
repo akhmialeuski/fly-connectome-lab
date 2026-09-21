@@ -1,0 +1,16 @@
+{'fold': 0, 'C': 0.01, 'tol': 1e-06, 'iterations': [692], 'warnings': [], 'accuracy': 0.010714285714285714}
+{'fold': 0, 'C': 0.01, 'tol': 0.0001, 'iterations': [250], 'warnings': [], 'accuracy': 0.010714285714285714}
+{'fold': 0, 'C': 0.1, 'tol': 1e-06, 'iterations': [1135], 'warnings': [], 'accuracy': 0.007142857142857143}
+{'fold': 0, 'C': 0.1, 'tol': 0.0001, 'iterations': [571], 'warnings': [], 'accuracy': 0.007142857142857143}
+{'fold': 0, 'C': 1.0, 'tol': 1e-06, 'iterations': [2132], 'warnings': [], 'accuracy': 0.010714285714285714}
+{'fold': 0, 'C': 1.0, 'tol': 0.0001, 'iterations': [924], 'warnings': [], 'accuracy': 0.010714285714285714}
+{'fold': 0, 'C': 10.0, 'tol': 1e-06, 'iterations': [3980], 'warnings': [], 'accuracy': 0.017857142857142856}
+{'fold': 0, 'C': 10.0, 'tol': 0.0001, 'iterations': [1244], 'warnings': [], 'accuracy': 0.017857142857142856}
+{'fold': 1, 'C': 0.01, 'tol': 1e-06, 'iterations': [736], 'warnings': [], 'accuracy': 0.025}
+{'fold': 1, 'C': 0.01, 'tol': 0.0001, 'iterations': [304], 'warnings': [], 'accuracy': 0.025}
+{'fold': 1, 'C': 0.1, 'tol': 1e-06, 'iterations': [1365], 'warnings': [], 'accuracy': 0.017857142857142856}
+{'fold': 1, 'C': 0.1, 'tol': 0.0001, 'iterations': [702], 'warnings': [], 'accuracy': 0.017857142857142856}
+{'fold': 1, 'C': 1.0, 'tol': 1e-06, 'iterations': [2600], 'warnings': [], 'accuracy': 0.010714285714285714}
+{'fold': 1, 'C': 1.0, 'tol': 0.0001, 'iterations': [1177], 'warnings': [], 'accuracy': 0.010714285714285714}
+{'fold': 1, 'C': 10.0, 'tol': 1e-06, 'iterations': [5000], 'warnings': ['lbfgs failed to converge after 5000 iteration(s) (status=1):\nSTOP: TOTAL NO. OF ITERATIONS REACHED LIMIT\n\nIncrease the number of iterations to improve the convergence (max_iter=5000).\nYou might also want to scale the data as shown in:\n    https://scikit-learn.org/stable/modules/preprocessing.html\nPlease also refer to the documentation for alternative solver options:\n    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression'], 'accuracy': 0.007142857142857143}
+{'fold': 1, 'C': 10.0, 'tol': 0.0001, 'iterations': [1322], 'warnings': [], 'accuracy': 0.0035714285714285713}

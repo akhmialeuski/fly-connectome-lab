@@ -1,0 +1,10 @@
+12:07:45 [info     ] fit_pixel_baseline             baseline=single_window step=1
+12:07:53 [info     ] fit_pixel_baseline             baseline=single_window step=2
+12:08:01 [info     ] fit_pixel_baseline             baseline=single_window step=3
+12:08:08 [info     ] fit_pixel_baseline             baseline=single_window step=4
+12:08:17 [info     ] fit_pixel_baseline             baseline=single_window step=5
+12:08:25 [info     ] fit_pixel_baseline             baseline=single_window step=6
+12:08:32 [info     ] fit_pixel_baseline             baseline=single_window step=7
+12:08:42 [info     ] fit_pixel_baseline             baseline=single_window step=8
+12:08:52 [info     ] fit_pixel_baseline             baseline=all_windows
+12:09:14 [info     ] fit_pixel_baseline             baseline=whole_image

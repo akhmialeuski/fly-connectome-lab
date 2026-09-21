@@ -1,0 +1,22 @@
+01:19:13 [info     ] grid_measured                  batch=1 cpu_percent=8.2 mean_rate_hz=2.3532123575284944 ms_per_episode_step=4.192394256630602 ms_per_step=4.192394256630602 rss_mb=482.463744 steps=300 steps_per_s=238.5271848940307 threads=1
+01:19:20 [info     ] grid_measured                  batch=4 cpu_percent=8.1 mean_rate_hz=2.3630421415716856 ms_per_episode_step=4.1312122891637655 ms_per_step=16.524849156655062 rss_mb=497.717248 steps=300 steps_per_s=60.514924555136986 threads=1
+01:19:21 [info     ] grid_measured                  batch=1 cpu_percent=15.2 mean_rate_hz=2.354407118576285 ms_per_episode_step=2.7855002833530307 ms_per_step=2.7855002833530307 rss_mb=497.733632 steps=300 steps_per_s=359.00193799163986 threads=2
+01:19:26 [info     ] grid_measured                  batch=4 cpu_percent=15.0 mean_rate_hz=2.3583563287342533 ms_per_episode_step=2.979954997523843 ms_per_step=11.919819990095371 rss_mb=497.737728 steps=300 steps_per_s=83.89388437333263 threads=2
+01:19:28 [info     ] grid_measured                  batch=1 cpu_percent=29.1 mean_rate_hz=2.3515236952609477 ms_per_episode_step=2.3777558132618046 ms_per_step=2.3777558132618046 rss_mb=497.758208 steps=300 steps_per_s=420.5646325928651 threads=4
+01:19:32 [info     ] grid_measured                  batch=4 cpu_percent=29.8 mean_rate_hz=2.3619021195760848 ms_per_episode_step=2.9079241949754455 ms_per_step=11.631696779901782 rss_mb=497.778688 steps=300 steps_per_s=85.97197974829292 threads=4
+01:19:34 [info     ] grid_measured                  batch=1 cpu_percent=57.8 mean_rate_hz=2.3532123575284944 ms_per_episode_step=3.1727334100287408 ms_per_step=3.1727334100287408 rss_mb=497.84832 steps=300 steps_per_s=315.1856367254447 threads=8
+01:19:39 [info     ] grid_measured                  batch=4 cpu_percent=58.4 mean_rate_hz=2.3605641371725654 ms_per_episode_step=3.249663933335493 ms_per_step=12.998655733341971 rss_mb=497.8688 steps=300 steps_per_s=76.9310319862513 threads=8
+01:19:45 [info     ] grid_measured                  batch=1 cpu_percent=84.3 mean_rate_hz=2.354407118576285 ms_per_episode_step=14.173887236587083 ms_per_step=14.173887236587083 rss_mb=497.872896 steps=300 steps_per_s=70.55227569602064 threads=12
+01:19:54 [info     ] grid_measured                  batch=4 cpu_percent=86.2 mean_rate_hz=2.3621975604879024 ms_per_episode_step=5.801882782495038 ms_per_step=23.20753112998015 rss_mb=497.922048 steps=300 steps_per_s=43.0894606754689 threads=12
+01:20:04 [info     ] grid_measured                  batch=1 cpu_percent=96.4 mean_rate_hz=2.360094981003799 ms_per_episode_step=22.02985547017306 ms_per_step=22.02985547017306 rss_mb=497.9712 steps=300 steps_per_s=45.39294419584062 threads=14
+01:20:34 [info     ] grid_measured                  batch=4 cpu_percent=97.7 mean_rate_hz=2.3627914417116576 ms_per_episode_step=18.859074758317245 ms_per_step=75.43629903326898 rss_mb=497.983488 steps=300 steps_per_s=13.256217667292761 threads=14
+01:21:05 [info     ] sustained_progress             elapsed_s=30.0 target_s=300.0
+01:21:35 [info     ] sustained_progress             elapsed_s=60.0 target_s=300.0
+01:22:05 [info     ] sustained_progress             elapsed_s=90.0 target_s=300.0
+01:22:35 [info     ] sustained_progress             elapsed_s=120.0 target_s=300.0
+01:23:05 [info     ] sustained_progress             elapsed_s=150.0 target_s=300.0
+01:23:35 [info     ] sustained_progress             elapsed_s=180.0 target_s=300.0
+01:24:05 [info     ] sustained_progress             elapsed_s=210.0 target_s=300.0
+01:24:35 [info     ] sustained_progress             elapsed_s=240.0 target_s=300.0
+01:25:05 [info     ] sustained_progress             elapsed_s=270.0 target_s=300.0
+01:25:35 [info     ] sustained_progress             elapsed_s=300.0 target_s=300.0

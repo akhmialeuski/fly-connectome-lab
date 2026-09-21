@@ -1,0 +1,17 @@
+08:00:51 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=1
+08:01:12 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=2
+08:01:37 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=3
+08:02:01 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=4
+08:02:21 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=5
+08:02:41 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=6
+08:03:03 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=7
+08:03:22 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=8
+08:03:40 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=9
+08:03:59 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=10
+08:04:17 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=11
+08:04:36 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=12
+08:04:54 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=13
+08:05:13 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=14
+08:05:32 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=15
+08:05:53 [info     ] fit_readout                    phase=training run_id=20260920-080049-celeba-reset-72aac7 t=16
+08:06:13 [info     ] training_completed             final_val_accuracy=0.01 phase=completed run_id=20260920-080049-celeba-reset-72aac7

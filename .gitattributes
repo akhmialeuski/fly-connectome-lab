@@ -1,0 +1,6 @@
+# Learned coefficients and computed neural feature payloads are versioned with Git LFS.
+research/**/*.npz filter=lfs diff=lfs merge=lfs -text
+research/**/features.zarr/features/c/** filter=lfs diff=lfs merge=lfs -text
+
+# Preserve SHA-256 inventories across platforms, including study metadata and reports.
+research/** -text
