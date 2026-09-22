@@ -1,0 +1,41 @@
+[
+  {
+    "representation": "pixels",
+    "anchor": "retry50000-smoke-02-pixels-persistent-all-both-pca60-true",
+    "arrays_exactly_equal": [
+      "scaler_mean",
+      "scaler_scale",
+      "coef",
+      "intercept",
+      "classes",
+      "pca_mean",
+      "pca_components"
+    ]
+  },
+  {
+    "representation": "encoded",
+    "anchor": "retry50000-smoke-04-encoded-persistent-all-both-pca60-true",
+    "arrays_exactly_equal": [
+      "scaler_mean",
+      "scaler_scale",
+      "coef",
+      "intercept",
+      "classes",
+      "pca_mean",
+      "pca_components"
+    ]
+  },
+  {
+    "representation": "neural",
+    "anchor": "smoke-05-neural-persistent-last-both-pca60-true",
+    "arrays_exactly_equal": [
+      "scaler_mean",
+      "scaler_scale",
+      "coef",
+      "intercept",
+      "classes",
+      "pca_mean",
+      "pca_components"
+    ]
+  }
+]

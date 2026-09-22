@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "attempt_memberships_verified": 48,
+  "training_rows": 280,
+  "validation_rows": 60,
+  "training_classes": 20,
+  "source_provenance": {
+    "dataset_fingerprint": "92adc8cc97da3de2e8af26e08ceb7cd37f5dbaa92fb60bc50c46f43527de794d",
+    "preprocessing_key": "185851868d46dc571b345c1a555d858b73e6f76ca52301fca59c3002aeea7899",
+    "config_hash": "9406ee5b0f5b2ba794b71bad4def5d906248af35165f49a8fceb7f0c96fe82b3",
+    "test_rows_loaded_for_scoring": false,
+    "cache_key": "ebe95201e2e7df78c79160aa7f281431284297438dbacbe953ef5587f2aa3183",
+    "brain_files_sha256": {
+      "brain.npz": "cc9bd1ecd00bd703a6fa648bc6ad145c93c7c1ee53debdcc9ce0d1f4305e6aca",
+      "weights.npz": "c29919aa44069a271b1ee978abe05fa9bf6e45e4ba3e436e92b624ef1b5be40c"
+    }
+  },
+  "fitted_models": 0,
+  "validation_predictions_scored": 0
+}

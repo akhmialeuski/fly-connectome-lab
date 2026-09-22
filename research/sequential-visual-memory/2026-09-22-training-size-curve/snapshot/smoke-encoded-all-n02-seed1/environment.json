@@ -1,0 +1,1 @@
+{"cpu_model":"Intel(R) Core(TM) Ultra 5 235H","hostname":"EPPLGDAW0123","logical_cpus":14,"numba_threads":14,"physical_cpus":14,"platform":"Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39","python":"3.12.12","ram_total_gb":16.469655552,"versions":{"numba":"0.67.0","numpy":"2.5.3","pyarrow":"25.0.1","scikit-learn":"1.9.1","scipy":"1.18.1","zarr":"3.4.0"},"wsl":true}
