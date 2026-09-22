@@ -446,6 +446,7 @@ class TestViewerBrowser:
             expect(actual=page.get_by_text(text='No matching experiments.')).to_be_visible()
             page.get_by_label(text='Search experiments').fill(value='tiny')
             page.get_by_role(role='link', name='tiny', exact=True).click()
+            expect(actual=page.get_by_text(text='Idea and results', exact=True)).to_be_visible()
             expect(actual=page.get_by_role(role='button', name='View episode')).to_have_count(
                 count=4
             )
@@ -484,13 +485,13 @@ class TestViewerBrowser:
             expect(actual=page.get_by_role(role='button', name='View episode')).to_have_count(
                 count=1
             )
-            page.get_by_role(role='link', name='03 Comparisons').click()
+            page.get_by_role(role='link', name='04 Comparisons').click()
             expect(
                 actual=page.get_by_text(text='Difference across observations', exact=True)
             ).to_be_visible()
             expect(actual=page.get_by_text(text='Final memory effect', exact=True)).to_be_visible()
             assert 'NaN' not in page.locator('#content').inner_text()
-            page.get_by_role(role='link', name='04 Evidence library').click()
+            page.get_by_role(role='link', name='05 Evidence library').click()
             expect(actual=page.locator('.report-text')).to_contain_text(expected='<script>')
             assert page.evaluate(expression='window.injected') is None
             for category, title in (
@@ -500,7 +501,7 @@ class TestViewerBrowser:
             ):
                 page.get_by_label(text='Report category', exact=True).select_option(value=category)
                 expect(actual=page.get_by_text(text=title, exact=True)).to_be_visible()
-            page.get_by_role(role='link', name='05 Trace caches').click()
+            page.get_by_role(role='link', name='06 Trace caches').click()
             expect(
                 actual=page.get_by_text(text='Stored neural recordings', exact=True)
             ).to_be_visible()
@@ -537,6 +538,39 @@ class TestViewerBrowser:
             page.goto(url='http://127.0.0.1/#runs')
             expect(
                 actual=page.get_by_role(role='link', name='attempt-a', exact=True)
+            ).to_have_count(count=0)
+            page.get_by_role(role='link', name='03 Diagnostics').click()
+            summaries = page.evaluate(
+                expression="""async () => {
+                    const {interpretation} = await import('/interpretation.js');
+                    return [
+                        {kind: 'training', mode: 'reset'},
+                        {kind: 'training', mode: 'reset_concat'},
+                        {kind: 'identity_probe', parameters: {representation: 'pixels'}},
+                        {kind: 'identity_probe', parameters: {representation: 'neural',
+                            history: 'last', train_per_class: 2, subset_seed: 0}},
+                        {kind: 'identity_probe', parameters: {representation: 'neural',
+                            history: 'all', label_mode: 'shuffled'}},
+                        {kind: 'convergence_diagnostic', report: {
+                            budget_measurements: [{converged: false}, {converged: true}]}},
+                        {kind: 'cohort_audit', report: {reserve_count: 0}},
+                        {kind: 'future_kind', status: 'running'}
+                    ].map(interpretation);
+                }"""
+            )
+            assert 'Reset neural state' in summaries[0]['idea']
+            assert 'combine' in summaries[1]['idea']
+            assert 'without simulating neural memory' in summaries[2]['idea']
+            assert 'final observation' in summaries[3]['idea']
+            assert '2 photographs' in summaries[3]['idea']
+            assert 'combined observations' in summaries[4]['idea']
+            assert 'shuffled' in summaries[4]['idea']
+            assert '1 of 2' in summaries[5]['result']
+            assert '0 reserved' in summaries[6]['result']
+            assert 'No specific hypothesis' in summaries[7]['idea']
+            assert 'No completed recognition result' in summaries[7]['result']
+            expect(
+                actual=page.get_by_role(role='link', name='attempt-a', exact=True)
             ).to_be_visible()
             page.get_by_label(text='Search experiments').fill(value='attempt')
             page.get_by_label(text='Experiment study').select_option(value='future/study')
@@ -563,8 +597,18 @@ class TestViewerBrowser:
                 expected='RecordedFailure'
             )
             assert page.evaluate(expression='window.unsafe') is None
-            page.get_by_role(role='link', name='02 Experiments').click()
+            page.get_by_role(role='link', name='03 Diagnostics').click()
             page.get_by_role(role='link', name='attempt-a', exact=True).click()
+            expect(actual=page.get_by_text(text='Idea and results', exact=True)).to_be_visible()
+            expect(
+                actual=page.get_by_text(
+                    text=(
+                        'Test identity information in encoded input currents, '
+                        'without simulating neural memory.'
+                    ),
+                    exact=True,
+                )
+            ).to_be_visible()
             expect(
                 actual=page.get_by_text(text='Recorded recognition scores', exact=True)
             ).to_be_visible()

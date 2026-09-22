@@ -1,3 +1,4 @@
+import { interpretation, interpretationCard } from './interpretation.js';
 import { bars, card, colors, el, lineChart, number, pct, raw, stats, table } from './charts.js';
 import { face } from './identities.js';
 
@@ -12,7 +13,14 @@ const status = (value) =>
   );
 export function experimentTable(entries) {
   return table(
-    ['Experiment / study', 'Kind / representation', 'Classes', 'Validation', 'Status'],
+    [
+      'Experiment / study',
+      'Kind / representation',
+      'Classes',
+      'Validation',
+      'Status',
+      'Idea and results',
+    ],
     entries.map((row) => [
       el(
         'div',
@@ -56,6 +64,12 @@ export function experimentTable(entries) {
         {},
         status(row.status),
         row.warnings?.length ? el('small', {}, 'Some evidence is unreadable') : null,
+      ),
+      el(
+        'div',
+        {},
+        el('p', {}, interpretation(row).idea),
+        el('p', {}, interpretation(row).result),
       ),
     ]),
   );
@@ -243,6 +257,15 @@ export async function researchPage(path, api, signal) {
           el('h1', { class: 'experiment-path' }, path.split('/').at(-1)),
           el('p', { class: 'experiment-path mono' }, path),
         ),
+        interpretationCard({
+          kind: parameters.kind || manifest.kind,
+          parameters,
+          status: manifest.status,
+          error: manifest.error,
+          scores: report.scores,
+          report,
+          classes: detail.documents['config.json']?.dataset?.subset?.n_identities,
+        }),
         stats([
           [
             'Status',

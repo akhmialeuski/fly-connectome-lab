@@ -294,3 +294,15 @@ their canonical `sample_ids_sha256`. The command requires a persistent,
 noise-enabled baseline and its verified trace cache; exact native replay is a
 mandatory gate before noise interventions. See the frozen
 [signal-stability protocol](research/sequential-visual-memory/2026-09-22-signal-stability/README.md).
+
+### Experiments and diagnostics in the viewer
+
+The **Experiments** menu contains sequential image-patch training runs and retains
+the episode, observation, and memory-state viewer. **Diagnostics** contains probes,
+cohort audits, numerical checks, and unfamiliar non-training records. Both lists
+are discovered automatically and refresh every five seconds; no study-name list
+is maintained. Existing links remain valid. Each entry and detail page explains
+its idea and recorded result. Diagnostic readout accuracy is not evidence of a
+memory benefit; pixel and encoded-current controls do not simulate neural memory.
+Summaries are derived from saved metadata without modifying scientific artifacts.
+Unknown experiment kinds explicitly state when a specific hypothesis is unavailable.
