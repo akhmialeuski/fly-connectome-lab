@@ -284,3 +284,15 @@ solver, regularization, folds, and preprocessing remain the same. Other solver
 limits remain unchanged. The default cap stays 5,000, and an unconverged full probe
 still fails rather than publishing an accuracy. Preserve the original failed
 attempt and give any retry a new output directory.
+
+### Experiments and diagnostics in the viewer
+
+The **Experiments** menu contains sequential image-patch training runs and retains
+the episode, observation, and memory-state viewer. **Diagnostics** contains probes,
+cohort audits, numerical checks, and unfamiliar non-training records. Both lists
+are discovered automatically and refresh every five seconds; no study-name list
+is maintained. Existing links remain valid. Each entry and detail page explains
+its idea and recorded result. Diagnostic readout accuracy is not evidence of a
+memory benefit; pixel and encoded-current controls do not simulate neural memory.
+Summaries are derived from saved metadata without modifying scientific artifacts.
+Unknown experiment kinds explicitly state when a specific hypothesis is unavailable.
