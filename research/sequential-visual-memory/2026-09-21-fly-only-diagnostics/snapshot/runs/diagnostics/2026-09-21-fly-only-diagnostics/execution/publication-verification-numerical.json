@@ -1,0 +1,42 @@
+[
+  {
+    "attempt": "convergence-main-01-pixels-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763559463",
+    "body_verified": true
+  },
+  {
+    "attempt": "convergence-main-02-encoded-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763590846",
+    "body_verified": true
+  },
+  {
+    "attempt": "convergence-smoke-02-pixels-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763520146",
+    "body_verified": true
+  },
+  {
+    "attempt": "convergence-smoke-04-encoded-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763536724",
+    "body_verified": true
+  },
+  {
+    "attempt": "retry50000-main-01-pixels-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5769674718",
+    "body_verified": true
+  },
+  {
+    "attempt": "retry50000-main-02-encoded-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5769714857",
+    "body_verified": true
+  },
+  {
+    "attempt": "retry50000-smoke-02-pixels-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5769619380",
+    "body_verified": true
+  },
+  {
+    "attempt": "retry50000-smoke-04-encoded-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5769627730",
+    "body_verified": true
+  }
+]

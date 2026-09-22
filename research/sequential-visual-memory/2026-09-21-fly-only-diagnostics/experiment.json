@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "study": "2026-09-21-fly-only-diagnostics",
-  "status": "P0 and original smoke/main probes archived; numerical and causal follow-ups pending",
+  "status": "Cached diagnostic campaign and numerical follow-up archived; causal and learning-curve studies remain separate",
   "issue": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40",
   "parent_issue": "https://github.com/akhmialeuski/fly-connectome-lab/issues/39",
   "parent_study": "../2026-09-20-celeba-poc1",
   "audits": 2,
-  "probe_attempts": 22,
-  "completed_probes": 18,
+  "probe_attempts": 26,
+  "completed_probes": 22,
   "failed_probes": 4,
   "final_test_scored": false,
   "working_relative_path": "runs/diagnostics/2026-09-21-fly-only-diagnostics",
@@ -18,7 +18,12 @@
   "initial_scientific_code_commit": "aa36121ac96c51361e33d0b8267445a3ab31030b",
   "source_commits": [
     "aa36121ac96c51361e33d0b8267445a3ab31030b",
-    "d12c494172c6a6c148d6c8cfaabc43e0fb160a0e"
+    "d12c494172c6a6c148d6c8cfaabc43e0fb160a0e",
+    "f821470ac263a584eb2a42e05108030d7fbb2630"
   ],
-  "main_prediction_replay": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/replay-verification-main.json"
+  "main_prediction_replay": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/replay-verification-main.json",
+  "convergence_diagnoses": 4,
+  "diagnostic_fold_models": 8,
+  "numerical_prediction_replay": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/replay-verification-retry50000.json",
+  "convergence_coefficient_replay": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/replay-verification-convergence.json"
 }
