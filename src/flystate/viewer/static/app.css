@@ -901,3 +901,8 @@ dialog::backdrop {
 .episode-grid .top-probs {
   margin: 0;
 }
+
+.experiment-path {
+  overflow-wrap: anywhere;
+  max-width: 36rem;
+}
