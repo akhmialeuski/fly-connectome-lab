@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study": "2026-09-22-training-size-curve",
-  "status": "Preregistered; no scientific fits executed yet",
+  "status": "Completed; 48 of 48 fits succeeded and exported predictions independently verified",
   "issue": "https://github.com/akhmialeuski/fly-connectome-lab/issues/42",
   "parent_issue": "https://github.com/akhmialeuski/fly-connectome-lab/issues/39",
   "parent_study": "../2026-09-21-fly-only-diagnostics",
@@ -21,5 +21,8 @@
   ],
   "shared_full_endpoint_seed": 0,
   "confirmation_status": "Exploratory validation; original final test and reserved photographs excluded",
-  "trainable_parameters": "Diagnostic readout only; fly graph, dynamics, encoder, and noise remain fixed"
+  "trainable_parameters": "Diagnostic readout only; fly graph, dynamics, encoder, and noise remain fixed",
+  "completed_unique_attempts": 48,
+  "source_commit": "c11b847ea3f5ef6704d5b94ff2812517b04bc092",
+  "replayed_prediction_rows": 7920
 }

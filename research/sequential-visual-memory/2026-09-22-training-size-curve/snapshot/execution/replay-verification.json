@@ -1,0 +1,242 @@
+[
+  {
+    "attempt": "smoke-encoded-all-n02-seed0",
+    "prediction_rows": 100,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n02-seed1",
+    "prediction_rows": 100,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n02-seed2",
+    "prediction_rows": 100,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n02-seed3",
+    "prediction_rows": 100,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n02-seed4",
+    "prediction_rows": 100,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n04-seed0",
+    "prediction_rows": 140,
+    "max_probability_error": 4.996003610813204e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n04-seed1",
+    "prediction_rows": 140,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n04-seed2",
+    "prediction_rows": 140,
+    "max_probability_error": 8.326672684688674e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n04-seed3",
+    "prediction_rows": 140,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n04-seed4",
+    "prediction_rows": 140,
+    "max_probability_error": 4.996003610813204e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n08-seed0",
+    "prediction_rows": 220,
+    "max_probability_error": 1.4988010832439613e-15
+  },
+  {
+    "attempt": "smoke-encoded-all-n08-seed1",
+    "prediction_rows": 220,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n08-seed2",
+    "prediction_rows": 220,
+    "max_probability_error": 8.881784197001252e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n08-seed3",
+    "prediction_rows": 220,
+    "max_probability_error": 7.771561172376096e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n08-seed4",
+    "prediction_rows": 220,
+    "max_probability_error": 5.551115123125783e-16
+  },
+  {
+    "attempt": "smoke-encoded-all-n14-seed0",
+    "prediction_rows": 340,
+    "max_probability_error": 1.27675647831893e-15
+  },
+  {
+    "attempt": "smoke-neural-last-n02-seed0",
+    "prediction_rows": 100,
+    "max_probability_error": 6.661338147750939e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n02-seed1",
+    "prediction_rows": 100,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n02-seed2",
+    "prediction_rows": 100,
+    "max_probability_error": 2.220446049250313e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n02-seed3",
+    "prediction_rows": 100,
+    "max_probability_error": 2.7755575615628914e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n02-seed4",
+    "prediction_rows": 100,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n04-seed0",
+    "prediction_rows": 140,
+    "max_probability_error": 2.220446049250313e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n04-seed1",
+    "prediction_rows": 140,
+    "max_probability_error": 2.220446049250313e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n04-seed2",
+    "prediction_rows": 140,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n04-seed3",
+    "prediction_rows": 140,
+    "max_probability_error": 2.220446049250313e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n04-seed4",
+    "prediction_rows": 140,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n08-seed0",
+    "prediction_rows": 220,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n08-seed1",
+    "prediction_rows": 220,
+    "max_probability_error": 6.661338147750939e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n08-seed2",
+    "prediction_rows": 220,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n08-seed3",
+    "prediction_rows": 220,
+    "max_probability_error": 5.551115123125783e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n08-seed4",
+    "prediction_rows": 220,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-neural-last-n14-seed0",
+    "prediction_rows": 340,
+    "max_probability_error": 1.5543122344752192e-15
+  },
+  {
+    "attempt": "smoke-pixels-all-n02-seed0",
+    "prediction_rows": 100,
+    "max_probability_error": 4.440892098500626e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n02-seed1",
+    "prediction_rows": 100,
+    "max_probability_error": 5.551115123125783e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n02-seed2",
+    "prediction_rows": 100,
+    "max_probability_error": 3.3306690738754696e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n02-seed3",
+    "prediction_rows": 100,
+    "max_probability_error": 4.996003610813204e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n02-seed4",
+    "prediction_rows": 100,
+    "max_probability_error": 6.661338147750939e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n04-seed0",
+    "prediction_rows": 140,
+    "max_probability_error": 1.2212453270876722e-15
+  },
+  {
+    "attempt": "smoke-pixels-all-n04-seed1",
+    "prediction_rows": 140,
+    "max_probability_error": 9.43689570931383e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n04-seed2",
+    "prediction_rows": 140,
+    "max_probability_error": 5.551115123125783e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n04-seed3",
+    "prediction_rows": 140,
+    "max_probability_error": 9.159339953157541e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n04-seed4",
+    "prediction_rows": 140,
+    "max_probability_error": 5.551115123125783e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n08-seed0",
+    "prediction_rows": 220,
+    "max_probability_error": 9.992007221626409e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n08-seed1",
+    "prediction_rows": 220,
+    "max_probability_error": 8.881784197001252e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n08-seed2",
+    "prediction_rows": 220,
+    "max_probability_error": 8.881784197001252e-16
+  },
+  {
+    "attempt": "smoke-pixels-all-n08-seed3",
+    "prediction_rows": 220,
+    "max_probability_error": 1.4988010832439613e-15
+  },
+  {
+    "attempt": "smoke-pixels-all-n08-seed4",
+    "prediction_rows": 220,
+    "max_probability_error": 1.5543122344752192e-15
+  },
+  {
+    "attempt": "smoke-pixels-all-n14-seed0",
+    "prediction_rows": 340,
+    "max_probability_error": 1.5543122344752192e-15
+  }
+]
