@@ -1,0 +1,21 @@
+{
+  "id": "p0-smoke-audit",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/p0-smoke-audit",
+    "--json",
+    "--phase",
+    "audit"
+  ],
+  "started_utc": "2026-09-21T15:15:35.542296+00:00",
+  "completed_utc": "2026-09-21T15:16:12.635920+00:00",
+  "exit_code": 0,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762860009",
+  "publication_error": null
+}

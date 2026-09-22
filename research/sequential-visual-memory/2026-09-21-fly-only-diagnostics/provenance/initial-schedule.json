@@ -1,0 +1,192 @@
+[
+  {
+    "id": "p0-smoke-audit",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "audit"
+  },
+  {
+    "id": "p0-main-audit",
+    "config": "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "phase": "audit"
+  },
+  {
+    "id": "smoke-01-pixels-persistent-last-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "pixels",
+    "history": "last",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-02-pixels-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "pixels",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-03-encoded-persistent-last-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "encoded",
+    "history": "last",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-04-encoded-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "encoded",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-05-neural-persistent-last-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-06-neural-reset-last-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071430-celeba-smoke-400cac/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-07-neural-reset-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071430-celeba-smoke-400cac/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-08-neural-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-09-neural-persistent-last-both-pca20-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 20,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-10-neural-persistent-last-both-pca120-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 120,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-11-neural-persistent-last-both-pca240-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 240,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-12-neural-persistent-last-both-pca0-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 0,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-13-neural-persistent-last-spike_trace-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "spike_trace",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-14-neural-persistent-last-voltage-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "voltage",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "smoke-15-encoded-persistent-all-both-pca60-permuted",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "encoded",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "permuted"
+  },
+  {
+    "id": "smoke-16-neural-persistent-last-both-pca60-permuted",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 60,
+    "label-mode": "permuted"
+  },
+  {
+    "id": "smoke-17-encoded-persistent-all-both-pca60-memorization",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "encoded",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "memorization"
+  },
+  {
+    "id": "smoke-18-neural-persistent-last-both-pca60-memorization",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "probe",
+    "representation": "neural",
+    "history": "last",
+    "features": "both",
+    "components": 60,
+    "label-mode": "memorization"
+  }
+]

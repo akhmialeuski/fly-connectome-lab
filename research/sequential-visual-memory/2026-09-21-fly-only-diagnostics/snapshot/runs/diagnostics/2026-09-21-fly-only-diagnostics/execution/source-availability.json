@@ -1,0 +1,15 @@
+{
+  "identities": 10177,
+  "images": 202599,
+  "maximum_images_per_identity": 35,
+  "identities_at_least": {
+    "20": 6348,
+    "25": 3661,
+    "30": 2360,
+    "35": 3,
+    "40": 0,
+    "50": 0,
+    "100": 0
+  },
+  "interpretation": "Availability only; no new cohort selected and no predictions scored."
+}

@@ -1,0 +1,31 @@
+{
+  "id": "smoke-07-neural-reset-all-both-pca60-true",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-071430-celeba-smoke-400cac/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-07-neural-reset-all-both-pca60-true",
+    "--json",
+    "--phase",
+    "probe",
+    "--representation",
+    "neural",
+    "--history",
+    "all",
+    "--features",
+    "both",
+    "--components",
+    "60",
+    "--label-mode",
+    "true"
+  ],
+  "started_utc": "2026-09-21T15:21:09.416004+00:00",
+  "completed_utc": "2026-09-21T15:22:03.728147+00:00",
+  "exit_code": 0,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762945554",
+  "publication_error": null
+}

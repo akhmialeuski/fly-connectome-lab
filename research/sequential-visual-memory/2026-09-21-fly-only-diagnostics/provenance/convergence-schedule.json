@@ -1,0 +1,42 @@
+[
+  {
+    "id": "convergence-smoke-02-pixels-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "convergence",
+    "representation": "pixels",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "convergence-smoke-04-encoded-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "phase": "convergence",
+    "representation": "encoded",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "convergence-main-01-pixels-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "phase": "convergence",
+    "representation": "pixels",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  },
+  {
+    "id": "convergence-main-02-encoded-persistent-all-both-pca60-true",
+    "config": "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "phase": "convergence",
+    "representation": "encoded",
+    "history": "all",
+    "features": "both",
+    "components": 60,
+    "label-mode": "true"
+  }
+]

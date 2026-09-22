@@ -1,0 +1,31 @@
+{
+  "id": "main-01-pixels-persistent-all-both-pca60-true",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-075340-celeba-persistent-541c94/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/main-01-pixels-persistent-all-both-pca60-true",
+    "--json",
+    "--phase",
+    "probe",
+    "--representation",
+    "pixels",
+    "--history",
+    "all",
+    "--features",
+    "both",
+    "--components",
+    "60",
+    "--label-mode",
+    "true"
+  ],
+  "started_utc": "2026-09-21T15:39:22.903179+00:00",
+  "completed_utc": "2026-09-21T15:40:45.691870+00:00",
+  "exit_code": 1,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763209476",
+  "publication_error": null
+}

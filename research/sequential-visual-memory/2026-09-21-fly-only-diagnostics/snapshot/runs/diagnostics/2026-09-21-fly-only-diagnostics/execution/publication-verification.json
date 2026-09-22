@@ -1,0 +1,102 @@
+[
+  {
+    "attempt": "p0-main-audit",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762869013",
+    "body_verified": true
+  },
+  {
+    "attempt": "p0-smoke-audit",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762860009",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-01-pixels-persistent-last-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762879086",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-02-pixels-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762887728",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-03-encoded-persistent-last-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762898053",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-04-encoded-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762913493",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-05-neural-persistent-last-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762922548",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-06-neural-reset-last-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762931967",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-07-neural-reset-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762945554",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-08-neural-persistent-all-both-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762958354",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-09-neural-persistent-last-both-pca20-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762967048",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-10-neural-persistent-last-both-pca120-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762975206",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-11-neural-persistent-last-both-pca240-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762983540",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-12-neural-persistent-last-both-pca0-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5762992540",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-13-neural-persistent-last-spike_trace-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763001152",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-14-neural-persistent-last-voltage-pca60-true",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763009403",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-15-encoded-persistent-all-both-pca60-permuted",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763026562",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-16-neural-persistent-last-both-pca60-permuted",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763036478",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-17-encoded-persistent-all-both-pca60-memorization",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763043990",
+    "body_verified": true
+  },
+  {
+    "attempt": "smoke-18-neural-persistent-last-both-pca60-memorization",
+    "url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763052133",
+    "body_verified": true
+  }
+]

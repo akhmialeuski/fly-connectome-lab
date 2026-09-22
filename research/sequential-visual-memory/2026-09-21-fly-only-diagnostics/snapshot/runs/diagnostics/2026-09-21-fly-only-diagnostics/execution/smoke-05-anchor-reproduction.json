@@ -1,0 +1,34 @@
+{
+  "anchor": "smoke-05",
+  "historical_run": "20260920-071344-celeba-smoke-9406ee",
+  "arrays": [
+    {
+      "array": "scaler_mean",
+      "exact_equal": true
+    },
+    {
+      "array": "scaler_scale",
+      "exact_equal": true
+    },
+    {
+      "array": "coef",
+      "exact_equal": true
+    },
+    {
+      "array": "intercept",
+      "exact_equal": true
+    },
+    {
+      "array": "classes",
+      "exact_equal": true
+    },
+    {
+      "array": "pca_mean",
+      "exact_equal": true
+    },
+    {
+      "array": "pca_components",
+      "exact_equal": true
+    }
+  ]
+}

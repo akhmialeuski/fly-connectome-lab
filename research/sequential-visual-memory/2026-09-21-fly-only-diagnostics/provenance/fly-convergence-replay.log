@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/mnt/c/Users/AnatolKhmialeuski/Workspace/fly-connectome-lab/.local/diagnostics/replay_convergence.py", line 31, in <module>
+    objective, gradient = objective_gradient(x=z,y=y,classes=a['classes'],coef=a['coef'],intercept=a['intercept'],c_value=m['C'])
+    ^^^^^^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 2)

@@ -1,0 +1,16 @@
+[
+  {
+    "attempt": "main-03-neural-persistent-last-both-pca60-true",
+    "prediction_rows": 1700,
+    "max_probability_error": 7.216449660063518e-15,
+    "anchor_run": "20260920-075340-celeba-persistent-541c94",
+    "anchor_max_probability_error": 2.0539125955565396e-15
+  },
+  {
+    "attempt": "main-04-neural-reset-all-both-pca60-true",
+    "prediction_rows": 1700,
+    "max_probability_error": 2.6645352591003757e-15,
+    "anchor_run": "20260920-080640-celeba-reset-concat-c29bf2",
+    "anchor_max_probability_error": 7.216449660063518e-16
+  }
+]

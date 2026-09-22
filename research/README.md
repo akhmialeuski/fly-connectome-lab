@@ -7,6 +7,7 @@ This directory preserves computed evidence, not just instructions for rerunning 
 | Experiment family | Study | Description |
 | --- | --- | --- |
 | Sequential visual memory | [2026-09-20-celeba-poc1](sequential-visual-memory/2026-09-20-celeba-poc1/README.md) | Five trained CelebA runs, six trace caches, calibration, controls, and first frozen comparisons |
+| Sequential visual memory | [2026-09-21-fly-only-diagnostics](sequential-visual-memory/2026-09-21-fly-only-diagnostics/README.md) | Cohort audits, 26 smoke/main probes, 22 fitted models, four numerical diagnoses, retained failures, and coefficient replay; causal follow-up remains separate |
 
 ## Storage contract for future experiments
 

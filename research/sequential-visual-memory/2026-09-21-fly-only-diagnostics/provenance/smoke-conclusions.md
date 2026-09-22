@@ -1,0 +1,14 @@
+### Interpretation of the completed smoke diagnostics
+
+Sixteen of the 18 preregistered probes completed; pixel-all and encoded-all with true labels failed the strict optimizer budget and remain missing measurements. No automatic retry, tolerance change, graph change, or specialized visual model was introduced.
+
+- The historical persistent-last readout was reproduced exactly, array for array. It fits all 280 training examples but only 4/60 validation examples. The fixed encoder's last-observation probe scores 11/60, versus 10/60 for pixels. The matched all-history comparison is unresolved until the numerical failures are diagnosed.
+- Increasing PCA from 60 to 120/240, removing PCA, and exposing all 16 neural observations did not provide the required gain. No variant in candidates 08–14 reaches the preregistered +10 percentage-point promotion threshold, so **no additional neural variant is promoted**. This argues against PCA60 being the sole easily removable bottleneck under the tested linear probes; it does not prove that every possible decoder lacks useful information.
+- Separate spike-trace and voltage probes each score 5/60, only one additional correct image over the 4/60 anchor. These exploratory differences are too small to establish an improvement from this selection exercise.
+- Permuted-training-label controls score 4/60 (encoded-all) and 3/60 (neural-last) on unchanged validation labels; they can still fit 100% and 98.21% of the training labels. High training accuracy therefore cannot be treated as recognition or as biological learning.
+- Both tiny memorization controls fit 20/20 examples across five classes. They are explicitly in-sample tests. Their requested five-fold CV is bounded by class support to four folds, and PCA is bounded by fold rank; neither result is a generalization claim.
+- Neural training features have high effective sample-Gram rank (~228 for last-observation features; ~275 for concatenated reset history), compared with ~35.6 for pixel-all and ~42.3 for encoded-all. This is descriptive evidence of broad variation, not proof that the variation is noise. Same-image repeated-noise and zero-visual-drive measurements remain necessary.
+
+The sample-size concern remains valid: the smoke cohort has only 14 training photos per identity, and the main cohort also has 14 per identity. A preregistered nested learning curve will address that question separately; increasing the number of identities alone is not the same intervention.
+
+Next: preserve this completed evidence in the new study directory; execute the four mandatory main anchors; diagnose the optimizer failures using training-only objective/gradient measurements; then use these results to choose the next signal/noise and data-size measurements. No useful recognition or memory advantage has been established by this smoke series.
