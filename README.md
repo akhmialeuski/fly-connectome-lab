@@ -217,6 +217,28 @@ identity after conservative screening. Incomplete reserve coverage does not
 constitute a balanced confirmation test. Follow the issue's preregistered order
 and record failures as well as successes; use a new attempt name for any retry.
 
+For a preregistered learning curve, select nested training photographs without changing
+the original cohort, validation set, encoder, or simulation seed:
+
+```bash
+uv run flystate diagnose run "$FLYSTATE_HOME/runs/<original-run>/config.yaml" \
+  --representation neural --history last --features both --components 60 \
+  --train-per-class 4 --subset-seed 0 --max-iterations 50000 \
+  --output runs/diagnostics/<new-study>/neural-four-photos-seed0 --json
+```
+
+`--train-per-class` requires at least two training photographs per class and true
+labels. `--subset-seed` controls only a named per-label training draw; prefixes of
+the same draw give nested subsets. Selected rows retain the original fitting
+order, so selecting all training photographs reproduces the unsampled endpoint.
+`training-subset.json` records membership hashes, CV fold membership, and actual
+PCA dimensions before fitting. CV folds are bounded by per-class support and PCA
+by each training fold's rank limit. A smaller subset therefore changes the
+available fold sizes and dimensions. Validation and old test images never enter
+the training draw. Register the candidate sizes, seeds, and numerical budget
+before running; archive unsuccessful attempts too. The first controlled study
+is tracked in [#42](https://github.com/akhmialeuski/fly-connectome-lab/issues/42).
+
 For a failed true-label probe, `--phase convergence` reconstructs the original
 training folds and identifies the first fold/C that exhausts 5,000 iterations.
 It records the regularized objective, exact gradient, warnings, and numeric fold
