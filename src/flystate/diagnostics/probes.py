@@ -12,6 +12,7 @@ from threadpoolctl import threadpool_limits
 
 from flystate.diagnostics.artifacts import attempt, export_classifier, feature_statistics
 from flystate.diagnostics.data import load_representation
+from flystate.diagnostics.subsets import subset_protocol, training_subset
 from flystate.experiments.config import ExperimentConfig
 from flystate.hashing import stable_int
 from flystate.readouts.fitting import MAX_LOGISTIC_ITERATIONS, fit_classifier
@@ -73,6 +74,8 @@ def run_probe(
     components: int | None,
     label_mode: str,
     max_iterations: int = MAX_LOGISTIC_ITERATIONS,
+    train_per_class: int | None = None,
+    subset_seed: int = 0,
 ) -> dict[str, Any]:
     """Run one preregistered diagnostic while retaining failures and all fitted coefficients.
 
@@ -94,6 +97,10 @@ def run_probe(
     :type label_mode: str
     :param max_iterations: Explicit solver budget; increasing it requires a new attempt.
     :type max_iterations: int
+    :param train_per_class: Optional balanced training support for a nested learning curve.
+    :type train_per_class: Optional[int]
+    :param subset_seed: Independent nonnegative training-subset seed.
+    :type subset_seed: int
     :returns: Completed diagnostic report; no final-test metrics are computed.
     :rtype: dict[str, Any]
     :raises ValueError: If protocol parameters are unsupported.
@@ -111,15 +118,36 @@ def run_probe(
         'cv_folds': cfg.readout.cv_folds,
         'max_iterations': max_iterations,
     }
+    if train_per_class is not None or subset_seed != 0:
+        parameters.update(train_per_class=train_per_class, subset_seed=subset_seed)
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
         if label_mode not in LABEL_MODES:
             raise ValueError('Unsupported diagnostic label mode.')
+        if subset_seed < 0 or (train_per_class is None and subset_seed != 0):
+            raise ValueError('A nonnegative subset seed requires explicit training support.')
+        if train_per_class is not None and label_mode != 'true':
+            raise ValueError('Learning-curve subsets require true labels.')
         data = load_representation(
             cfg=cfg, paths=paths, representation=representation, history=history, features=features
         )
         labels = np.asarray(a=[sample.label for sample in data.samples], dtype=np.int64)
         train = np.flatnonzero(a=[sample.split == 'train' for sample in data.samples])
         val = np.flatnonzero(a=[sample.split == 'val' for sample in data.samples])
+        if train_per_class is not None:
+            train = training_subset(
+                samples=data.samples, per_class=train_per_class, seed=subset_seed
+            )
+            write_json(
+                path=directory / 'training-subset.json',
+                value=subset_protocol(
+                    samples=data.samples,
+                    rows=train,
+                    cv_folds=cfg.readout.cv_folds,
+                    seed=cfg.seed,
+                    components=components,
+                    feature_count=data.x.shape[1],
+                ),
+            )
         if label_mode == 'memorization':
             train = np.concatenate(
                 [
