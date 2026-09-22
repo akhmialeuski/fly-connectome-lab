@@ -1,0 +1,8 @@
+{
+  "verified_cases": 7,
+  "verified_samples": 40,
+  "quantization_to_image_rms_max": 0.0008126181093644803,
+  "noise_to_image_mse_first": 4.47714318228059,
+  "noise_to_image_mse_last": 1.611270580086803,
+  "verification": "All native arrays and recorded SHA-256 hashes checked; pair-distance means independently reproduced using Gram matrices."
+}

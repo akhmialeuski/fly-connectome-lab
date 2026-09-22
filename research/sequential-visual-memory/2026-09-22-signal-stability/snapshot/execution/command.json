@@ -1,0 +1,6 @@
+{
+  "command": "flystate diagnose stability ORIGINAL_SMOKE_CONFIG --membership membership.json --output runs/diagnostics/2026-09-22-signal-stability/paired-responses --json",
+  "source_commit": "5652dc6112aaa329a508c8d7fd49910783d09bd5",
+  "exit_code": 0,
+  "original_config": "runs/20260920-071344-celeba-smoke-9406ee/config.yaml"
+}
