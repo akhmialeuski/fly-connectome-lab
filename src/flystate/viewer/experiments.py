@@ -142,6 +142,10 @@ class ExperimentStore:
                             if not isinstance(scores, dict):
                                 raise ValueError('Recorded scores must be an object.')
                             entry['scores'] = scores
+                            conclusion = payload.get('conclusion')
+                            entry['result_summary'] = (
+                                conclusion if isinstance(conclusion, str) else None
+                            )
                         else:
                             entry['config_name'] = payload.get('name')
                             entry['classes'] = (
