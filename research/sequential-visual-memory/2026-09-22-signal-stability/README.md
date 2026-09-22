@@ -5,7 +5,8 @@ and [frozen measurement design](protocol.md). Membership is fixed in
 [membership.json](membership.json). All 163 episodes completed with exact native replay. See [results and limitations](results.md).
 The complete immutable attempt and execution records are preserved in `snapshot/`.
 Run `git lfs pull` before verifying `checksums.sha256`; all generated NPZ arrays
-use Git LFS. Remote restore verification follows the archive push.
+use Git LFS. All eight NPZ payloads were independently fetched from origin and
+verified; see [remote verification](provenance/remote-lfs-verification.json).
 
 This study measures native float32 neural responses, float16 storage error,
 paired noise variability, and zero-current responses on 40 training photographs.
