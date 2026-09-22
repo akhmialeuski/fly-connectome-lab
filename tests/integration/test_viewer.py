@@ -17,6 +17,7 @@ from playwright.sync_api import Route, expect, sync_playwright
 from typer.testing import CliRunner
 
 from flystate.cli.main import app
+from flystate.diagnostics.probes import run_probe
 from flystate.evaluation.evaluate import evaluate
 from flystate.experiments.config import ExperimentConfig, effective_yaml
 from flystate.hashing import sha256_file
@@ -247,6 +248,7 @@ class TestViewer:
         paths = get_paths()
         assert Repository(paths=paths).catalog() == {
             'runs': [],
+            'experiments': [],
             'reports': [],
             'caches': [],
             'warnings': [],
@@ -502,6 +504,85 @@ class TestViewerBrowser:
             expect(
                 actual=page.get_by_text(text='Stored neural recordings', exact=True)
             ).to_be_visible()
+            page.set_viewport_size(viewport_size={'width': 390, 'height': 844})
+            assert page.evaluate(expression='document.documentElement.scrollWidth <= innerWidth')
+            assert errors == []
+            browser.close()
+
+    def test_research_live_discovery(self, tiny_experiment: ExperimentConfig) -> None:
+        """Display a nested probe with photos, then discover a new failure without losing filters.
+
+        :param tiny_experiment: Offline photographs and deterministic encoder configuration.
+        :type tiny_experiment: ExperimentConfig
+        """
+        paths = get_paths()
+        relative = 'future/study/attempt-a'
+        run_probe(
+            cfg=tiny_experiment,
+            paths=paths,
+            output=paths.runs / relative,
+            representation='encoded',
+            history='all',
+            features='both',
+            components=10,
+            label_mode='true',
+        )
+        client = TestClient(app=create_app(paths=paths), base_url='http://127.0.0.1')
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            page = browser.new_page(viewport={'width': 1280, 'height': 900})
+            errors: list[str] = []
+            page.on(event='pageerror', f=lambda error: errors.append(str(error)))
+            page.route(url='**/*', handler=partial(fulfill_local, client=client))
+            page.goto(url='http://127.0.0.1/#runs')
+            expect(
+                actual=page.get_by_role(role='link', name='attempt-a', exact=True)
+            ).to_be_visible()
+            page.get_by_label(text='Search experiments').fill(value='attempt')
+            page.get_by_label(text='Experiment study').select_option(value='future/study')
+            write_json(
+                path=paths.runs / 'future/study/attempt-b/manifest.json',
+                value={
+                    'status': 'failed',
+                    'parameters': {'kind': 'future_kind'},
+                    'error': '<script>unsafe()</script>',
+                    'error_type': 'RecordedFailure',
+                },
+            )
+            expect(
+                actual=page.get_by_role(role='link', name='attempt-b', exact=True)
+            ).to_be_visible(timeout=12000)
+            expect(actual=page.get_by_label(text='Search experiments')).to_have_value(
+                value='attempt'
+            )
+            expect(actual=page.get_by_label(text='Experiment study')).to_have_value(
+                value='future/study'
+            )
+            page.get_by_role(role='link', name='attempt-b', exact=True).click()
+            expect(actual=page.get_by_role(role='alert')).to_contain_text(
+                expected='RecordedFailure'
+            )
+            assert page.evaluate(expression='window.unsafe') is None
+            page.get_by_role(role='link', name='02 Experiments').click()
+            page.get_by_role(role='link', name='attempt-a', exact=True).click()
+            expect(
+                actual=page.get_by_text(text='Recorded recognition scores', exact=True)
+            ).to_be_visible()
+            expect(actual=page.get_by_text(text="Model's first choice", exact=True)).to_be_visible()
+            expected = client.get(
+                url='/api/experiments/evidence',
+                params={
+                    'path': relative,
+                    'name': 'validation-predictions.parquet',
+                    'limit': 1,
+                },
+            ).json()['rows'][0]
+            assert page.locator('.first-choice').get_attribute(name='data-label') == str(
+                expected['y_pred']
+            )
+            page.locator('.first-choice img').evaluate(expression='image => image.decode()')
+            page.get_by_label(text='Experiment evidence').select_option(value='manifest.json')
+            expect(actual=page.locator('.report-text')).to_contain_text(expected='identity_probe')
             page.set_viewport_size(viewport_size={'width': 390, 'height': 844})
             assert page.evaluate(expression='document.documentElement.scrollWidth <= innerWidth')
             assert errors == []
