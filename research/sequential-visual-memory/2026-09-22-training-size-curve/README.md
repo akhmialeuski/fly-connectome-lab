@@ -24,7 +24,9 @@ Learned NPZ coefficients use Git LFS. Run `git lfs pull` before verification.
 Copy the contents of `snapshot/` to that working output directory to inspect
 the attempts in the viewer Diagnostics menu. Fetch the exact external inputs
 using the parent study acquisition records; no photographs are included.
-Remote availability is verified separately after the archive is pushed.
+All 48 NPZ payloads were independently fetched from origin into an initially
+empty object store and verified against their SHA-256 digests. See
+[remote verification](provenance/remote-lfs-verification.json).
 
 Verify the current inventory after checking out this commit:
 
