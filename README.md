@@ -306,3 +306,7 @@ its idea and recorded result. Diagnostic readout accuracy is not evidence of a
 memory benefit; pixel and encoded-current controls do not simulate neural memory.
 Summaries are derived from saved metadata without modifying scientific artifacts.
 Unknown experiment kinds explicitly state when a specific hypothesis is unavailable.
+
+New diagnostic kinds can record `parameters.hypothesis` in their manifest and a
+`conclusion` string in `report.json`. The viewer displays these recorded summaries
+automatically, without adding a study or experiment identifier to the UI code.

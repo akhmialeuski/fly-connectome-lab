@@ -554,7 +554,12 @@ class TestViewerBrowser:
                         {kind: 'convergence_diagnostic', report: {
                             budget_measurements: [{converged: false}, {converged: true}]}},
                         {kind: 'cohort_audit', report: {reserve_count: 0}},
-                        {kind: 'future_kind', status: 'running'}
+                        {kind: 'future_kind', status: 'running'},
+                        {kind: 'new_kind', status: 'completed',
+                            parameters: {hypothesis: 'Recorded idea'},
+                            result_summary: 'Recorded outcome'},
+                        {kind: 'new_kind', status: 'failed',
+                            result_summary: 'Must not hide failure'}
                     ].map(interpretation);
                 }"""
             )
@@ -569,6 +574,8 @@ class TestViewerBrowser:
             assert '0 reserved' in summaries[6]['result']
             assert 'No specific hypothesis' in summaries[7]['idea']
             assert 'No completed recognition result' in summaries[7]['result']
+            assert summaries[8] == {'idea': 'Recorded idea', 'result': 'Recorded outcome'}
+            assert 'Attempt failed' in summaries[9]['result']
             expect(
                 actual=page.get_by_role(role='link', name='attempt-a', exact=True)
             ).to_be_visible()
