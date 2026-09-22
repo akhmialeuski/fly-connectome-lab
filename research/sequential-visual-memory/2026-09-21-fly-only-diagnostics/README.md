@@ -6,14 +6,17 @@ Implementation: [#41](https://github.com/akhmialeuski/fly-connectome-lab/pull/41
 
 ## Scope and current status
 
-This snapshot preserves two completed cohort audits and all 22 preregistered smoke/main
-probe attempts: 18 fitted diagnostic models and four optimizer failures. Numerical
-convergence and subsequent causal investigations are still pending in this snapshot. Results are exploratory. No historical-test or reserved-image
+This snapshot preserves two completed cohort audits and all 26 smoke/main
+probe attempts: 22 fitted diagnostic models and four original optimizer failures.
+Four numerical diagnoses additionally preserve eight training-fold parameter sets,
+including four unconverged fits explicitly marked as diagnostic-only. Subsequent
+causal and learning-curve investigations remain separate studies. Results are exploratory. No historical-test or reserved-image
 predictions were scored, and no fly dynamics or synaptic weights changed.
 
 The [protocol](protocol.md) was
 [posted before scoring](https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5759062409).
-The [main result table](provenance/main-summary.md),
+The [numerical diagnosis and retry results](provenance/numerical-summary.md),
+[main result table](provenance/main-summary.md),
 [smoke result table](snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/execution/smoke-summary.md)
 and [interpretation](provenance/smoke-conclusions.md) preserve successful and failed
 experiments. The same reports are posted to their research issues.
@@ -25,7 +28,8 @@ experiments. The same reports are posted to their research issues.
   model exactly. This is memorization without established useful generalization.
 - Main neural anchors: persistent-last scores 1/300 validation correct (0.33%);
   reset-all scores 2/300 (0.67%), against 1% chance. Both reproduce the historical
-  model probabilities. Their input controls also fail the strict iteration budget.
+  model probabilities. Their original input controls fail the 5,000-iteration budget; the separately
+  preregistered 50,000-cap retries converge. See the numerical report for scores.
 - Pixel-last: 10/60 validation correct; encoded-last: 11/60. Pixel-all and
   encoded-all true-label controls reached the 5,000-iteration optimizer limit at
   tolerance 1e-6. Their missing scores are not zero accuracy.
@@ -56,8 +60,9 @@ Completed probes include training/validation probabilities, metrics, feature
 statistics, CV scores, and numeric scaler/PCA/classifier coefficients. Failed
 attempts retain their exception and pre-failure evidence; no completed model is
 claimed for them. `execution/` includes issue-comment readback verification and
-independent replay of all 8,200 stored prediction rows from the 18 models, recorded in separate
-smoke and main replay reports.
+independent replay of all 12,280 stored prediction rows from the 22 models, recorded
+in separate smoke, main, and retry reports. Numerical fold coefficient replay
+reproduces the saved training objective and gradient norms without scoring validation.
 
 Large model NPZ files and main training-prediction Parquet files use Git LFS.
 JSON, YAML, Markdown, and logs remain directly readable; Parquet tables can be

@@ -1,0 +1,22 @@
+[
+  {
+    "attempt": "retry50000-main-01-pixels-persistent-all-both-pca60-true",
+    "prediction_rows": 1700,
+    "max_probability_error": 1.7763568394002505e-15
+  },
+  {
+    "attempt": "retry50000-main-02-encoded-persistent-all-both-pca60-true",
+    "prediction_rows": 1700,
+    "max_probability_error": 1.7208456881689926e-15
+  },
+  {
+    "attempt": "retry50000-smoke-02-pixels-persistent-all-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 1.5543122344752192e-15
+  },
+  {
+    "attempt": "retry50000-smoke-04-encoded-persistent-all-both-pca60-true",
+    "prediction_rows": 340,
+    "max_probability_error": 1.27675647831893e-15
+  }
+]
