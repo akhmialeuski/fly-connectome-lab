@@ -68,4 +68,5 @@ indices; original photographs and encoded image arrays are excluded.
 Working evidence is under
 `$FLYSTATE_HOME/runs/diagnostics/2026-09-22-signal-stability/`. The sibling study
 archive retains the frozen protocol, membership, complete attempt, execution logs,
-and independent verification. Remote restoration is reported separately after push.
+and independent verification. All eight generated NPZ payloads were independently restored from origin and
+verified against their SHA-256 digests; see the provenance verification record.

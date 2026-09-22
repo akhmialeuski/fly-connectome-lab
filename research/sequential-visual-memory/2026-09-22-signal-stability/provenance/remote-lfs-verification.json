@@ -1,0 +1,47 @@
+{
+  "archive_commit": "9be5dc80615b9079e0a0ad35bcbdd17c81294abb",
+  "verification": "Independent origin fetch into an initially empty LFS object store; all generated NPZ arrays match their archived SHA-256 digests.",
+  "files": [
+    {
+      "path": "snapshot/paired-responses/blank-0.npz",
+      "sha256": "aaf732ef2626a5ada186c862602e76372e17df34a513d7f2e40f154efe5d4a92",
+      "bytes": 169108
+    },
+    {
+      "path": "snapshot/paired-responses/blank-1.npz",
+      "sha256": "1f8df92a47802e6f1a972cacae4b542c6660c48730301ee85245c22980bb0338",
+      "bytes": 169108
+    },
+    {
+      "path": "snapshot/paired-responses/blank-off.npz",
+      "sha256": "8940add142c0719e20ace98e83716e5e582d9900324277e905c93f206d31c0cc",
+      "bytes": 169108
+    },
+    {
+      "path": "snapshot/paired-responses/matched-0.npz",
+      "sha256": "460daca32f8fa7ae64d7a585abadd789a18ea55baf22cd00f3a7c1ab0c77a8d8",
+      "bytes": 6743572
+    },
+    {
+      "path": "snapshot/paired-responses/matched-1.npz",
+      "sha256": "faed4f92241e055f5da5beb6cec42b317b20ae247379e5bf7c98f5534139ccf5",
+      "bytes": 6743572
+    },
+    {
+      "path": "snapshot/paired-responses/native.npz",
+      "sha256": "7889dfbd209e3cb45452694b6adb53857d7fecf71c7cb667e7fb411e2ce2e197",
+      "bytes": 6743572
+    },
+    {
+      "path": "snapshot/paired-responses/noise-off.npz",
+      "sha256": "d76877512f5fd95dc67bcfa43a661206c02b40b13314abc6e8fc2a6800e847c0",
+      "bytes": 6743572
+    },
+    {
+      "path": "snapshot/paired-responses/rest.npz",
+      "sha256": "704a18c1d0d76def0778eedfabaaf3060fa0a27dd7566a50ea4bd1d0535b0ce6",
+      "bytes": 776782
+    }
+  ],
+  "total_bytes": 28258394
+}
