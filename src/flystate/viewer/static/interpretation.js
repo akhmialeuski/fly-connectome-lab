@@ -6,7 +6,9 @@ export const isSequential = (entry) => entry.kind === 'training';
 export function interpretation(entry) {
   const p = entry.parameters || {};
   let idea;
-  if (isSequential(entry)) {
+  if (typeof p.hypothesis === 'string' && p.hypothesis.trim()) {
+    idea = p.hypothesis;
+  } else if (isSequential(entry)) {
     const policy =
       {
         persistent: 'Keep neural state between successive image patches.',
@@ -40,9 +42,12 @@ export function interpretation(entry) {
   const accuracy = entry.scores?.validation?.accuracy;
   const measurements = entry.report?.budget_measurements;
   const reserve = entry.report?.reserve_count;
+  const conclusion = entry.report?.conclusion ?? entry.result_summary;
   let result;
   if (entry.status === 'failed')
     result = `Attempt failed. ${entry.error || 'Inspect the recorded error.'} No successful result is implied.`;
+  else if (entry.status === 'completed' && typeof conclusion === 'string' && conclusion.trim())
+    result = conclusion;
   else if (Array.isArray(measurements) && measurements.length)
     result = `Optimizer convergence: ${measurements.filter((m) => m.converged).length} of ${measurements.length} recorded budget checks converged. These are numerical checks, not recognition scores.`;
   else if (Number.isFinite(reserve))

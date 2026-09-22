@@ -44,7 +44,10 @@ class TestExperimentDiscovery:
         )
         write_json(
             path=directory / 'report.json',
-            value={'scores': {'validation': {'accuracy': 0.5, 'n': 4}}},
+            value={
+                'scores': {'validation': {'accuracy': 0.5, 'n': 4}},
+                'conclusion': 'Recorded study conclusion.',
+            },
         )
         updated = next(
             row
@@ -52,6 +55,7 @@ class TestExperimentDiscovery:
             if row['id'] == relative
         )
         assert updated['status'] == 'completed'
+        assert updated['result_summary'] == 'Recorded study conclusion.'
         assert updated['scores']['validation']['accuracy'] == 0.5
         assert updated['revision'] != entry['revision']
         detail = client.get(url='/api/experiments/detail', params={'path': relative})
