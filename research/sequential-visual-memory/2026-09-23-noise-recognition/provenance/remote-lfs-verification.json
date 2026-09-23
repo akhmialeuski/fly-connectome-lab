@@ -1,0 +1,9 @@
+{
+  "attempt_inventories_verified": 10,
+  "bytes_verified": 183124833,
+  "file_digest_tree_sha256": "ac1245f138b72410358dc0b7e594a10720e4f9f851abdce06277512f42078c24",
+  "files_verified": 116,
+  "fresh_clone_restoration_verified": true,
+  "lfs_npz_payloads_restored": 12,
+  "remote_clone_commit": "f255e085d4340904289ecbaeaeadfcbb130193be"
+}
