@@ -12,6 +12,7 @@ from threadpoolctl import threadpool_limits
 
 from flystate.diagnostics.artifacts import attempt, export_classifier, feature_statistics
 from flystate.diagnostics.data import load_representation
+from flystate.diagnostics.noise import load_noise_trace
 from flystate.diagnostics.subsets import subset_protocol, training_subset
 from flystate.experiments.config import ExperimentConfig
 from flystate.hashing import stable_int
@@ -76,6 +77,8 @@ def run_probe(
     max_iterations: int = MAX_LOGISTIC_ITERATIONS,
     train_per_class: int | None = None,
     subset_seed: int = 0,
+    trace_source: Path | None = None,
+    trace_precision: str | None = None,
 ) -> dict[str, Any]:
     """Run one preregistered diagnostic while retaining failures and all fitted coefficients.
 
@@ -101,6 +104,10 @@ def run_probe(
     :type train_per_class: Optional[int]
     :param subset_seed: Independent nonnegative training-subset seed.
     :type subset_seed: int
+    :param trace_source: Optional completed native development trace to fit.
+    :type trace_source: Optional[Path]
+    :param trace_precision: Explicit float32 or float16 treatment of that source.
+    :type trace_precision: Optional[str]
     :returns: Completed diagnostic report; no final-test metrics are computed.
     :rtype: dict[str, Any]
     :raises ValueError: If protocol parameters are unsupported.
@@ -120,6 +127,8 @@ def run_probe(
     }
     if train_per_class is not None or subset_seed != 0:
         parameters.update(train_per_class=train_per_class, subset_seed=subset_seed)
+    if trace_source is not None:
+        parameters.update(trace_source=str(trace_source), trace_precision=trace_precision)
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
         if label_mode not in LABEL_MODES:
             raise ValueError('Unsupported diagnostic label mode.')
@@ -127,8 +136,29 @@ def run_probe(
             raise ValueError('A nonnegative subset seed requires explicit training support.')
         if train_per_class is not None and label_mode != 'true':
             raise ValueError('Learning-curve subsets require true labels.')
-        data = load_representation(
-            cfg=cfg, paths=paths, representation=representation, history=history, features=features
+        if (trace_source is None) != (trace_precision is None) or (
+            trace_source is not None and representation != 'neural'
+        ):
+            raise ValueError(
+                'A native trace requires a neural representation and explicit precision.'
+            )
+        data = (
+            load_representation(
+                cfg=cfg,
+                paths=paths,
+                representation=representation,
+                history=history,
+                features=features,
+            )
+            if trace_source is None
+            else load_noise_trace(
+                cfg=cfg,
+                paths=paths,
+                source=trace_source,
+                precision=trace_precision or '',
+                history=history,
+                features=features,
+            )
         )
         labels = np.asarray(a=[sample.label for sample in data.samples], dtype=np.int64)
         train = np.flatnonzero(a=[sample.split == 'train' for sample in data.samples])

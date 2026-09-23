@@ -1,0 +1,23 @@
+{
+  "membership_sha256": "5af10356b3ff565bf515144983758763fb8b346737520c50647885cdf88a92d8",
+  "historical": "runs/diagnostics/2026-09-22-training-size-curve/smoke-neural-last-n14-seed0",
+  "traces": {
+    "seed0": "runs/diagnostics/2026-09-23-noise-recognition/traces/seed0",
+    "seed1": "runs/diagnostics/2026-09-23-noise-recognition/traces/seed1",
+    "off": "runs/diagnostics/2026-09-23-noise-recognition/traces/off"
+  },
+  "probes": {
+    "seed0": {
+      "float32": "runs/diagnostics/2026-09-23-noise-recognition/probes/seed0-float32",
+      "float16": "runs/diagnostics/2026-09-23-noise-recognition/probes/seed0-float16"
+    },
+    "seed1": {
+      "float32": "runs/diagnostics/2026-09-23-noise-recognition/probes/seed1-float32",
+      "float16": "runs/diagnostics/2026-09-23-noise-recognition/probes/seed1-float16"
+    },
+    "off": {
+      "float32": "runs/diagnostics/2026-09-23-noise-recognition/probes/off-float32",
+      "float16": "runs/diagnostics/2026-09-23-noise-recognition/probes/off-float16"
+    }
+  }
+}
