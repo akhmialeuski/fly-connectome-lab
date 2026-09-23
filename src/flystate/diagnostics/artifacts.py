@@ -1,5 +1,6 @@
 """Attempt-level immutable evidence and safe numeric classifier exports."""
 
+import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -72,6 +73,34 @@ def attempt(
             f'{sha256_file(path=path)}  {path.relative_to(directory)}\n' for path in members
         )
         (directory / 'checksums.sha256').write_text(data=inventory, encoding='utf-8')
+
+
+def verify_attempt_inventory(directory: Path, paths: Paths) -> dict[str, Any]:
+    """Verify every recorded file and return the attempt manifest.
+
+    :param directory: Attempt directory within the data home.
+    :type directory: Path
+    :param paths: Working data boundary.
+    :type paths: Paths
+    :returns: Stored manifest, including completion or failure status.
+    :rtype: dict[str, Any]
+    :raises ValueError: If an inventory member is missing, altered, added, or unsafe.
+    """
+    source = output_path(path=directory, paths=paths)
+    inventory = (source / 'checksums.sha256').read_text(encoding='utf-8').splitlines()
+    names: set[str] = set()
+    for line in inventory:
+        digest, name = line.split('  ', 1)
+        member = (source / name).resolve()
+        if name in names or not member.is_relative_to(source) or sha256_file(path=member) != digest:
+            raise ValueError('Attempt inventory verification failed.')
+        names.add(name)
+    actual_names = {
+        str(path.relative_to(source)) for path in source.rglob('*') if path.is_file()
+    } - {'checksums.sha256'}
+    if not names or names != actual_names:
+        raise ValueError('Attempt inventory is incomplete.')
+    return json.loads(s=(source / 'manifest.json').read_text(encoding='utf-8'))
 
 
 def export_classifier(model: Pipeline, directory: Path) -> dict[str, Any]:
