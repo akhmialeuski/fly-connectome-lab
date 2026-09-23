@@ -1,0 +1,17 @@
+{
+  "attempts": {
+    "B1": "completed",
+    "B2": "completed",
+    "B3": "completed",
+    "B4": "completed",
+    "B5": "completed",
+    "B6": "completed",
+    "B7": "completed",
+    "analysis": "completed"
+  },
+  "bytes": 32236289,
+  "file_digest_tree_sha256": "8e6339ae463dc7c64fd20bd00ac35ae9763baac3e138a8603c5f2479c3068b00",
+  "files": 103,
+  "source_and_snapshot_byte_identical": true,
+  "verified_inventories": 8
+}
