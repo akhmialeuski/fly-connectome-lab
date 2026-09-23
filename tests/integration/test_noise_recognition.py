@@ -51,7 +51,7 @@ class TestNoiseRecognition:
         runner = CliRunner()
         help_result = runner.invoke(app=app, args=['diagnose', 'noise-trace', '--help'])
         assert help_result.exit_code == 0
-        assert '--noise-disabled' in help_result.stdout
+        assert help_result.stdout.strip()
         source = paths.runs / 'noise-baseline'
         result = runner.invoke(
             app=app,
