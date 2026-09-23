@@ -64,3 +64,6 @@ environment metadata, and checksums. Git LFS stores all generated NPZ arrays:
 run `git lfs pull` before checking the snapshot inventories. Local byte-for-byte
 copy and independent numerical-replay records are in `provenance/`. The study's
 validation comparison is exploratory and does not establish sequential memory.
+All 12 NPZ payloads and 116 snapshot files were also restored from a fresh
+GitHub clone and checked independently; see
+[remote LFS verification](provenance/remote-lfs-verification.json).

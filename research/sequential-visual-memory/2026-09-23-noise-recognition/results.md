@@ -69,6 +69,9 @@ attempts under `FLYSTATE_HOME` were copied byte-for-byte into `snapshot/`:
 file-digest tree SHA-256
 `ac1245f138b72410358dc0b7e594a10720e4f9f851abdce06277512f42078c24`.
 See [local archive verification](provenance/local-archive-verification.json).
+An independent fresh GitHub clone subsequently restored all 12 Git LFS NPZ
+payloads and verified all 116 files, ten attempt inventories, and the same
+file-digest tree; see [remote LFS verification](provenance/remote-lfs-verification.json).
 
 The manifests record the frozen source commit. Their `git_dirty` field is null
 because Git status exceeded the manifest helper's five-second timeout on the
