@@ -4,6 +4,7 @@ This sibling study follows the [preregistered protocol](protocol.md) in
 [issue #50](https://github.com/akhmialeuski/fly-connectome-lab/issues/50).
 The exact 280 training and 60 validation sample IDs are in [membership.json](membership.json);
 the three trace and six fit destinations are frozen in [schedule.json](schedule.json).
+The completed comparison and its limits are in [results.md](results.md).
 The original 20-identity persistent configuration, real MaleCNS files, and CelebA
 source are required under `FLYSTATE_HOME`. Acquisition and fingerprint details are
 documented in the preceding study directories. No source photograph, transformed
@@ -57,6 +58,9 @@ flystate diagnose noise-analyze "$FLYSTATE_HOME/runs/20260920-071344-celeba-smok
   --output runs/diagnostics/2026-09-23-noise-recognition/analysis --json
 ```
 
-Results, failures, learned arrays, neural traces, checksums, and independent
-remote-restoration evidence are added only after execution. The study's validation
-comparison is exploratory and does not establish sequential memory.
+The ten completed immutable attempts are preserved in `snapshot/`, including
+all native traces, learned scaler/PCA/classifier arrays, predictions, timing,
+environment metadata, and checksums. Git LFS stores all generated NPZ arrays:
+run `git lfs pull` before checking the snapshot inventories. Local byte-for-byte
+copy and independent numerical-replay records are in `provenance/`. The study's
+validation comparison is exploratory and does not establish sequential memory.

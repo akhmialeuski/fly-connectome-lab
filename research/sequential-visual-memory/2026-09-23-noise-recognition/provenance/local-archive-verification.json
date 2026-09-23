@@ -1,0 +1,19 @@
+{
+  "attempts": {
+    "analysis": "completed",
+    "probes/off-float16": "completed",
+    "probes/off-float32": "completed",
+    "probes/seed0-float16": "completed",
+    "probes/seed0-float32": "completed",
+    "probes/seed1-float16": "completed",
+    "probes/seed1-float32": "completed",
+    "traces/off": "completed",
+    "traces/seed0": "completed",
+    "traces/seed1": "completed"
+  },
+  "bytes": 183124833,
+  "file_digest_tree_sha256": "ac1245f138b72410358dc0b7e594a10720e4f9f851abdce06277512f42078c24",
+  "files": 116,
+  "source_and_snapshot_byte_identical": true,
+  "verified_inventories": 10
+}
