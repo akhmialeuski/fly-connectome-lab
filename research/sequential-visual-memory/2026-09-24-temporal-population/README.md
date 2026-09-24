@@ -21,3 +21,14 @@ Run C0-C6 in the frozen order, changing both `--case` and the final output direc
 The first blank attempts omitted three checkpoints needed for ten-step recovery comparisons. See `correction-2026-09-24.md`; run C0R and C6R as new attempts with the same command pattern before calculating recovery contrasts. Keep C0/C6 as recorded, and verify exact equality at all overlapping checkpoints.
 
 Each completed case stores `responses.npz` (numeric arrays readable with `numpy.load(..., allow_pickle=False)`), `sample-windows.json` (sample IDs, labels, window indices), `report.json`, `manifest.json`, effective `config.json`, environment metadata, and `checksums.sha256` under `$FLYSTATE_HOME/runs/diagnostics/2026-09-24-temporal-population/<case>/`. The archive snapshot will be copied into this study only after all cases and analysis are complete. New attempts appear automatically in the viewer's Diagnostics menu when it is pointed at the same data home.
+
+After all nine attempts (C0-C6, C0R, and C6R) complete, run the immutable paired analysis:
+
+```bash
+uv run flystate diagnose temporal-analyze configs/celeba-smoke.yaml \
+  --source runs/diagnostics/2026-09-24-temporal-population \
+  --output runs/diagnostics/2026-09-24-temporal-population/analysis \
+  --json
+```
+
+The analysis refuses altered or missing case files and verifies the corrected blank overlap and paired noise streams. It writes `per-unit.parquet` with every training-image/window/checkpoint/population contrast and a `report.json` with descriptive summaries and the predeclared advancement gate. It does not train or evaluate an identity classifier.
