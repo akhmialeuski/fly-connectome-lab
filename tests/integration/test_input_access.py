@@ -13,10 +13,25 @@ from flystate.cli.main import app
 from flystate.datasets.preprocess import PreparedDataset
 from flystate.diagnostics import input_access
 from flystate.diagnostics.probes import score_split as real_score_split
-from flystate.experiments.config import ExperimentConfig, effective_yaml
+from flystate.experiments.config import ExperimentConfig, effective_yaml, load_config
 from flystate.settings import Paths, get_paths
 from flystate.storage.json import write_json
 from flystate.storage.parquet import read_table
+
+
+def test_frozen_json_grid_matches_effective_tuple() -> None:
+    """Accept the real frozen C grid but reject a changed numeric candidate."""
+    root = Path(__file__).resolve().parents[2]
+    cfg = load_config(path=root / 'configs/celeba-smoke.yaml')
+    study = root / 'research/sequential-visual-memory/2026-09-24-input-access'
+    cohort = json.loads(s=(study / 'cohort.json').read_text(encoding='utf-8'))
+    schedule = json.loads(s=(study / 'schedule.json').read_text(encoding='utf-8'))
+    assert isinstance(cfg.readout.c_grid, tuple)
+    assert isinstance(schedule['readout']['c_grid'], list)
+    input_access._verify_readout_schedule(cfg=cfg, cohort=cohort, schedule=schedule)
+    schedule['readout']['c_grid'][0] = 0.02
+    with pytest.raises(expected_exception=ValueError, match='readout or gate'):
+        input_access._verify_readout_schedule(cfg=cfg, cohort=cohort, schedule=schedule)
 
 
 def test_query_scoring_follows_both_fits(
