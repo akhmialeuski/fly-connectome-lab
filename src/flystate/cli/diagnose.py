@@ -9,6 +9,7 @@ from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
 from flystate.cli.identity import identity_command
 from flystate.cli.identity_analysis import identity_analysis_command
 from flystate.cli.input_access import input_access_command
+from flystate.cli.input_loss_selection import input_loss_selection_command
 from flystate.cli.noise import noise_trace_command
 from flystate.cli.noise_analysis import noise_analysis_command
 from flystate.cli.stability import stability_command
@@ -31,6 +32,10 @@ app.command(
     name='input-access',
     help='Fit both frozen training-only pixel/current identity-access probes.',
 )(input_access_command)
+app.command(
+    name='input-loss-selection',
+    help='Select input-control regularization by fit-only out-of-fold log loss.',
+)(input_loss_selection_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
 app.command(
