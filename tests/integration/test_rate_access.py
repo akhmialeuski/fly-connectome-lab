@@ -89,7 +89,7 @@ def test_memory_gate_needs_a_clear_paired_gain(tiny_experiment: ExperimentConfig
         cfg=tiny_experiment,
         paths=paths,
         output=Path('runs/offline/memory'),
-        decode=DECODE,
+        decodes=[DECODE],
         settings=[GOOD, FLAT],
         populations=[POPULATION],
         representation=REPRESENTATION,
