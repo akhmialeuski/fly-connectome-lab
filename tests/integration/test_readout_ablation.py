@@ -71,15 +71,15 @@ class TestReadoutAblation:
             {'id': case_id, 'features': features, 'history': history, 'components': components}
             for case_id, features, history, components in EXPECTED_CASES
         ]
-        for specification in cases:
+        for case_id, features, history, components in EXPECTED_CASES:
             run_probe(
                 cfg=cfg,
                 paths=paths,
-                output=reference if specification['id'] == 'B0' else prefix / specification['id'],
+                output=reference if case_id == 'B0' else prefix / case_id,
                 representation='neural',
-                history=specification['history'],
-                features=specification['features'],
-                components=specification['components'],
+                history=history,
+                features=features,
+                components=components,
                 label_mode='true',
                 max_iterations=50000,
                 train_per_class=14,
