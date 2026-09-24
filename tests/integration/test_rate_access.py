@@ -27,6 +27,7 @@ OUTPUT_OPTION: str = '--output'
 DIAGNOSE: str = 'diagnose'
 RECORD_COMMAND: str = 'rate-record'
 MEMORY_COMMAND: str = 'rate-memory'
+CURVE_COMMAND: str = 'rate-memory-curve'
 GOOD: str = 'good'
 FLAT: str = 'flat'
 SUPPORTED: str = 'memory_supported'
@@ -120,7 +121,7 @@ def test_rate_cli_help_and_json(
     config = tmp_path / 'config.yaml'
     config.write_text(data=effective_yaml(cfg=tiny_experiment), encoding='utf-8')
     runner = CliRunner()
-    for command in (RECORD_COMMAND, MEMORY_COMMAND):
+    for command in (RECORD_COMMAND, MEMORY_COMMAND, CURVE_COMMAND):
         result = runner.invoke(app=app, args=[DIAGNOSE, command, '--help'])
         assert result.exit_code == 0
         assert JSON_OPTION in re.sub(pattern=r'\x1b\[[0-9;]*m', repl='', string=result.stdout)

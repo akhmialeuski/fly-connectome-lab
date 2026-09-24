@@ -359,6 +359,7 @@ def decode_drive(
     parent_schedule_path: Path,
     membership_path: Path,
     selection_schedule_path: Path,
+    representations: list[str] | None = None,
 ) -> dict[str, Any]:
     """Decode identity from recorded conditions with the exact T30 fit-only OOF procedure.
 
@@ -382,6 +383,9 @@ def decode_drive(
     :type membership_path: Path
     :param selection_schedule_path: T30 committed C grid, PCA and convergence schedule.
     :type selection_schedule_path: Path
+    :param representations: Neural representations to decode; all of them when omitted. The
+        input references are always decoded.
+    :type representations: Optional[list[str]]
     :returns: Per-condition, population and representation OOF metrics.
     :rtype: dict[str, Any]
     """
@@ -392,7 +396,7 @@ def decode_drive(
         COHORT_SHA256: sha256_file(path=cohort_path),
         PARENT_SCHEDULE_SHA256: sha256_file(path=parent_schedule_path),
         'selection_schedule_sha256': sha256_file(path=selection_schedule_path),
-        'representations': list(REPRESENTATIONS),
+        'representations': representations or 'all',
         'trainable_fly_parameters': [],
     }
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
@@ -454,6 +458,10 @@ def decode_drive(
                         cases.append((condition, name, FINAL_VOLTAGE, voltage))
         metrics: list[dict[str, Any]] = []
         oof_rows: list[dict[str, Any]] = []
+        if representations:
+            cases = [
+                case for case in cases if case[0] == INPUT_REFERENCE or case[2] in representations
+            ]
         for condition, population, representation, x in cases:
             label = f'{condition}/{population}/{representation}'
             row: dict[str, Any] = {
