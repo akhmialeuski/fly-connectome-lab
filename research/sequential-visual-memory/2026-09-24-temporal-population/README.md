@@ -41,3 +41,5 @@ uv run python -c 'import hashlib, json, pathlib; p=pathlib.Path("research/sequen
 ```
 
 The archive does not contain source photographs, preprocessed image arrays, downloaded brain files, or duplicated #50 neural traces. The frozen external input hashes and exact training IDs are in `cohort.json` and `population-masks.json`.
+
+The [fresh-clone record](provenance/remote-lfs-verification.json) confirms that all nine LFS arrays and all 69 archive files restored from GitHub with their recorded hashes, and that the 4,512-row analysis remained readable.
