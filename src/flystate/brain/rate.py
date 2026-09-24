@@ -19,6 +19,10 @@ from flybrain import FlyBrain
 from numpy.typing import NDArray
 from scipy import sparse
 
+from flystate.hashing import stable_int
+
+SHUFFLE_NAMESPACE: str = 'degree-preserving-shuffle'
+
 
 @numba.njit(parallel=True, cache=True)
 def _propagate(
@@ -48,6 +52,44 @@ def _propagate(
         out[row] = accumulator
 
 
+def degree_preserving_shuffle(
+    matrix: sparse.csr_matrix | sparse.csr_array, seed: int
+) -> sparse.csr_matrix:
+    """Permute the postsynaptic targets of all edges, then restore flybrain's row normalization.
+
+    Every edge keeps its presynaptic neuron and weight, so each neuron keeps its out-degree and the
+    sign of its outgoing weights. Targets are permuted over all edges, so each neuron also keeps its
+    in-degree, and rows that were empty (sensory neurons) stay empty. Parallel edges created by the
+    permutation are summed. Each nonempty row is rescaled so that its absolute weights sum to the
+    same value as before, which is 1 for every neuron with inputs.
+
+    :param matrix: Effective weights with postsynaptic rows, shape (N,N), float32.
+    :type matrix: sparse.csr_matrix | sparse.csr_array
+    :param seed: Nonnegative shuffle seed.
+    :type seed: int
+    :returns: Shuffled, renormalized float32 CSR matrix, shape (N,N).
+    :rtype: sparse.csr_matrix
+    """
+    # Canonical order on a copy: the permutation must not depend on the caller's storage order.
+    canonical = sparse.csr_matrix(matrix, copy=True)
+    canonical.sum_duplicates()
+    canonical.sort_indices()
+    coo = canonical.tocoo()
+    generator = np.random.default_rng(
+        seed=np.random.SeedSequence(entropy=[seed, stable_int(key=SHUFFLE_NAMESPACE)])
+    )
+    targets = generator.permutation(coo.row)
+    shuffled = sparse.csr_matrix(
+        (coo.data.astype(np.float64), (targets, coo.col)), shape=matrix.shape
+    )
+    shuffled.sum_duplicates()
+    before = np.asarray(abs(canonical).sum(axis=1), dtype=np.float64).ravel()
+    after = np.asarray(abs(shuffled).sum(axis=1), dtype=np.float64).ravel()
+    scale = np.divide(before, after, out=np.zeros_like(before), where=after > 0)
+    shuffled = sparse.diags(scale) @ shuffled
+    return sparse.csr_matrix(shuffled, dtype=np.float32)
+
+
 class RateReservoir:
     """Batched leaky-tanh dynamics on the unchanged effective flybrain weight matrix."""
 
@@ -58,6 +100,7 @@ class RateReservoir:
         leak: float,
         batch_size: int,
         leak_overrides: dict[float, NDArray[np.int64]] | None = None,
+        shuffle_seed: int | None = None,
     ) -> None:
         """Load the effective graph exactly as flybrain builds it for ``sensory_input=False``.
 
@@ -71,6 +114,9 @@ class RateReservoir:
         :type batch_size: int
         :param leak_overrides: Optional leak values for listed neuron indices, each shape (K,).
         :type leak_overrides: Optional[dict[float, NDArray[np.int64]]]
+        :param shuffle_seed: When given, replace the graph by a degree-preserving shuffle (see
+            :func:`degree_preserving_shuffle`); the unchanged graph otherwise.
+        :type shuffle_seed: Optional[int]
         :raises ValueError: If a parameter is outside its valid range.
         """
         overrides = leak_overrides or {}
@@ -82,6 +128,8 @@ class RateReservoir:
         matrix = sparse.csc_matrix(
             (spiking.weights, spiking.indices, spiking.indptr), shape=(spiking.n, spiking.n)
         ).tocsr()
+        if shuffle_seed is not None:
+            matrix = degree_preserving_shuffle(matrix=matrix, seed=shuffle_seed)
         matrix.sort_indices()
         self.n: int = spiking.n
         self.edges: int = int(matrix.nnz)
