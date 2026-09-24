@@ -54,6 +54,93 @@ def make_runtime(
 class TestEpisodeBrain:
     """Verify deterministic dynamics and scientifically meaningful controls."""
 
+    def test_recorded_checkpoints_match_existing_runtime(self, synthetic_brain_dir: Path) -> None:
+        """Replay stimulus and blank steps with identical noise and terminal features.
+
+        :param synthetic_brain_dir: Offline signed connectome.
+        :type synthetic_brain_dir: Path
+        """
+        recorded = make_runtime(path=synthetic_brain_dir, batch_size=2)
+        reference = make_runtime(path=synthetic_brain_dir, batch_size=2)
+        rest = recorded.compute_rest_state(seed=8)
+        indices = recorded.cells(superclasses=['visual_projection'])[:20]
+        currents = np.linspace(start=0.02, stop=0.32, num=20, dtype=np.float32)[:, None]
+        currents = np.repeat(a=currents, repeats=2, axis=1)
+        populations = {
+            'visual': indices,
+            'descending': recorded.readout_idx[:10],
+        }
+        for runtime in (recorded, reference):
+            runtime.begin(rest=rest, sample_ids=['first', 'second'], seed=3)
+        response = recorded.run_recorded(
+            input_idx=indices,
+            currents=currents,
+            stimulus_steps=5,
+            recovery_steps=3,
+            populations=populations,
+            checkpoints=(0, 1, 2, 5, 6, 8),
+        )
+        first = reference.run(input_idx=indices, currents=currents, n_steps=5)
+        np.testing.assert_array_equal(
+            actual=response.voltages['descending'][3],
+            desired=reference.features(kinds=['voltage'])[:, :10],
+        )
+        np.testing.assert_array_equal(
+            actual=response.readout_traces[3],
+            desired=reference.features(kinds=['spike_trace']),
+        )
+        assert response.total_spikes[:5].sum(axis=0).tolist() == first.spikes_total.tolist()
+        assert response.active_neurons[4].tolist() == first.active_neurons.tolist()
+        assert response.noise_kicks[:5].sum() > 0
+        second = reference.run(input_idx=indices, currents=None, n_steps=3)
+        np.testing.assert_array_equal(
+            actual=response.voltages['descending'][-1],
+            desired=reference.features(kinds=['voltage'])[:, :10],
+        )
+        np.testing.assert_array_equal(
+            actual=response.readout_traces[-1],
+            desired=reference.features(kinds=['spike_trace']),
+        )
+        assert response.total_spikes[5:].sum(axis=0).tolist() == second.spikes_total.tolist()
+        assert np.all(response.active_neurons[-1] >= first.active_neurons)
+        assert np.all(response.active_neurons[-1] <= first.active_neurons + second.active_neurons)
+        assert response.spike_counts['visual'][-1].shape == (2, 20)
+
+    def test_recorded_rejects_invalid_masks_and_checkpoints(
+        self, synthetic_brain_dir: Path
+    ) -> None:
+        """Reject malformed recorder inputs before the first simulation step.
+
+        :param synthetic_brain_dir: Offline signed connectome.
+        :type synthetic_brain_dir: Path
+        """
+        runtime = make_runtime(path=synthetic_brain_dir, noise=False)
+        runtime.begin(rest=runtime.compute_rest_state(seed=0), sample_ids=['one'], seed=0)
+        initial_steps = runtime._fb.steps
+        input_idx = np.empty(shape=0, dtype=np.int64)
+        good = {'visual': np.arange(5, dtype=np.int64)}
+        for checkpoints in ((1,), (0, 2, 1), (0, 4)):
+            with pytest.raises(expected_exception=ValueError, match='Checkpoints'):
+                runtime.run_recorded(
+                    input_idx=input_idx,
+                    currents=None,
+                    stimulus_steps=2,
+                    recovery_steps=1,
+                    populations=good,
+                    checkpoints=checkpoints,
+                )
+        for populations in ({}, {'visual': np.array([1, 1], dtype=np.int64)}):
+            with pytest.raises(expected_exception=ValueError, match=r'population|Population'):
+                runtime.run_recorded(
+                    input_idx=input_idx,
+                    currents=None,
+                    stimulus_steps=2,
+                    recovery_steps=1,
+                    populations=populations,
+                    checkpoints=(0, 1),
+                )
+        assert runtime._fb.steps == initial_steps
+
     def test_batch_and_order_independence(self, synthetic_brain_dir: Path) -> None:
         """Track one episode alone, in a full batch, and with padding.
 

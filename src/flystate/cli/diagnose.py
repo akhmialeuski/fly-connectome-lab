@@ -9,6 +9,7 @@ from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
 from flystate.cli.noise import noise_trace_command
 from flystate.cli.noise_analysis import noise_analysis_command
 from flystate.cli.stability import stability_command
+from flystate.cli.temporal import temporal_command
 from flystate.diagnostics.audit import audit_cohort
 from flystate.diagnostics.convergence import diagnose_convergence
 from flystate.diagnostics.probes import run_probe
@@ -24,6 +25,10 @@ app = typer.Typer(
 app.command(name='stability')(stability_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
+app.command(
+    name='temporal',
+    help='Record one frozen stimulus, blank, or noise-control response in a fresh attempt.',
+)(temporal_command)
 
 
 @app.command(name='run')

@@ -1,5 +1,6 @@
 {
   "source_membership_sha256": "5af10356b3ff565bf515144983758763fb8b346737520c50647885cdf88a92d8",
+  "source_config_sha256": "9406ee5b0f5b2ba794b71bad4def5d906248af35165f49a8fceb7f0c96fe82b3",
   "preprocess_cache_key": "185851868d46dc571b345c1a555d858b73e6f76ca52301fca59c3002aeea7899",
   "selection_rule": "For labels 0, 5, 10, and 15, take the two training samples with the smallest stable_int(sample_id), breaking ties by sample_id.",
   "windows": [0, 7, 15],
