@@ -1,0 +1,50 @@
+{
+  "analysis_source_commit": "f9055c7",
+  "cases": {
+    "N0": {
+      "max_pair_squared_distance_error": 2.546585164964199e-11,
+      "null_histogram_exact": true,
+      "observed_correct": 5,
+      "pairs_checked": 780,
+      "primary_features": 15768,
+      "query_predictions_exact": true
+    },
+    "N1": {
+      "max_pair_squared_distance_error": 2.2367885321727954e-11,
+      "null_histogram_exact": true,
+      "observed_correct": 4,
+      "pairs_checked": 780,
+      "primary_features": 15768,
+      "query_predictions_exact": true
+    },
+    "OFF": {
+      "max_pair_squared_distance_error": 2.2282620193436742e-11,
+      "null_histogram_exact": true,
+      "observed_correct": 3,
+      "pairs_checked": 780,
+      "primary_features": 15768,
+      "query_predictions_exact": true
+    }
+  },
+  "gate_passed": false,
+  "input_controls": {
+    "encoded_current": {
+      "correct": 3,
+      "max_pair_squared_distance_error": 7.247535904753022e-13,
+      "pairs_checked": 780,
+      "queries_checked": 40,
+      "query_predictions_exact": true
+    },
+    "pixels": {
+      "correct": 3,
+      "max_pair_squared_distance_error": 0.0,
+      "pairs_checked": 780,
+      "queries_checked": 40,
+      "query_predictions_exact": true
+    }
+  },
+  "pair_rows": 60060,
+  "query_rows": 3080,
+  "same_image_cross_seed_mean_squared_distance": 474.8419231937858,
+  "schema_version": 1
+}

@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "source_membership_sha256": "5af10356b3ff565bf515144983758763fb8b346737520c50647885cdf88a92d8",
+  "source_config_sha256": "9406ee5b0f5b2ba794b71bad4def5d906248af35165f49a8fceb7f0c96fe82b3",
+  "preprocess_cache_key": "185851868d46dc571b345c1a555d858b73e6f76ca52301fca59c3002aeea7899",
+  "source_pilot_masks_sha256": "f27e99e04e16402fde7799e3556b398ac383b8e904a1349188f7543035fca905",
+  "selection_rule": "For every original identity label 0-19, take the two training samples with the smallest stable_int(sample_id), breaking ties by sample_id.",
+  "windows": [
+    0,
+    7,
+    15
+  ],
+  "samples": [
+    {
+      "label": 0,
+      "sample_id": "celeba-170257",
+      "source_sha256": "2e5d3be9c23d292cd3ace89aa86ac52ac5cf2830c3ac81702389f5285a4e2832",
+      "aligned_sha256": "2f6363548e6eff6dae0706fce30ac249eab29523a753cfe8d75f9b74a653b261"
+    },
+    {
+      "label": 0,
+      "sample_id": "celeba-180834",
+      "source_sha256": "19ab68f4f4292f498368a3feec1da4c08cb5a297e3f9400be01d9a8edecf1b31",
+      "aligned_sha256": "2c0c437bcf3aafa1fbee3ca47c8e74f71e26612f685f5819aec3c67db9421c4b"
+    },
+    {
+      "label": 1,
+      "sample_id": "celeba-019695",
+      "source_sha256": "5851065baa07611918d8ea019c1d763961aa36b047fbe3b340830f7fdfe0b5f3",
+      "aligned_sha256": "e1b15f2c8f3f55d67437dc15829377fc313f3e1e6e9955d43e8d1940d25cae8b"
+    },
+    {
+      "label": 1,
+      "sample_id": "celeba-098338",
+      "source_sha256": "3542d752e58e34c1aa1cb3a1c7a3c4580b96fe01c8215ecc4977b2c3429659ce",
+      "aligned_sha256": "0c7151db8edca91df7c852c7424c0c717269a80281284a1dc783488a469c701f"
+    },
+    {
+      "label": 2,
+      "sample_id": "celeba-079392",
+      "source_sha256": "01a563121dbbcb8ed2b24f9b0c4fd2466e9ef9dca682d50b3055d7865db73dfc",
+      "aligned_sha256": "a443eb71533f6c4f7609bed9a45b11bd5fc976343319c3f2055d0d397bc097a5"
+    },
+    {
+      "label": 2,
+      "sample_id": "celeba-100130",
+      "source_sha256": "fbc6ca41d49a475d0106b48eedef299501e5c02a84196c647c55d3c27489bc63",
+      "aligned_sha256": "288f8705f39812021ee14b0fdf6e5ce06221efed042385aa7bf359861d0aa36e"
+    },
+    {
+      "label": 3,
+      "sample_id": "celeba-062613",
+      "source_sha256": "94d677c972628bf668c082f1e96ca28cc3595438b7d0bbb982d71831ddfde472",
+      "aligned_sha256": "98823516c6fe5d5e74c88bc6f68054e1eb026034423ce684c18a0f8a57b2eb87"
+    },
+    {
+      "label": 3,
+      "sample_id": "celeba-115044",
+      "source_sha256": "d394f047ab8b4e3296ddc990c99c8a4662f3c18b7d00d9dde1bf6f837680c1a3",
+      "aligned_sha256": "cf3b0856cae56f6303de5076d097d0c567f2d09894b7179d92dcd76d0551fe8f"
+    },
+    {
+      "label": 4,
+      "sample_id": "celeba-017860",
+      "source_sha256": "b392d35e11e1a60c6e38e516dbcb45276bca77c716d7f1d6b3d8a77b37acafcc",
+      "aligned_sha256": "f99f1caeff2b7d1a1ca9e0202fe9b09e5fa6aed7984761b149ce63ef73175d8c"
+    },
+    {
+      "label": 4,
+      "sample_id": "celeba-101364",
+      "source_sha256": "30fb78e262ca3f03583b1eb75ed5b6aaffdd7939f1d2db5e353d80cc00af6bdf",
+      "aligned_sha256": "6ec5a59bdfa65854b12f49eefd61c9cbe6ec9ebe4551aa0ffc5df786fcac2dac"
+    },
+    {
+      "label": 5,
+      "sample_id": "celeba-032051",
+      "source_sha256": "52e83ae088def90b1ff1d0188d712305630b329b26d0c0ea55ddc8bb75ad199c",
+      "aligned_sha256": "75027a11d07a0d3a692e5570aa881125f317b19eee0fbd17cbcd056332b744bc"
+    },
+    {
+      "label": 5,
+      "sample_id": "celeba-064652",
+      "source_sha256": "79c2ffcfadbbbf68e5a58a6ae3ff2c5a13347911b92b14dbcba451d6c0ed7b3e",
+      "aligned_sha256": "bd0079d24ebe65d7b4c655671ea203902f0a573b7288ecf87907448883d5b61f"
+    },
+    {
+      "label": 6,
+      "sample_id": "celeba-038602",
+      "source_sha256": "013d90269c9734e93849fc0e85f11be09e661a8f37f309644aa8188c0da8f634",
+      "aligned_sha256": "82c0f64fcb80e28c73191e6fb39324ca811cc9c5a2f68c191697466ff9e23521"
+    },
+    {
+      "label": 6,
+      "sample_id": "celeba-101212",
+      "source_sha256": "1e3f6d470b359217744b7e95f86471325bc57753a04b9bbf60aa88efdfa45ffb",
+      "aligned_sha256": "fb6e1aad534c54e34f2246a5c9123965cadd89059e94312d3c5f54f7d52c3de1"
+    },
+    {
+      "label": 7,
+      "sample_id": "celeba-026165",
+      "source_sha256": "17efabe1dc29ee3f547e22dae1bff46eb71d4f97006176c47aaa54cd631716ca",
+      "aligned_sha256": "7257cd6d6d327ed4f965e510dbcdd15c1d7b65b51b71661cca40bf6f21335774"
+    },
+    {
+      "label": 7,
+      "sample_id": "celeba-107632",
+      "source_sha256": "cd8efc698691b2c8e65620badb45bee6f6824322ef1b1efb6b88670395c515ac",
+      "aligned_sha256": "e8db7843517379ee3970bcd215a0ab9250b89391701faf933ffb02e62e05b910"
+    },
+    {
+      "label": 8,
+      "sample_id": "celeba-082843",
+      "source_sha256": "174e6082738e1db5fc7a21ecc6bad3062e0a19a92f283c1e6f4dda72aae57b1b",
+      "aligned_sha256": "f3dafa3df03bb19bf3e49f68c35aa52e88a9aed382f25cc879f4b499c51e5b84"
+    },
+    {
+      "label": 8,
+      "sample_id": "celeba-102529",
+      "source_sha256": "307f808b3bf86f20d6fb849bfafee6c916b46d0e7c73597401554fd3c4a41673",
+      "aligned_sha256": "95d34c843a11d3c4b82af28908186acda47ddc546fc67a414541d646c43b7994"
+    },
+    {
+      "label": 9,
+      "sample_id": "celeba-106388",
+      "source_sha256": "e1ddc361844cd6f888321067cbc0917977ba8833bd3e0e47037928581d9c79df",
+      "aligned_sha256": "15eb01bc9727517860ff4a910f33e434a027ca3f17e1cb98cd74f8b8a7f76ce1"
+    },
+    {
+      "label": 9,
+      "sample_id": "celeba-059878",
+      "source_sha256": "d37bcfac769090221705fc862cd8ccd9b47b63d84781ef35c21ba9a469d223ca",
+      "aligned_sha256": "1ce92d42af88dc2636c9aaa716d6ee6ead3eb7f5df16e1a064ca760c69fb7c32"
+    },
+    {
+      "label": 10,
+      "sample_id": "celeba-081666",
+      "source_sha256": "1f69cba0356b6a9d7c276a9a8ac3fbacdddae446b5f959e3cf471e01331b2bde",
+      "aligned_sha256": "8eb791aa394a899b2c119245c88a8777d3586c132b211522656bc8b67c4a3a01"
+    },
+    {
+      "label": 10,
+      "sample_id": "celeba-044942",
+      "source_sha256": "688ddc840a08c39e31b611881f1874555c23824752827a6ca1ac452bd3096dc2",
+      "aligned_sha256": "22d788c48c46832e0f5f66ca41aaf7890c1b2f2f0c02a72ca3996f7082fc781f"
+    },
+    {
+      "label": 11,
+      "sample_id": "celeba-099304",
+      "source_sha256": "13f115f3e11623ef56fec70d2bb0ed4a561f219afefbf537120892c606229f06",
+      "aligned_sha256": "98c3d5e8c3d8eef1adf29cdbccd0c1791deb0b6d93b4792dab9f23ab8d90cd38"
+    },
+    {
+      "label": 11,
+      "sample_id": "celeba-060550",
+      "source_sha256": "e51c1388b3e7b0b217628eabb859b5ddb0d5f7467cb13b9a946009102eac7396",
+      "aligned_sha256": "d5e26a26e8d531a640b15f59a215873197395ee7d2da9625dc32820c63a504c3"
+    },
+    {
+      "label": 12,
+      "sample_id": "celeba-035224",
+      "source_sha256": "27b0852e8c8e4580b4746d47fd5195ce93e9a27d0da5daf4a182681e986d24b3",
+      "aligned_sha256": "43a45ce3d53c56dc3c60c0b9b19ef5fa4d3ebef8ec0ff24ae08378e11babf2f6"
+    },
+    {
+      "label": 12,
+      "sample_id": "celeba-084989",
+      "source_sha256": "d669e87e3985c7e8631f96e70edebb093b5806d332799761cd8ea55364430d26",
+      "aligned_sha256": "d4780fb7d09c9877437793f91a8099bcce54f1eb7c18f7ca211626660bcc7a62"
+    },
+    {
+      "label": 13,
+      "sample_id": "celeba-186450",
+      "source_sha256": "14f4bafcfd40740fd5efa58a1c4463e1550bf069a8b97d0e3e65aeb2eed8c9ea",
+      "aligned_sha256": "8719a490aa2980a76c8933670af378eac738625642fbd280faa51b30ed1e23a7"
+    },
+    {
+      "label": 13,
+      "sample_id": "celeba-201541",
+      "source_sha256": "1a1ce0f48f89c6080b4a22ab6dfb9ddf476fa7b1bb5af7f41f643c7350021502",
+      "aligned_sha256": "e2ad7d74ecfb6aaec3bbcc73e6a553727d1dcc5fadd8dff40c9d479a4e3de691"
+    },
+    {
+      "label": 14,
+      "sample_id": "celeba-051447",
+      "source_sha256": "9d7adef1dbf802412c89f2e2e9e47a46e1fba0bfe6e90c759caab719c97e7ebc",
+      "aligned_sha256": "64506f12153a87e78af453e6e0677ce7af089def2da389d896912e9eac218cbf"
+    },
+    {
+      "label": 14,
+      "sample_id": "celeba-049671",
+      "source_sha256": "09ac48a1440100b9715fc46c2b8c98ce2e5e7408e4b436cd567040149934c719",
+      "aligned_sha256": "96f16f71ba3a0a1710e7dd6d41089f568599999e7ea1f20b14cf27b5f9d0c2c0"
+    },
+    {
+      "label": 15,
+      "sample_id": "celeba-026743",
+      "source_sha256": "409d71af36a310702ce6c80da08bb76394d8ede8992c162dcb051c02c46b60a0",
+      "aligned_sha256": "c60733e84b1581bcd7dedbccdabe953ce668bdcb67a4ab056f0f25e3d1b4b20f"
+    },
+    {
+      "label": 15,
+      "sample_id": "celeba-148389",
+      "source_sha256": "652107997dddfabc65e4a94a9595489db6a8917648e90c8fdf4911f6d01ac36d",
+      "aligned_sha256": "d1ee122401a6d534d3f2f51792a23c6d3922d43448840056cf99b6aa1cc587a4"
+    },
+    {
+      "label": 16,
+      "sample_id": "celeba-095187",
+      "source_sha256": "cb0373d71093c316edd72a2eb47b7e7d3083e5fcd554ddeef951f5bb2f7ec91e",
+      "aligned_sha256": "51a5c58b0e78e22f52f25e64ebd23a160b9928bf40ef4e1d00dfc2d35985c677"
+    },
+    {
+      "label": 16,
+      "sample_id": "celeba-053246",
+      "source_sha256": "0ee86a7a21f2a2f84538be44de373ff291098f45024a40bc3fcae9da75f5eeb4",
+      "aligned_sha256": "a2f99cc0c6f4f444975a1965084351b67db9fb7419eef5e2f9be773662e61699"
+    },
+    {
+      "label": 17,
+      "sample_id": "celeba-116337",
+      "source_sha256": "04b4d37b4e07b09b3d3adaf1efee28a3efa05286a2fc95b60011b0cf155002c3",
+      "aligned_sha256": "edaa9a36a5060d8ad12d50bff925796eefaee5a5eb886418d3aeb04f25a4a6d9"
+    },
+    {
+      "label": 17,
+      "sample_id": "celeba-060143",
+      "source_sha256": "5120eafc786bcb0e87917ddeaaea4d4e415ff6b544544434acf3e6fa01b089d5",
+      "aligned_sha256": "08c6ec30edc8b353358e884e31ec1d651e0d20d17063030733ab4fe847992b6c"
+    },
+    {
+      "label": 18,
+      "sample_id": "celeba-202007",
+      "source_sha256": "04bc538fcbf3a35053d960e0d2a351179f9e7b7b8670c534b3e884514d48004a",
+      "aligned_sha256": "125e598c44c690b42fc97c259f2d5ac02b3b2a9586b7adf34605765d94f25adc"
+    },
+    {
+      "label": 18,
+      "sample_id": "celeba-196250",
+      "source_sha256": "3b4d8d0296b59696421c848dcba5745c5c3f0102324a7e873ee747290a61fa0d",
+      "aligned_sha256": "be12b0866594736d371e411c6a535fe645e8deaeb58a56e92c56e6b7b49dde3e"
+    },
+    {
+      "label": 19,
+      "sample_id": "celeba-161650",
+      "source_sha256": "e192b5a43ebdfde5c218452518ab4bcc27823efd8778ca7dabfe91fa71bdc98e",
+      "aligned_sha256": "bb09530559764a7da757c68d1a9de6340edf93268ff1b7e9059cfe32c222e086"
+    },
+    {
+      "label": 19,
+      "sample_id": "celeba-142983",
+      "source_sha256": "606cace4fb45ffcbb65a2566b5ec5eb9bccf70d96e3f6228d3e3052b2669f55c",
+      "aligned_sha256": "a616e1812b7d0019454eec7df7a688c21813d42249f83575f7973ba4ad134bbf"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "campaign_time_limit_seconds": 3600,
+  "cases": [
+    {
+      "episode_seed": 0,
+      "id": "N0",
+      "noise_enabled": true
+    },
+    {
+      "episode_seed": 1,
+      "id": "N1",
+      "noise_enabled": true
+    },
+    {
+      "episode_seed": 0,
+      "id": "OFF",
+      "noise_enabled": false
+    }
+  ],
+  "checkpoints": [
+    0,
+    1,
+    2,
+    5,
+    10,
+    11,
+    12,
+    15,
+    20
+  ],
+  "cohort_sha256": "296fd75bee1176ee7a1c2953fe287656796029436c99311dfc32366f8aa81838",
+  "common_noise_identifier_template": "identity-access|window=<window>|stream=<case>",
+  "masks_order": [
+    "visual_projection",
+    "ol_intrinsic",
+    "cb_intrinsic",
+    "descending_neuron"
+  ],
+  "masks_sha256": "f27e99e04e16402fde7799e3556b398ac383b8e904a1349188f7543035fca905",
+  "membership_file_sha256": "79f845ab51c7fb9aba04a6b72816979a9539bce794ecdf31cfc167285567902b",
+  "memory_limit_bytes": 12884901888,
+  "null_permutations": 10000,
+  "null_seed_key": "t28-primary-null",
+  "primary_endpoint_step": 10,
+  "recovery_steps": 10,
+  "schema_version": 1,
+  "stimulus_steps": 10,
+  "study": "2026-09-24-identity-access",
+  "windows": [
+    0,
+    7,
+    15
+  ]
+}

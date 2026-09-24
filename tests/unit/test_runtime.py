@@ -92,6 +92,10 @@ class TestEpisodeBrain:
         assert response.total_spikes[:5].sum(axis=0).tolist() == first.spikes_total.tolist()
         assert response.active_neurons[4].tolist() == first.active_neurons.tolist()
         assert response.noise_kicks[:5].sum() > 0
+        assert response.noise_digests.shape == (8, 2, 32)
+        np.testing.assert_array_equal(
+            actual=response.noise_digests[4], desired=reference.last_noise_digest
+        )
         second = reference.run(input_idx=indices, currents=None, n_steps=3)
         np.testing.assert_array_equal(
             actual=response.voltages['descending'][-1],
@@ -102,6 +106,9 @@ class TestEpisodeBrain:
             desired=reference.features(kinds=['spike_trace']),
         )
         assert response.total_spikes[5:].sum(axis=0).tolist() == second.spikes_total.tolist()
+        np.testing.assert_array_equal(
+            actual=response.noise_digests[-1], desired=reference.last_noise_digest
+        )
         assert np.all(response.active_neurons[-1] >= first.active_neurons)
         assert np.all(response.active_neurons[-1] <= first.active_neurons + second.active_neurons)
         assert response.spike_counts['visual'][-1].shape == (2, 20)

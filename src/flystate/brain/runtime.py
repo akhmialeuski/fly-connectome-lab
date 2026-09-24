@@ -1,5 +1,6 @@
 """CPU connectome episodes with independent noise streams and explicit rest states."""
 
+import hashlib
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,13 +37,14 @@ class RunSummary:
 
 @dataclass(frozen=True)
 class TemporalResponse:
-    """Checkpoint states for one batch; voltages are float32 and counts are int32/int64."""
+    """Checkpoint float32 states, integer counts, and per-step noise-index digests."""
 
     checkpoints: tuple[int, ...]
     voltages: dict[str, NDArray[np.float32]]
     spike_counts: dict[str, NDArray[np.int32]]
     readout_traces: NDArray[np.float32]
     noise_kicks: NDArray[np.int64]
+    noise_digests: NDArray[np.uint8]
     total_spikes: NDArray[np.int64]
     active_neurons: NDArray[np.int64]
 
@@ -107,6 +109,7 @@ class EpisodeBrain:
         self._readout_lookup[self.readout_idx] = np.arange(len(self.readout_idx), dtype=np.int64)
         self._generators: list[np.random.Generator] = []
         self.last_noise_kicks: NDArray[np.int64] = np.zeros(shape=batch_size, dtype=np.int64)
+        self.last_noise_digest: NDArray[np.uint8] = np.zeros(shape=(batch_size, 32), dtype=np.uint8)
 
     def cells(self, superclasses: Sequence[str]) -> NDArray[np.int64]:
         """Select sorted neuron indices by upstream superclass or cell type.
@@ -198,6 +201,7 @@ class EpisodeBrain:
         self._fb.steps = rest.warmup_steps
         self._trace.fill(0)
         self.last_noise_kicks.fill(0)
+        self.last_noise_digest.fill(0)
 
     def _step(self, input_idx: NDArray[np.int64], currents: NDArray[np.float32] | None) -> None:
         """Apply one upstream-ordered LIF step and update per-fly readout traces.
@@ -212,6 +216,8 @@ class EpisodeBrain:
         voltage *= self._fb.decay
         voltage += current + self._fb.tonic
         self.last_noise_kicks.fill(0)
+        empty_digest = np.frombuffer(buffer=hashlib.sha256(b'').digest(), dtype=np.uint8)
+        self.last_noise_digest[:] = empty_digest
         if self._cfg.noise.enabled:
             probability = self._cfg.noise.rate_hz * self._cfg.dt_s
             for column, generator in enumerate(self._generators):
@@ -219,6 +225,8 @@ class EpisodeBrain:
                 indices = generator.choice(a=self.n, size=count, replace=False)
                 voltage[indices, column] += np.float32(self._cfg.noise.amplitude)
                 self.last_noise_kicks[column] = count
+                digest = hashlib.sha256(indices.astype('<i8', copy=False).tobytes()).digest()
+                self.last_noise_digest[column] = np.frombuffer(buffer=digest, dtype=np.uint8)
         if currents is not None:
             voltage[input_idx, :] += currents
         fired = np.flatnonzero(a=voltage >= 1.0)
@@ -333,8 +341,8 @@ class EpisodeBrain:
         :type populations: dict[str, NDArray[np.int64]]
         :param checkpoints: Strictly increasing steps including zero, at most total steps.
         :type checkpoints: tuple[int, ...]
-        :returns: Voltage and cumulative spike arrays (C,B,K), traces (C,B,R), and
-            per-step noise/spike/active counts (S,B).
+        :returns: Voltage and cumulative spike arrays (C,B,K), traces (C,B,R),
+            per-step counts (S,B), and noise-index SHA-256 bytes (S,B,32).
         :rtype: TemporalResponse
         :raises ValueError: If a checkpoint, population, or timing parameter is invalid.
         :raises RuntimeError: If the episode has not been initialized.
@@ -386,6 +394,7 @@ class EpisodeBrain:
             shape=(len(checkpoints), self.batch_size, len(self.readout_idx)), dtype=np.float32
         )
         noise = np.zeros(shape=(total_steps, self.batch_size), dtype=np.int64)
+        noise_digests = np.empty(shape=(total_steps, self.batch_size, 32), dtype=np.uint8)
         spikes = np.zeros_like(a=noise)
         active_counts = np.zeros_like(a=noise)
         active = np.zeros(shape=(self.n, self.batch_size), dtype=np.bool_)
@@ -410,6 +419,7 @@ class EpisodeBrain:
                 currents=currents if step <= stimulus_steps else None,
             )
             noise[step - 1] = self.last_noise_kicks
+            noise_digests[step - 1] = self.last_noise_digest
             fired = self._fb.fired
             newly_active = fired[~active.ravel()[fired]]
             active.ravel()[fired] = True
@@ -430,6 +440,7 @@ class EpisodeBrain:
             spike_counts=spike_snapshots,
             readout_traces=traces,
             noise_kicks=noise,
+            noise_digests=noise_digests,
             total_spikes=spikes,
             active_neurons=active_counts,
         )
