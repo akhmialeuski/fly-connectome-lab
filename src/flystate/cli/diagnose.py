@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
+from flystate.cli.drive_sweep import drive_decode_command, drive_record_command
 from flystate.cli.identity import identity_command
 from flystate.cli.identity_analysis import identity_analysis_command
 from flystate.cli.input_access import input_access_command
@@ -41,6 +42,14 @@ app.command(
     name='matched-neural',
     help='Compare original fly descending-state OOF identity scores with encoded input.',
 )(matched_neural_command)
+app.command(
+    name='drive-record',
+    help='Record T32 population spike counts under a scaled encoder drive.',
+)(drive_record_command)
+app.command(
+    name='drive-decode',
+    help='Decode identity from T32 recordings with the T30 fit-only OOF readout.',
+)(drive_decode_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
 app.command(
