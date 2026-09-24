@@ -20,3 +20,18 @@ done
 ```
 
 Each command requires a fresh output directory. It verifies the frozen source, config, cohort, masks, schedule, and prior attempt order before simulation, then preserves a completed or failed immutable attempt with SHA-256 inventory. N0/N1 use identical image-independent episode-noise streams within each window and save exact per-step noise-index digests; OFF saves zero-noise controls. `responses.npz` and `blanks.npz` contain numeric neural states only and can be opened with `numpy.load(..., allow_pickle=False)`. `sample-windows.json` contains image IDs, labels, raster-window indices, input hashes, and input-current norms, not image pixels. The browser viewer discovers these attempts in Diagnostics from the same `FLYSTATE_HOME` without a run-name registry.
+
+After all three response attempts have completed, create a fresh immutable analysis attempt:
+
+```bash
+uv run flystate diagnose identity-analyze configs/celeba-smoke.yaml \
+  --source runs/diagnostics/2026-09-24-identity-access \
+  --output runs/diagnostics/2026-09-24-identity-access/analysis \
+  --cohort "$study/cohort.json" \
+  --masks research/sequential-visual-memory/2026-09-24-temporal-population/population-masks.json \
+  --membership research/sequential-visual-memory/2026-09-23-noise-recognition/membership.json \
+  --schedule "$study/schedule.json" \
+  --json
+```
+
+The analyzer verifies the three source inventories and exact per-step noise-index matching before computing the frozen primary identity feature. It recomputes the pixel and encoded-current controls from the external training images without storing their arrays. `pairs.parquet` retains every same-/different-identity squared distance for the primary and diagnostic views, `queries.parquet` retains every fixed one-nearest-neighbor decision, `cross-seed.parquet` retains per-image noise sensitivity, and `report.json` contains the complete permutation histograms, stage gate, and limitations. Failed analysis attempts remain in the working ledger and cannot be overwritten.
