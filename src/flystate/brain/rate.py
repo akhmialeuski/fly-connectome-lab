@@ -1,0 +1,105 @@
+"""Deterministic graded (rate) dynamics on flybrain's effective MaleCNS connectome.
+
+The spiking runtime in :mod:`flystate.brain.runtime` follows flybrain's leaky integrate-and-fire
+model. This module keeps the same effective graph, including flybrain's removal of synapses onto
+sensory neurons, but replaces spikes with a leaky echo-state update, the neuron model used by
+connectome reservoirs such as conn2res, wetware and fly-self-driving:
+
+``x[t+1] = (1 - leak) * x[t] + leak * tanh(gain * W @ x[t] + u[t])``
+
+There is no noise and no tonic drive, so ``x = 0`` is the rest state and every result is a
+deterministic function of the input.
+"""
+
+from pathlib import Path
+
+import numba
+import numpy as np
+from flybrain import FlyBrain
+from numpy.typing import NDArray
+from scipy import sparse
+
+
+@numba.njit(parallel=True, cache=True)
+def _propagate(
+    indptr: NDArray[np.int64],
+    indices: NDArray[np.int32],
+    weights: NDArray[np.float32],
+    state: NDArray[np.float32],
+    out: NDArray[np.float32],
+) -> None:  # pragma: no cover - compiled; covered through RateReservoir.step
+    """Write ``W @ state`` row by row; each row is summed by one thread in edge order.
+
+    :param indptr: CSR row pointers of the postsynaptic-row matrix, shape (N+1,).
+    :type indptr: NDArray[np.int64]
+    :param indices: CSR presynaptic column indices, shape (E,).
+    :type indices: NDArray[np.int32]
+    :param weights: CSR signed dimensionless weights, shape (E,).
+    :type weights: NDArray[np.float32]
+    :param state: Presynaptic states, shape (N,B), float32.
+    :type state: NDArray[np.float32]
+    :param out: Destination for postsynaptic input, shape (N,B), float32.
+    :type out: NDArray[np.float32]
+    """
+    for row in numba.prange(len(indptr) - 1):
+        accumulator = np.zeros(state.shape[1], dtype=np.float32)
+        for edge in range(indptr[row], indptr[row + 1]):
+            accumulator += weights[edge] * state[indices[edge]]
+        out[row] = accumulator
+
+
+class RateReservoir:
+    """Batched leaky-tanh dynamics on the unchanged effective flybrain weight matrix."""
+
+    def __init__(self, brain_dir: Path, gain: float, leak: float, batch_size: int) -> None:
+        """Load the effective graph exactly as flybrain builds it for ``sensory_input=False``.
+
+        :param brain_dir: Directory with flybrain ``brain.npz`` and ``weights.npz``.
+        :type brain_dir: Path
+        :param gain: Positive multiplier of the row-normalized weights, dimensionless.
+        :type gain: float
+        :param leak: Update fraction in (0, 1]; 1 replaces the state every step.
+        :type leak: float
+        :param batch_size: Positive number of independent episodes advanced together.
+        :type batch_size: int
+        :raises ValueError: If a parameter is outside its valid range.
+        """
+        if not (gain > 0 and 0 < leak <= 1 and batch_size >= 1):
+            raise ValueError('Gain must be positive, leak in (0, 1], and batch_size positive.')
+        spiking = FlyBrain(data=brain_dir, seed=0, device='cpu', batch=1, sensory_input=False)
+        matrix = sparse.csc_matrix(
+            (spiking.weights, spiking.indices, spiking.indptr), shape=(spiking.n, spiking.n)
+        ).tocsr()
+        matrix.sort_indices()
+        self.n: int = spiking.n
+        self.edges: int = int(matrix.nnz)
+        self.gain: np.float32 = np.float32(gain)
+        self.leak: np.float32 = np.float32(leak)
+        self._indptr: NDArray[np.int64] = matrix.indptr.astype(np.int64)
+        self._indices: NDArray[np.int32] = matrix.indices.astype(np.int32)
+        self._weights: NDArray[np.float32] = matrix.data.astype(np.float32)
+        self.state: NDArray[np.float32] = np.zeros(shape=(self.n, batch_size), dtype=np.float32)
+        self._drive: NDArray[np.float32] = np.empty_like(self.state)
+
+    def reset(self) -> None:
+        """Return every episode to the zero rest state."""
+        self.state.fill(0)
+
+    def step(self, input_idx: NDArray[np.int64], inputs: NDArray[np.float32] | None) -> None:
+        """Advance every episode by one synaptic update.
+
+        :param input_idx: Distinct driven neuron indices, shape (I,), int64.
+        :type input_idx: NDArray[np.int64]
+        :param inputs: Additive input to the driven neurons, shape (I,B), float32, or none.
+        :type inputs: Optional[NDArray[np.float32]]
+        :raises ValueError: If the input shape does not match the driven neurons and batch.
+        """
+        if inputs is not None and inputs.shape != (len(input_idx), self.state.shape[1]):
+            raise ValueError('Inputs must have shape (len(input_idx), batch_size).')
+        _propagate(self._indptr, self._indices, self._weights, self.state, self._drive)
+        self._drive *= self.gain
+        if inputs is not None:
+            self._drive[input_idx] += inputs
+        np.tanh(self._drive, out=self._drive)
+        self.state *= np.float32(1) - self.leak
+        self.state += self.leak * self._drive
