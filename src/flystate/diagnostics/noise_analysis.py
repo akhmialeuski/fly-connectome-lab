@@ -27,7 +27,11 @@ EXPECTED_TRAIN_PER_CLASS: int = 14
 
 
 def identity_cluster_interval(
-    differences: NDArray[np.float64], identities: NDArray, samples: int, seed: int
+    differences: NDArray[np.float64],
+    identities: NDArray,
+    samples: int,
+    seed: int,
+    namespace: str = BOOTSTRAP_NAMESPACE,
 ) -> dict[str, float | int]:
     """Bootstrap equally sized identity clusters of paired image-level differences.
 
@@ -39,6 +43,8 @@ def identity_cluster_interval(
     :type samples: int
     :param seed: Nonnegative config-derived resampling seed.
     :type seed: int
+    :param namespace: Stable study-specific bootstrap seed namespace.
+    :type namespace: str
     :returns: Difference and 95% percentile interval in percentage points.
     :rtype: dict[str, float | int]
     :raises ValueError: If vectors, finite values, or cluster sizes are invalid.
@@ -58,7 +64,7 @@ def identity_cluster_interval(
         values=cluster_means,
         samples=samples,
         seed=seed,
-        namespace=BOOTSTRAP_NAMESPACE,
+        namespace=namespace,
     )
     return {
         'diff_pp': float(np.mean(a=cluster_means) * 100),
