@@ -44,3 +44,5 @@ uv run python -c 'import hashlib, json, pathlib; p=pathlib.Path("research/sequen
 ```
 
 An [independent analysis replay](provenance/analysis-replay.json) recomputed every primary and input-control distance, all one-nearest-neighbor predictions, the three permutation histograms, and the negative gate using SciPy distances rather than the analyzer's distance loop.
+
+A [fresh-clone verification](provenance/remote-lfs-verification.json) restored all six Git LFS arrays from GitHub and checked every one of the 32 archived files, the three Parquet row counts, source controls, and the failed gate.
