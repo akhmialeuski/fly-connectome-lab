@@ -45,6 +45,9 @@ class TemporalCase:
 
 CASES: dict[str, TemporalCase] = {
     'C0': TemporalCase('C0', 20, 0.0, 10, True, 'Measure the time-matched noisy blank state.'),
+    'C0R': TemporalCase(
+        'C0R', 20, 0.0, 10, True, 'Complete missing short-recovery blank checkpoints.'
+    ),
     'C1': TemporalCase('C1', 10, 1.0, 10, True, 'Measure the original ten-step response.'),
     'C2': TemporalCase('C2', 20, 1.0, 10, True, 'Double duration at a fixed voltage kick.'),
     'C3': TemporalCase('C3', 20, 0.5, 10, True, 'Double duration at fixed total drive.'),
@@ -53,6 +56,9 @@ CASES: dict[str, TemporalCase] = {
         'C5', 10, 1.0, 10, False, 'Measure the original drive without episode noise.'
     ),
     'C6': TemporalCase('C6', 20, 0.0, 10, False, 'Measure the time-matched noise-off blank.'),
+    'C6R': TemporalCase(
+        'C6R', 20, 0.0, 10, False, 'Complete missing noise-off recovery checkpoints.'
+    ),
 }
 
 
@@ -211,6 +217,8 @@ def _checkpoints(case: TemporalCase) -> tuple[int, ...]:
     :returns: Strictly increasing global step indices including rest step zero.
     :rtype: tuple[int, ...]
     """
+    if case.name in {'C0R', 'C6R'}:
+        return (0, 1, 2, 5, 10, 11, 12, 15, 20, 21, 22, 25, 30)
     stimulus = (0, 1, 2, 5, 10, 20) if case.stimulus_steps == 20 else (0, 1, 2, 5, 10)
     recovery = tuple(case.stimulus_steps + step for step in (1, 2, 5, 10))
     return (*stimulus, *recovery)
