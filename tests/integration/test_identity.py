@@ -16,6 +16,7 @@ from flystate.experiments.config import ExperimentConfig, config_hash, effective
 from flystate.hashing import sha256_file, sha256_obj, stable_int
 from flystate.settings import Paths, get_paths
 from flystate.storage.json import write_json
+from flystate.storage.parquet import read_table
 
 
 def frozen_identity_fixture(
@@ -175,6 +176,10 @@ class TestIdentityAccess:
         assert help_result.exit_code == 0
         assert '--json' in unstyle(help_result.stdout)
         assert '--schedule' in unstyle(help_result.stdout)
+        analysis_help = runner.invoke(app, ['diagnose', 'identity-analyze', '--help'])
+        assert analysis_help.exit_code == 0
+        assert '--source' in unstyle(analysis_help.stdout)
+        assert '--json' in unstyle(analysis_help.stdout)
         digests = {}
         for case in ('N0', 'N1', 'OFF'):
             output = Path(f'runs/diagnostics/identity-fixture/{case}')
@@ -221,6 +226,45 @@ class TestIdentityAccess:
             repeated = runner.invoke(app, args)
             assert repeated.exit_code == 1
         assert not np.array_equal(digests['N0'], digests['N1'])
+        analysis = Path('runs/diagnostics/identity-fixture-analysis')
+        analyzed = runner.invoke(
+            app,
+            [
+                'diagnose',
+                'identity-analyze',
+                str(config),
+                '--source',
+                'runs/diagnostics/identity-fixture',
+                '--output',
+                str(analysis),
+                '--cohort',
+                str(cohort),
+                '--masks',
+                str(masks),
+                '--membership',
+                str(membership),
+                '--schedule',
+                str(schedule),
+                '--json',
+            ],
+        )
+        assert analyzed.exit_code == 0, analyzed.output
+        analysis_report = json.loads(s=analyzed.stdout)
+        assert analysis_report['controls']['cases_verified'] == 3
+        assert analysis_report['controls']['paired_noise_indices_exact']
+        assert analysis_report['controls']['input_digests_exact']
+        assert analysis_report['primary']['N0']['queries'] == 8
+        assert analysis_report['primary']['N0']['within_pairs'] == 4
+        assert analysis_report['chance_accuracy'] == 0.25
+        assert analysis_report['pair_rows'] == len(
+            read_table(path=paths.home / analysis / 'pairs.parquet')
+        )
+        assert analysis_report['query_rows'] == len(
+            read_table(path=paths.home / analysis / 'queries.parquet')
+        )
+        assert analysis_report['cross_seed_rows'] == len(
+            read_table(path=paths.home / analysis / 'cross-seed.parquet')
+        )
         unknown = runner.invoke(
             app,
             [
