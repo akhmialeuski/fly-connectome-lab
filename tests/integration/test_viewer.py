@@ -559,7 +559,18 @@ class TestViewerBrowser:
                             parameters: {hypothesis: 'Recorded idea'},
                             result_summary: 'Recorded outcome'},
                         {kind: 'new_kind', status: 'failed',
-                            result_summary: 'Must not hide failure'}
+                            result_summary: 'Must not hide failure'},
+                        {kind: 'identity_probe', status: 'completed', classes: 20,
+                            parameters: {representation: 'neural', history: 'last',
+                                features: 'voltage', pca_components: 60},
+                            scores: {validation: {accuracy: 0.1}}},
+                        {kind: 'readout_ablation_analysis', status: 'completed', report: {
+                            gate: 'do_not_advance', fits: {
+                                B0: {scores: {validation: {accuracy: 0.0333333333}}},
+                                B2: {scores: {validation: {accuracy: 0.1}}}
+                            }}},
+                        {kind: 'future_analysis', status: 'completed', gate: 'do_not_advance',
+                            case_count: 8}
                     ].map(interpretation);
                 }"""
             )
@@ -576,6 +587,13 @@ class TestViewerBrowser:
             assert 'No completed recognition result' in summaries[7]['result']
             assert summaries[8] == {'idea': 'Recorded idea', 'result': 'Recorded outcome'}
             assert 'Attempt failed' in summaries[9]['result']
+            assert 'voltage block' in summaries[10]['idea']
+            assert '60 components' in summaries[10]['idea']
+            assert '10.00%' in summaries[10]['result']
+            assert 'readout ablation' in summaries[11]['idea']
+            assert 'do not advance' in summaries[11]['result']
+            assert '10.00% (B2)' in summaries[11]['result']
+            assert '8 recorded cases' in summaries[12]['result']
             expect(
                 actual=page.get_by_role(role='link', name='attempt-a', exact=True)
             ).to_be_visible()
