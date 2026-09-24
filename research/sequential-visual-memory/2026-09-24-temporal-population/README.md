@@ -1,0 +1,21 @@
+# Temporal response and population access pilot
+
+This study follows [issue #54](https://github.com/akhmialeuski/fly-connectome-lab/issues/54). The committed `protocol.md`, `analysis-plan.md`, `cohort.json`, and `population-masks.json` define the inputs before the first real response run. It measures the unchanged fly simulation at selected times within a single image window. It does not train a classifier or claim sequential memory.
+
+Use the same `FLYSTATE_HOME` that contains the validated CelebA source, downloaded MaleCNS brain files, and existing preprocessing cache. The archived [source-acquisition instructions](../2026-09-20-celeba-poc1/README.md) specify how to obtain the external inputs; the user-supplied JPEGs and connectome files are never copied into Git. Run from the repository root after `uv sync --frozen`:
+
+```bash
+export FLYSTATE_HOME=/path/to/existing/flystate-home
+study=research/sequential-visual-memory/2026-09-24-temporal-population
+uv run flystate diagnose temporal configs/celeba-smoke.yaml \
+  --output runs/diagnostics/2026-09-24-temporal-population/C0 \
+  --case C0 \
+  --cohort "$study/cohort.json" \
+  --masks "$study/population-masks.json" \
+  --membership research/sequential-visual-memory/2026-09-23-noise-recognition/membership.json \
+  --json
+```
+
+Run C0-C6 in the frozen order, changing both `--case` and the final output directory component for each invocation. Every output directory must be new; a completed attempt cannot be overwritten. The command verifies the source configuration, exact training membership, original and aligned image hashes, graph file hashes, and selected neuron bodyIds before simulation. Failed attempts retain their manifest and checksum inventory. `--json` emits one result object on stdout and logs on stderr.
+
+Each completed case stores `responses.npz` (numeric arrays readable with `numpy.load(..., allow_pickle=False)`), `sample-windows.json` (sample IDs, labels, window indices), `report.json`, `manifest.json`, effective `config.json`, environment metadata, and `checksums.sha256` under `$FLYSTATE_HOME/runs/diagnostics/2026-09-24-temporal-population/<case>/`. The archive snapshot will be copied into this study only after all cases and analysis are complete. New attempts appear automatically in the viewer's Diagnostics menu when it is pointed at the same data home.
