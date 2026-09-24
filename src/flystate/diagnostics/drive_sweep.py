@@ -38,6 +38,12 @@ INPUT_REFERENCES: tuple[str, ...] = ('encoded_current', 'pixels')
 INPUT_REFERENCE: str = 'input_reference'
 COUNTS_PREFIX: str = 'counts_'
 VOLTAGE_PREFIX: str = 'final_voltage_'
+STATE_PREFIX: str = 'state_'
+ARRAY_PREFIXES: str = 'array_prefixes'
+WINDOW_REPRESENTATIONS: dict[str, tuple[str, str]] = {
+    COUNTS_PREFIX: (ALL_WINDOWS, LAST_WINDOW),
+    STATE_PREFIX: ('all_windows_state', 'last_window_state'),
+}
 RESPONSES_FILE: str = 'responses.npz'
 REPORT_FILE: str = 'report.json'
 ISSUE: int = 64
@@ -434,12 +440,18 @@ def decode_drive(
                     if keep
                 ] != ids:
                     raise ValueError(f'Recording sample order differs: {recording}.')
+                # T32 spiking recordings predate the declared prefixes: counts plus final voltage.
+                prefixes = report.get(
+                    ARRAY_PREFIXES, {'window': COUNTS_PREFIX, 'final': VOLTAGE_PREFIX}
+                )
+                all_windows, last_window = WINDOW_REPRESENTATIONS[prefixes['window']]
                 for name in report[POPULATION_SIZES]:
-                    counts = data[f'{COUNTS_PREFIX}{name}'][fit].astype(np.float32)
-                    cases.append((condition, name, ALL_WINDOWS, counts.reshape(len(ids), -1)))
-                    cases.append((condition, name, LAST_WINDOW, counts[:, -1]))
-                    voltage = data[f'{VOLTAGE_PREFIX}{name}'][fit].astype(np.float32)
-                    cases.append((condition, name, FINAL_VOLTAGE, voltage))
+                    window = data[f'{prefixes["window"]}{name}'][fit].astype(np.float32)
+                    cases.append((condition, name, all_windows, window.reshape(len(ids), -1)))
+                    cases.append((condition, name, last_window, window[:, -1]))
+                    if 'final' in prefixes:
+                        voltage = data[f'{prefixes["final"]}{name}'][fit].astype(np.float32)
+                        cases.append((condition, name, FINAL_VOLTAGE, voltage))
         metrics: list[dict[str, Any]] = []
         oof_rows: list[dict[str, Any]] = []
         for condition, population, representation, x in cases:
