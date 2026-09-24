@@ -263,6 +263,18 @@ def test_decode_scores_informative_population_above_flat_one(
     assert scores[(INFORMATIVE, ALL_WINDOWS)] == IDENTITIES * FIT_PER_IDENTITY
     assert scores[(FLAT, ALL_WINDOWS)] <= IDENTITIES
     assert not report['validation_test_reserve_scored'] and not report['prior_queries_scored']
+    filtered = drive_sweep.decode_drive(
+        cfg=tiny_experiment,
+        paths=paths,
+        output=Path('runs/offline/decode-filtered'),
+        recordings=[recording],
+        cohort_path=cohort,
+        parent_schedule_path=parent,
+        membership_path=membership,
+        selection_schedule_path=selection,
+        representations=[ALL_WINDOWS],
+    )
+    assert filtered['cases'] == 4 + 2
 
 
 def test_drive_cli_help_and_json(

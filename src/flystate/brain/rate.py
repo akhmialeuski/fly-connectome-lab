@@ -51,21 +51,33 @@ def _propagate(
 class RateReservoir:
     """Batched leaky-tanh dynamics on the unchanged effective flybrain weight matrix."""
 
-    def __init__(self, brain_dir: Path, gain: float, leak: float, batch_size: int) -> None:
+    def __init__(
+        self,
+        brain_dir: Path,
+        gain: float,
+        leak: float,
+        batch_size: int,
+        leak_overrides: dict[float, NDArray[np.int64]] | None = None,
+    ) -> None:
         """Load the effective graph exactly as flybrain builds it for ``sensory_input=False``.
 
         :param brain_dir: Directory with flybrain ``brain.npz`` and ``weights.npz``.
         :type brain_dir: Path
         :param gain: Positive multiplier of the row-normalized weights, dimensionless.
         :type gain: float
-        :param leak: Update fraction in (0, 1]; 1 replaces the state every step.
+        :param leak: Update fraction in (0, 1] for every neuron; 1 replaces the state each step.
         :type leak: float
         :param batch_size: Positive number of independent episodes advanced together.
         :type batch_size: int
+        :param leak_overrides: Optional leak values for listed neuron indices, each shape (K,).
+        :type leak_overrides: Optional[dict[float, NDArray[np.int64]]]
         :raises ValueError: If a parameter is outside its valid range.
         """
-        if not (gain > 0 and 0 < leak <= 1 and batch_size >= 1):
-            raise ValueError('Gain must be positive, leak in (0, 1], and batch_size positive.')
+        overrides = leak_overrides or {}
+        if not (
+            gain > 0 and batch_size >= 1 and all(0 < value <= 1 for value in (leak, *overrides))
+        ):
+            raise ValueError('Gain must be positive, leaks in (0, 1], and batch_size positive.')
         spiking = FlyBrain(data=brain_dir, seed=0, device='cpu', batch=1, sensory_input=False)
         matrix = sparse.csc_matrix(
             (spiking.weights, spiking.indices, spiking.indptr), shape=(spiking.n, spiking.n)
@@ -74,7 +86,11 @@ class RateReservoir:
         self.n: int = spiking.n
         self.edges: int = int(matrix.nnz)
         self.gain: np.float32 = np.float32(gain)
-        self.leak: np.float32 = np.float32(leak)
+        self.leak: NDArray[np.float32] = np.full(
+            shape=(spiking.n, 1), fill_value=leak, dtype=np.float32
+        )
+        for value, indices in overrides.items():
+            self.leak[indices] = value
         self._indptr: NDArray[np.int64] = matrix.indptr.astype(np.int64)
         self._indices: NDArray[np.int32] = matrix.indices.astype(np.int32)
         self._weights: NDArray[np.float32] = matrix.data.astype(np.float32)
@@ -102,4 +118,5 @@ class RateReservoir:
             self._drive[input_idx] += inputs
         np.tanh(self._drive, out=self._drive)
         self.state *= np.float32(1) - self.leak
-        self.state += self.leak * self._drive
+        self._drive *= self.leak
+        self.state += self._drive
