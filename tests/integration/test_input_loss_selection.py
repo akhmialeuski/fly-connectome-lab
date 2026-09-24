@@ -46,7 +46,7 @@ def test_all_candidates_have_exact_fit_only_oof_rows() -> None:
     labels = np.repeat(np.arange(20, dtype=np.int64), 10)
     ids = [f'fit-{index:03d}' for index in range(200)]
     x = np.eye(20, dtype=np.float32)[labels]
-    folds = []
+    folds: list[dict[str, Any]] = []
     splitter = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
     for index, (training, held_out) in enumerate(splitter.split(X=x, y=labels)):
         folds.append(
