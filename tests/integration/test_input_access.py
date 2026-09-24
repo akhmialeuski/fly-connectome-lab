@@ -1,6 +1,7 @@
 """Offline T29 fit/query isolation, evidence persistence, and CLI contracts."""
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -197,7 +198,8 @@ def test_input_access_cli_json_and_help(
     runner = CliRunner()
     help_result = runner.invoke(app=app, args=['diagnose', 'input-access', '--help'])
     assert help_result.exit_code == 0
-    assert '--cohort' in help_result.stdout and '--json' in help_result.stdout
+    visible_help = re.sub(pattern=r'\x1b\[[0-9;]*m', repl='', string=help_result.stdout)
+    assert '--cohort' in visible_help and '--json' in visible_help
 
     def fake_run(**kwargs: Any) -> dict[str, Any]:
         """Return a small successful command result without external data.
