@@ -15,6 +15,7 @@ from flystate.experiments.config import ExperimentConfig, config_hash, effective
 from flystate.hashing import sha256_file, sha256_obj, stable_int
 from flystate.settings import Paths, get_paths
 from flystate.storage.json import write_json
+from flystate.storage.parquet import read_table
 
 
 def frozen_fixture_documents(
@@ -150,7 +151,7 @@ class TestTemporalPilot:
         runner = CliRunner()
         responses = {}
         checkpoints = {}
-        for case in ('C0', 'C1', 'C5', 'C6', 'C0R', 'C6R'):
+        for case in ('C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C0R', 'C6R'):
             output = Path(f'runs/diagnostics/temporal-fixture/{case}')
             result = runner.invoke(
                 app,
@@ -198,6 +199,30 @@ class TestTemporalPilot:
                 np.testing.assert_array_equal(actual=values, desired=expected)
         assert {11, 12, 15}.issubset(checkpoints['C0R'])
         assert {11, 12, 15}.issubset(checkpoints['C6R'])
+        source = Path('runs/diagnostics/temporal-fixture')
+        analysis = Path('runs/diagnostics/temporal-fixture-analysis')
+        result = runner.invoke(
+            app,
+            [
+                'diagnose',
+                'temporal-analyze',
+                str(config_path),
+                '--source',
+                str(source),
+                '--output',
+                str(analysis),
+                '--json',
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        report = json.loads(s=result.stdout)
+        assert report['status'] == 'completed'
+        assert report['controls']['cases_verified'] == 9
+        assert report['controls']['corrected_blank_overlap_exact']
+        assert report['controls']['paired_noise_exact']
+        assert report['controls']['noise_off_zero']
+        assert report['rows'] == len(read_table(path=paths.home / analysis / 'per-unit.parquet'))
+        assert report['decision'] in {'expand_training_only', 'inspect_encoder_and_recorder'}
 
     def test_cli_rejects_unknown_case(self) -> None:
         """Reject an unregistered intervention with CLI configuration exit code two."""
@@ -206,6 +231,10 @@ class TestTemporalPilot:
         assert help_result.exit_code == 0
         assert 'Record one frozen stimulus' in help_result.stdout
         assert '--json' in help_result.stdout
+        analysis_help = runner.invoke(app, ['diagnose', 'temporal-analyze', '--help'])
+        assert analysis_help.exit_code == 0
+        assert '--source' in analysis_help.stdout
+        assert '--json' in analysis_help.stdout
         result = runner.invoke(
             app,
             [
