@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+from click import unstyle
 from typer.testing import CliRunner
 
 from flystate.cli.main import app
@@ -230,11 +231,11 @@ class TestTemporalPilot:
         help_result = runner.invoke(app, ['diagnose', 'temporal', '--help'])
         assert help_result.exit_code == 0
         assert 'Record one frozen stimulus' in help_result.stdout
-        assert '--json' in help_result.stdout
+        assert '--json' in unstyle(help_result.stdout)
         analysis_help = runner.invoke(app, ['diagnose', 'temporal-analyze', '--help'])
         assert analysis_help.exit_code == 0
-        assert '--source' in analysis_help.stdout
-        assert '--json' in analysis_help.stdout
+        assert '--source' in unstyle(analysis_help.stdout)
+        assert '--json' in unstyle(analysis_help.stdout)
         result = runner.invoke(
             app,
             [
