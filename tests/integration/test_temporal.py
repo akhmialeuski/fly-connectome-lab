@@ -121,7 +121,7 @@ class TestTemporalPilot:
     def test_cli_records_parity_and_paired_blanks(
         self, tiny_experiment: ExperimentConfig, tmp_path: Path
     ) -> None:
-        """Exercise C0/C1/C5 through Typer and compare saved noise sequences.
+        """Replay corrected blanks and original stimuli through the public Typer CLI.
 
         :param tiny_experiment: Offline synthetic brain and CelebA-shaped dataset.
         :type tiny_experiment: ExperimentConfig
@@ -149,7 +149,8 @@ class TestTemporalPilot:
         )
         runner = CliRunner()
         responses = {}
-        for case in ('C0', 'C1', 'C5'):
+        checkpoints = {}
+        for case in ('C0', 'C1', 'C5', 'C6', 'C0R', 'C6R'):
             output = Path(f'runs/diagnostics/temporal-fixture/{case}')
             result = runner.invoke(
                 app,
@@ -174,6 +175,7 @@ class TestTemporalPilot:
             descriptor = json.loads(s=result.stdout)
             assert descriptor['status'] == 'completed'
             assert descriptor['sample_windows'] == 2
+            checkpoints[case] = descriptor['checkpoints']
             response_file = paths.home / output / 'responses.npz'
             with np.load(file=response_file, allow_pickle=False) as source:
                 responses[case] = {name: source[name].copy() for name in source.files}
@@ -185,6 +187,17 @@ class TestTemporalPilot:
         assert not np.any(responses['C5']['noise_kicks'])
         assert responses['C1']['voltage_descending_neuron'].shape == (2, 9, 100)
         assert responses['C1']['spikes_descending_neuron'].dtype == np.int32
+        for original, corrected in (('C0', 'C0R'), ('C6', 'C6R')):
+            positions = [checkpoints[corrected].index(step) for step in checkpoints[original]]
+            for name, values in responses[original].items():
+                expected = (
+                    responses[corrected][name][:, positions]
+                    if name.startswith(('voltage_', 'spikes_')) or name == 'readout_trace'
+                    else responses[corrected][name]
+                )
+                np.testing.assert_array_equal(actual=values, desired=expected)
+        assert {11, 12, 15}.issubset(checkpoints['C0R'])
+        assert {11, 12, 15}.issubset(checkpoints['C6R'])
 
     def test_cli_rejects_unknown_case(self) -> None:
         """Reject an unregistered intervention with CLI configuration exit code two."""

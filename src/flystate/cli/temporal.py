@@ -21,13 +21,13 @@ def temporal_command(
     membership: Annotated[Path, typer.Option('--membership')],
     as_json: Annotated[bool, typer.Option('--json')] = False,
 ) -> None:
-    """Record one preregistered C0-C6 stimulus/blank condition without overwriting evidence.
+    """Record a frozen stimulus or corrected blank condition without overwriting evidence.
 
     :param config: Original effective 20-identity experiment YAML.
     :type config: Path
     :param output: Fresh attempt directory inside FLYSTATE_HOME.
     :type output: Path
-    :param case: Frozen stimulus/blank condition name, C0-C6.
+    :param case: Frozen stimulus/blank condition name or corrected C0R/C6R control.
     :type case: str
     :param cohort: Frozen training-only cohort JSON document.
     :type cohort: Path
@@ -41,7 +41,7 @@ def temporal_command(
     """
     try:
         if case not in CASES:
-            raise ConfigError('Choose a frozen temporal case from C0 through C6.')
+            raise ConfigError('Choose a frozen temporal case from C0-C6, C0R, or C6R.')
         cfg = load_config(path=config)
         result = run_temporal_case(
             cfg=cfg,
