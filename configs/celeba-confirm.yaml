@@ -1,0 +1,73 @@
+name: celeba-confirm
+seed: 0
+dataset:
+  name: celeba
+  subset:
+    n_identities: 20
+    images_per_identity: 20
+    calibration_identities: 0
+    selection_seed: 2
+  split:
+    kind: per_identity
+    fractions:
+    - 0.7
+    - 0.15
+    - 0.15
+  preprocess:
+    align: landmarks5
+    size: 128
+    eye_center:
+    - 64.0
+    - 52.0
+    interocular: 40.0
+    color: rgb
+episodes:
+  task: classification
+  window: 32
+  steps: 16
+  trajectory:
+    strategy: raster
+    max_overlap: 0.25
+    seed: 0
+encoder:
+  kind: sparse_projection
+  target_population: visual_projection
+  neurons_per_channel: 1280
+  nonzeros_per_row: 8
+  position:
+    enabled: true
+    neurons_per_axis: 16
+  amplitude: 0.05
+  seed: 0
+brain:
+  backend: flybrain
+  dt_s: 0.02
+  sensory_input: false
+  warmup_steps: 25
+  steps_per_observation: 10
+  noise:
+    enabled: true
+    rate_hz: 1.2
+    amplitude: 0.22
+  threads: 4
+  batch_size: 1
+memory:
+  mode: persistent
+readout:
+  population: descending_neuron
+  features:
+  - spike_trace
+  - voltage
+  trace_tau_s: 0.1
+  pca_components: 60
+  c_grid:
+  - 0.01
+  - 0.1
+  - 1.0
+  - 10.0
+  cv_folds: 5
+evaluation:
+  bootstrap_samples: 10000
+  bootstrap_seed: 0
+design_check:
+  min_memory_gap_pp: 10.0
