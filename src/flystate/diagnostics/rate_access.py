@@ -228,7 +228,7 @@ def analyze_memory(
     cfg: ExperimentConfig,
     paths: Paths,
     output: Path,
-    decode: Path,
+    decodes: list[Path],
     settings: list[str],
     populations: list[str],
     representation: str,
@@ -246,8 +246,8 @@ def analyze_memory(
     :type paths: Paths
     :param output: New immutable attempt directory.
     :type output: Path
-    :param decode: Completed ``drive-decode`` attempt containing every named condition.
-    :type decode: Path
+    :param decodes: Completed ``drive-decode`` attempts that together contain every condition.
+    :type decodes: list[Path]
     :param settings: Dynamics setting names, each with a persistent and a reset condition.
     :type settings: list[str]
     :param populations: Populations to test, for example the central brain and descending neurons.
@@ -262,7 +262,7 @@ def analyze_memory(
     parameters = {
         'kind': 'rate_access_memory',
         'issue': 65,
-        'decode': str(decode),
+        'decodes': [str(path) for path in decodes],
         'settings': settings,
         'populations': populations,
         'representation': representation,
@@ -270,18 +270,21 @@ def analyze_memory(
         'bootstrap_seed_namespace': MEMORY_BOOTSTRAP_NAMESPACE,
     }
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
-        manifest = verify_attempt_inventory(directory=decode, paths=paths)
-        source = output_path(path=decode, paths=paths)
-        if manifest['status'] != 'completed':
-            raise ValueError('The decode attempt is not completed.')
-        metrics = {
-            (row['condition'], row['population'], row['representation']): row
-            for row in _read_json(path=source / REPORT_FILE)['metrics']
-        }
-        oof = read_table(path=source / 'oof-predictions.parquet')
+        metrics: dict[tuple[str, str, str], dict[str, Any]] = {}
         rows_by_label: dict[str, list[dict[str, Any]]] = {}
-        for row in oof:
-            rows_by_label.setdefault(row['representation'], []).append(row)
+        for decode in decodes:
+            manifest = verify_attempt_inventory(directory=decode, paths=paths)
+            source = output_path(path=decode, paths=paths)
+            if manifest['status'] != 'completed':
+                raise ValueError(f'The decode attempt is not completed: {decode}.')
+            for row in _read_json(path=source / REPORT_FILE)['metrics']:
+                key = (row['condition'], row['population'], row['representation'])
+                if key[0] != 'input_reference' and key in metrics:
+                    raise ValueError(f'Condition decoded twice: {key}.')
+                metrics[key] = row
+            for row in read_table(path=source / 'oof-predictions.parquet'):
+                if not row['representation'].startswith('input_reference/'):
+                    rows_by_label.setdefault(row['representation'], []).append(row)
         generator = np.random.default_rng(
             seed=np.random.SeedSequence(
                 entropy=[cfg.seed, stable_int(key=MEMORY_BOOTSTRAP_NAMESPACE)]

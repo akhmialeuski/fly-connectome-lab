@@ -91,7 +91,7 @@ def rate_record_command(
 
 def rate_memory_command(
     config: Path,
-    decode: Annotated[Path, typer.Argument(help='Completed drive-decode attempt.')],
+    decodes: Annotated[list[Path], typer.Argument(help='Completed drive-decode attempts.')],
     output: Annotated[Path, typer.Option(OUTPUT_OPTION, help=OUTPUT_HELP)],
     settings: Annotated[
         list[str], typer.Option('--setting', help='Setting with -persistent and -reset runs.')
@@ -109,8 +109,8 @@ def rate_memory_command(
 
     :param config: Original persistent experiment YAML.
     :type config: Path
-    :param decode: Completed decode attempt with every persistent and reset condition.
-    :type decode: Path
+    :param decodes: Completed decode attempts with every persistent and reset condition.
+    :type decodes: list[Path]
     :param output: Fresh attempt directory within FLYSTATE_HOME.
     :type output: Path
     :param settings: Dynamics setting names.
@@ -130,7 +130,7 @@ def rate_memory_command(
             cfg=load_config(path=config),
             paths=get_paths(),
             output=output,
-            decode=decode,
+            decodes=decodes,
             settings=settings,
             populations=populations,
             representation=representation,
