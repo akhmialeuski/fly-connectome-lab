@@ -45,6 +45,41 @@ def _read_json(path: Path) -> dict[str, Any]:
     return value
 
 
+def _verify_readout_schedule(
+    cfg: ExperimentConfig, cohort: dict[str, Any], schedule: dict[str, Any]
+) -> None:
+    """Require the committed CV/readout/gate values despite JSON tuple conversion.
+
+    :param cfg: Effective original experiment configuration.
+    :type cfg: ExperimentConfig
+    :param cohort: Frozen fit/query role counts.
+    :type cohort: dict[str, Any]
+    :param schedule: Frozen CV/readout and advancement settings.
+    :type schedule: dict[str, Any]
+    :raises ValueError: If any scientific fit or gate setting differs.
+    """
+    readout = schedule['readout']
+    if (
+        readout['preprocessing'] != ['StandardScaler', 'PCA']
+        or readout['pca_components'] != cfg.readout.pca_components
+        or readout['c_grid'] != list(cfg.readout.c_grid)
+        or readout['cv_folds'] != cfg.readout.cv_folds
+        or readout['seed'] != cfg.seed
+        or readout['logistic_tolerance'] != 1e-6
+        or readout['max_iterations'] != 50000
+        or readout['blas_threads'] != 1
+        or cohort['fit_per_identity'] != 10
+        or cohort['query_per_identity'] != 4
+        or schedule['gate']
+        != {
+            'min_correct_of_80_each': 20,
+            'max_log_loss_exclusive': 'ln(20)',
+            'chance_accuracy': 0.05,
+        }
+    ):
+        raise ValueError('Input-access readout or gate changed from the frozen protocol.')
+
+
 def _verify_protocol(
     cfg: ExperimentConfig,
     paths: Paths,
@@ -91,26 +126,7 @@ def _verify_protocol(
         or schedule['pixel_scale_divisor'] != 255
     ):
         raise ValueError('Input-access source or protocol identity differs.')
-    readout = schedule['readout']
-    if (
-        readout['preprocessing'] != ['StandardScaler', 'PCA']
-        or readout['pca_components'] != cfg.readout.pca_components
-        or readout['c_grid'] != cfg.readout.c_grid
-        or readout['cv_folds'] != cfg.readout.cv_folds
-        or readout['seed'] != cfg.seed
-        or readout['logistic_tolerance'] != 1e-6
-        or readout['max_iterations'] != 50000
-        or readout['blas_threads'] != 1
-        or cohort['fit_per_identity'] != 10
-        or cohort['query_per_identity'] != 4
-        or schedule['gate']
-        != {
-            'min_correct_of_80_each': 20,
-            'max_log_loss_exclusive': 'ln(20)',
-            'chance_accuracy': 0.05,
-        }
-    ):
-        raise ValueError('Input-access readout or gate changed from the frozen protocol.')
+    _verify_readout_schedule(cfg=cfg, cohort=cohort, schedule=schedule)
     rows_by_id = {
         sample.sample_id: (index, sample) for index, sample in enumerate(prepared.samples)
     }
