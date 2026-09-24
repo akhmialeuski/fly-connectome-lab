@@ -1,0 +1,75 @@
+"""Offline end-to-end T35 confirmation on a synthetic brain and synthetic faces."""
+
+import json
+from pathlib import Path
+
+import numpy as np
+
+from flystate.diagnostics import confirmation
+from flystate.experiments.config import ExperimentConfig
+from flystate.settings import get_paths
+
+PERSISTENT: str = 'persistent'
+RESET: str = 'reset'
+POPULATION: str = 'central_brain'
+
+
+def test_confirmation_scores_every_held_out_photograph(tiny_experiment: ExperimentConfig) -> None:
+    """Record persistent and reset states, then score only held-out photographs, paired.
+
+    :param tiny_experiment: Offline synthetic experiment with installed brain files.
+    :type tiny_experiment: ExperimentConfig
+    """
+    paths = get_paths()
+    recordings = {}
+    for name, reset in ((PERSISTENT, False), (RESET, True)):
+        summary = confirmation.record_confirmation(
+            cfg=tiny_experiment,
+            paths=paths,
+            output=Path(f'runs/offline/{name}'),
+            gain=1.0,
+            leak=0.25,
+            driven_leak=1.0,
+            input_scale=20.0,
+            steps_per_window=2,
+            reset_each_window=reset,
+            shuffle_seed=None,
+        )
+        assert summary['parameters']['graph'] == 'fly'
+        recordings[name] = Path(f'runs/offline/{name}')
+    shuffled = confirmation.record_confirmation(
+        cfg=tiny_experiment,
+        paths=paths,
+        output=Path('runs/offline/shuffled'),
+        gain=1.0,
+        leak=0.25,
+        driven_leak=None,
+        input_scale=20.0,
+        steps_per_window=2,
+        reset_each_window=False,
+        shuffle_seed=0,
+    )
+    assert shuffled['parameters']['graph'] == 'degree_preserving_shuffle'
+    result = confirmation.evaluate_confirmation(
+        cfg=tiny_experiment,
+        paths=paths,
+        output=Path('runs/offline/evaluate'),
+        recordings=recordings,
+        populations=[POPULATION],
+        comparisons=[(f'{PERSISTENT}/{POPULATION}', f'{RESET}/{POPULATION}')],
+    )
+    report = json.loads(s=(paths.home / 'runs/offline/evaluate/report.json').read_text())
+    held_out = report['held_out_photographs']
+    assert report['train_photographs'] + held_out == 40
+    assert set(result['scores']) == {
+        'input/encoded_current_all',
+        'input/encoded_current_last',
+        'input/pixels_all',
+        f'{PERSISTENT}/{POPULATION}',
+        f'{RESET}/{POPULATION}',
+    }
+    comparison = report['comparisons'][0]
+    persistent = report['scores'][f'{PERSISTENT}/{POPULATION}']['held_out_correct']
+    reset = report['scores'][f'{RESET}/{POPULATION}']['held_out_correct']
+    assert np.isclose(comparison['a_minus_b_pp'], 100 * (persistent - reset) / held_out)
+    assert report['scores'][f'{RESET}/{POPULATION}']['chance'] == 0.25
