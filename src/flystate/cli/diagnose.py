@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
+from flystate.cli.identity import identity_command
 from flystate.cli.noise import noise_trace_command
 from flystate.cli.noise_analysis import noise_analysis_command
 from flystate.cli.stability import stability_command
@@ -26,6 +27,10 @@ app = typer.Typer(
 app.command(name='stability')(stability_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
+app.command(
+    name='identity',
+    help='Record one frozen training-only identity response condition.',
+)(identity_command)
 app.command(
     name='temporal',
     help='Record one frozen stimulus, blank, or noise-control response in a fresh attempt.',
