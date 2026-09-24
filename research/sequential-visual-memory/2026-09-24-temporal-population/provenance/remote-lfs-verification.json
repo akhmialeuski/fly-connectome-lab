@@ -1,0 +1,20 @@
+{
+  "analysis_rows_verified": 4512,
+  "branch": "work/temporal-population",
+  "bytes_verified": 42327958,
+  "commit": "36bb51a425546cdb35a0f1b33336e6fedf10fa3a",
+  "controls_verified": {
+    "cases_verified": 9,
+    "corrected_blank_overlap_exact": true,
+    "noise_off_zero": true,
+    "paired_noise_exact": true,
+    "sample_windows": 24,
+    "source_config_sha256": "9406ee5b0f5b2ba794b71bad4def5d906248af35165f49a8fceb7f0c96fe82b3"
+  },
+  "decision_verified": "expand_training_only",
+  "files_verified": 69,
+  "inventory_sha256": "73e536ffd2db9bd390b0aa2b82c04db2b74af00892b56ac4107bba18b3be3330",
+  "lfs_npz_restored": 9,
+  "remote": "https://github.com/akhmialeuski/fly-connectome-lab.git",
+  "schema_version": 1
+}
