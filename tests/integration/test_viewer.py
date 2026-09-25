@@ -570,7 +570,20 @@ class TestViewerBrowser:
                                 B2: {scores: {validation: {accuracy: 0.1}}}
                             }}},
                         {kind: 'future_analysis', status: 'completed', gate: 'do_not_advance',
-                            case_count: 8}
+                            case_count: 8},
+                        {kind: 'wiring_record', status: 'completed', episodes: 400,
+                            parameters: {family: 'degree', seed: 0, gain: 0.97, alpha: 0.25,
+                                giant_component_radius: 0.2567, reset_each_window: false}},
+                        {kind: 'wiring_analyze', status: 'completed', decisions: [{
+                            name: 'W1-degree-central_brain', difference_pp: 1.25,
+                            interval_95_pp: [-1.5, 4.0],
+                            decision: 'no practically relevant difference'}]},
+                        {kind: 'wiring_select', status: 'completed',
+                            selection: {fly: 0.75, random_target: 1.0}},
+                        {kind: 'confirmation_evaluate', status: 'completed', scores: {
+                            'persistent/central_brain': {accuracy: 0.525, held_out: 120,
+                                chance: 0.05},
+                            'reset/central_brain': {accuracy: 0.1, held_out: 120}}}
                     ].map(interpretation);
                 }"""
             )
@@ -594,6 +607,17 @@ class TestViewerBrowser:
             assert 'do not advance' in summaries[11]['result']
             assert '10.00% (B2)' in summaries[11]['result']
             assert '8 recorded cases' in summaries[12]['result']
+            assert 'degree-preserving shuffle (seed 0)' in summaries[13]['idea']
+            assert 'spectral radius 0.2567' in summaries[13]['idea']
+            assert 'final states of 400 photographs' in summaries[13]['result']
+            assert (
+                'W1 degree central brain: no practically relevant difference '
+                '(+1.25 points, 95% interval [-1.5, 4])'
+            ) in summaries[14]['result']
+            assert 'fly \u03b1 0.75, random target \u03b1 1' in summaries[15]['result']
+            assert 'Best held-out accuracy: 52.50%' in summaries[16]['result']
+            assert '2 separately fitted readouts' in summaries[16]['result']
+            assert all('No specific hypothesis' not in row['idea'] for row in summaries[13:])
             expect(
                 actual=page.get_by_role(role='link', name='attempt-a', exact=True)
             ).to_be_visible()
