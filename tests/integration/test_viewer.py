@@ -702,6 +702,37 @@ class TestViewerBrowser:
             assert errors == []
             browser.close()
 
+    def test_color_scale_resists_outliers(self) -> None:
+        """Clip to percentiles, center signed data on zero, and place legend ticks correctly."""
+        client = TestClient(app=create_app(paths=get_paths()), base_url='http://127.0.0.1')
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            page = browser.new_page()
+            page.route(url='**/*', handler=partial(fulfill_local, client=client))
+            page.goto(url='http://127.0.0.1/')
+            result = page.evaluate(
+                expression="""async () => {
+                    const {colorScale} = await import('/charts.js');
+                    const signed = [...Array(1000).keys()].map((i) => (i - 500) / 500);
+                    signed.push(1000);
+                    const positive = [...Array(1000).keys()].map((i) => i / 1000);
+                    const s = colorScale(signed), p = colorScale(positive);
+                    return {
+                        diverging: s.diverging, high: s.high, low: s.low,
+                        quarter: s.ticks.find((t) => t.position === 0.75).value,
+                        zero: s.color(0), top: s.color(1000), bound: s.color(s.high),
+                        sequential: p.diverging, pTicks: p.ticks.map((t) => t.position),
+                    };
+                }"""
+            )
+            assert result['diverging'] and not result['sequential']
+            assert result['high'] == pytest.approx(0.98) and result['low'] == -result['high']
+            assert result['quarter'] == pytest.approx(result['high'] / 4)
+            assert result['top'] == result['bound']
+            assert result['zero'] == 'rgb(247,247,247)'
+            assert result['pTicks'] == [0, 0.25, 0.5, 0.75, 1]
+            browser.close()
+
 
 def fulfill_local(route: Route, client: TestClient) -> None:
     """Serve browser requests directly through the API without external network access.
