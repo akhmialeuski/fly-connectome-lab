@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from flystate.diagnostics import confirmation
 from flystate.diagnostics.artifacts import verify_attempt_inventory
@@ -89,3 +90,25 @@ def test_confirmation_scores_every_held_out_photograph(tiny_experiment: Experime
             assert {'scaler_mean', 'scaler_scale', 'coef', 'intercept', 'classes'} <= set(
                 arrays.files
             )
+
+
+def test_confirmation_rejects_recording_names_that_escape_model_directory(
+    tiny_experiment: ExperimentConfig,
+) -> None:
+    """Reject an unsafe recording name before creating an evaluation attempt.
+
+    :param tiny_experiment: Offline synthetic experiment configuration.
+    :type tiny_experiment: ExperimentConfig
+    """
+    paths = get_paths()
+    output = Path('runs/offline/unsafe-evaluate')
+    with pytest.raises(expected_exception=ValueError, match='Recording names'):
+        confirmation.evaluate_confirmation(
+            cfg=tiny_experiment,
+            paths=paths,
+            output=output,
+            recordings={'../escape': Path('runs/offline/record')},
+            populations=[POPULATION],
+            comparisons=[],
+        )
+    assert not (paths.home / output).exists()
