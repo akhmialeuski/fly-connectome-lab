@@ -666,7 +666,7 @@ class TestViewerBrowser:
             'blank': ('2026-09-25T02:00:00+00:00', None),
         }
         for name, (created, scale) in attempts.items():
-            parameters: dict[str, Any] = {'kind': 'drive_sweep_record'}
+            parameters: dict[str, Any] = {'kind': 'future_kind'}
             if scale is not None:
                 parameters['amplitude_scale'] = scale
             write_json(
@@ -699,6 +699,71 @@ class TestViewerBrowser:
                 value='parameters.amplitude_scale'
             )
             assert page.evaluate(expression=order) == ['s16', 's2', 'blank']
+            assert errors == []
+            browser.close()
+
+    def test_memory_studies_join_experiments(self) -> None:
+        """List memory-study attempts under Experiments with their ideas and held-out results."""
+        paths = get_paths()
+        attempts = {
+            'memory/record': {
+                'kind': 'rate_access_record',
+                'gain': 1.0,
+                'leak': 0.02,
+                'driven_leak': 1.0,
+                'reset_each_window': False,
+            },
+            'memory/evaluate': {'kind': 'confirmation_evaluate'},
+            'probes/probe': {'kind': 'identity_probe', 'representation': 'pixels'},
+        }
+        for relative, parameters in attempts.items():
+            write_json(
+                path=paths.runs / relative / 'manifest.json',
+                value={'status': 'completed', 'parameters': parameters},
+            )
+        write_json(
+            path=paths.runs / 'memory/evaluate/report.json',
+            value={
+                'scores': {
+                    'persistent/central_brain': {
+                        'held_out_correct': 63,
+                        'held_out': 120,
+                        'accuracy': 0.525,
+                        'chance': 0.05,
+                    },
+                    'reset/central_brain': {
+                        'held_out_correct': 12,
+                        'held_out': 120,
+                        'accuracy': 0.1,
+                        'chance': 0.05,
+                    },
+                }
+            },
+        )
+        client = TestClient(app=create_app(paths=paths), base_url='http://127.0.0.1')
+        names = "[...document.querySelectorAll('.run-link')].map((link) => link.textContent)"
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            page = browser.new_page(viewport={'width': 1280, 'height': 900})
+            errors: list[str] = []
+            page.on(event='pageerror', f=lambda error: errors.append(str(error)))
+            page.route(url='**/*', handler=partial(fulfill_local, client=client))
+            page.goto(url='http://127.0.0.1/#runs')
+            expect(actual=page.get_by_role(role='link', name='record', exact=True)).to_be_visible()
+            assert sorted(page.evaluate(expression=names)) == ['evaluate', 'record']
+            expect(actual=page.locator('#content')).to_contain_text(
+                expected='gain 1, leak 0.02, input-neuron leak 1'
+            )
+            expect(actual=page.locator('#content')).to_contain_text(
+                expected='central brain with memory 63/120 (52.50%)'
+            )
+            page.get_by_role(role='link', name='03 Diagnostics').click()
+            expect(actual=page.get_by_role(role='link', name='probe', exact=True)).to_be_visible()
+            assert page.evaluate(expression=names) == ['probe']
+            page.goto(url='http://127.0.0.1/#experiment/memory%2Frecord')
+            expect(actual=page.get_by_role(role='link', name='02 Experiments')).to_have_attribute(
+                name='aria-current', value='page'
+            )
             assert errors == []
             browser.close()
 

@@ -102,7 +102,7 @@ async function overview(signal) {
       [
         'Experiments',
         number(inventory.experiments.filter(isSequential).length),
-        'Sequential training runs',
+        'Sequential runs and memory studies',
       ],
       [
         'Completed',
@@ -260,7 +260,7 @@ function experiments(diagnostics = false) {
       diagnostics ? 'Diagnostic register' : 'Experiment register',
       diagnostics
         ? 'Probes, audits, and numerical checks. These are not sequential-memory training runs.'
-        : 'Sequential image-patch experiments. Open a run to inspect episodes and memory state.',
+        : 'Sequential image-patch experiments. Training runs open the episode inspector; memory studies open their recorded evidence.',
     ),
   );
   const search = el('input', {
@@ -887,13 +887,14 @@ async function navigate(refresh = false) {
   refreshView = null;
   const [page = 'overview', id] = (location.hash.slice(1) || 'overview').split('/');
   document.querySelector('#section-label').textContent = titles[page] || 'Overview';
-  document.querySelectorAll('nav a').forEach((a) => {
-    const active =
-      a.hash === `#${page === 'run' ? 'runs' : page === 'experiment' ? 'diagnostics' : page}`;
-    a.classList.toggle('active', active);
-    if (active) a.setAttribute('aria-current', 'page');
-    else a.removeAttribute('aria-current');
-  });
+  const highlight = (tab) =>
+    document.querySelectorAll('nav a').forEach((a) => {
+      const active = a.hash === `#${tab}`;
+      a.classList.toggle('active', active);
+      if (active) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  highlight(page === 'run' ? 'runs' : page === 'experiment' ? 'diagnostics' : page);
   content.replaceChildren(loading());
   try {
     if (!inventory || refresh) inventory = await api('catalog', signal);
@@ -902,6 +903,12 @@ async function navigate(refresh = false) {
     if (page === 'overview') await overview(signal);
     else if (page === 'runs' || page === 'diagnostics') experiments(page === 'diagnostics');
     else if (page === 'experiment' && id) {
+      // A detail page belongs to the register that lists its attempt.
+      const entry = inventory.experiments.find((row) => row.id === decodeURIComponent(id));
+      if (entry && isSequential(entry)) {
+        highlight('runs');
+        document.querySelector('#section-label').textContent = titles.runs;
+      }
       const view = await researchPage(decodeURIComponent(id), api, signal);
       if (current !== generation) return;
       content.append(view.page);

@@ -1,14 +1,43 @@
 import { card, el, pct } from './charts.js';
 
-// Classification follows the recorded run contract, never a study-name allowlist.
-export const isSequential = (entry) => entry.kind === 'training';
+// Classification follows the recorded attempt kind, never a study-name allowlist.
+export const isTrainingRun = (entry) => entry.kind === 'training';
+
+// Kinds written by the sequential-patch studies that compare memory policies (T32 to T35).
+// Each builds the idea text from the attempt's own recorded parameters.
+const SEQUENTIAL_IDEAS = {
+  drive_sweep_record: (p) =>
+    `Show 16 sequential patches to the spiking fly model at ${p.amplitude_scale ?? '?'}× encoder drive, ${p.noise_enabled === false ? 'without' : 'with'} background noise, and record every population's spikes.`,
+  drive_sweep_decode: () =>
+    'Decode identity from each recorded spiking population with the fit-only readout, against the encoded input reference.',
+  rate_access_record: (p) =>
+    `Run the fly wiring with graded units (gain ${p.gain ?? '?'}, leak ${p.leak ?? '?'}${p.driven_leak != null && p.driven_leak !== p.leak ? `, input-neuron leak ${p.driven_leak}` : ''}) and ${p.reset_each_window ? 'reset the state before every patch' : 'keep the state across patches'}.`,
+  rate_access_memory: () =>
+    'Test whether keeping the network state across patches identifies people better than resetting it, paired by photograph.',
+  rate_access_memory_curve: () =>
+    'Measure, without identity labels, how much of each earlier patch the final network state still holds.',
+  confirmation_record: (p) =>
+    `Record the frozen graded fly model on never-used identities (${p.graph === 'degree_preserving_shuffle' ? 'degree-preserving shuffled graph' : 'MaleCNS graph'}, ${p.reset_each_window ? 'state reset before every patch' : 'state kept across patches'}).`,
+  confirmation_evaluate: () =>
+    'Score every held-out photograph once and compare memory against the reset and shuffled-graph controls.',
+};
+export const isSequential = (entry) =>
+  isTrainingRun(entry) || Object.hasOwn(SEQUENTIAL_IDEAS, entry.kind);
+// Held-out cases summarized for a confirmation evaluation, in reading order.
+const CONFIRMATION_CASES = [
+  ['persistent/central_brain', 'central brain with memory'],
+  ['reset/central_brain', 'reset before every patch'],
+  ['shuffled/central_brain', 'shuffled graph with memory'],
+];
 
 export function interpretation(entry) {
   const p = entry.parameters || {};
   let idea;
   if (typeof p.hypothesis === 'string' && p.hypothesis.trim()) {
     idea = p.hypothesis;
-  } else if (isSequential(entry)) {
+  } else if (Object.hasOwn(SEQUENTIAL_IDEAS, entry.kind)) {
+    idea = SEQUENTIAL_IDEAS[entry.kind](p);
+  } else if (isTrainingRun(entry)) {
     const policy =
       {
         persistent: 'Keep neural state between successive image patches.',
@@ -61,6 +90,18 @@ export function interpretation(entry) {
     result = `Attempt failed. ${entry.error || 'Inspect the recorded error.'} No successful result is implied.`;
   else if (entry.status === 'completed' && typeof conclusion === 'string' && conclusion.trim())
     result = conclusion;
+  else if (entry.status === 'completed' && entry.kind === 'confirmation_evaluate') {
+    const cases = CONFIRMATION_CASES.filter(([key]) => entry.scores?.[key]?.held_out);
+    const chance = entry.scores?.[cases[0]?.[0]]?.chance;
+    result = cases.length
+      ? `Held-out photographs: ${cases
+          .map(([key, label]) => {
+            const score = entry.scores[key];
+            return `${label} ${score.held_out_correct}/${score.held_out} (${pct(score.accuracy)})`;
+          })
+          .join(', ')}.${Number.isFinite(chance) ? ` Chance ${pct(chance)}.` : ''}`
+      : 'Completed. Inspect the recorded held-out scores below.';
+  }
   else if (entry.status === 'completed' && typeof gate === 'string' && gate.trim()) {
     const count = entry.case_count ?? Object.keys(entry.report?.fits || {}).length;
     result = `Recorded decision: ${gate.replaceAll('_', ' ')}.`;
