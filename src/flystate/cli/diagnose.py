@@ -20,6 +20,7 @@ from flystate.cli.rate_access import (
     rate_memory_curve_command,
     rate_record_command,
 )
+from flystate.cli.scale import scale_analyze_command, scale_evaluate_command, scale_record_command
 from flystate.cli.stability import stability_command
 from flystate.cli.temporal import temporal_command
 from flystate.cli.temporal_analysis import temporal_analysis_command
@@ -98,6 +99,18 @@ app.command(
     name='wiring-analyze',
     help='Pool the T37 cohorts and decide each preregistered wiring contrast.',
 )(wiring_analyze_command)
+app.command(
+    name='scale-record',
+    help='Record T38 final graded states in photograph batches, optionally after blank windows.',
+)(scale_record_command)
+app.command(
+    name='scale-evaluate',
+    help='Score a T38 cohort: persistent states at every delay, reset, optional references.',
+)(scale_evaluate_command)
+app.command(
+    name='scale-analyze',
+    help='Apply the frozen T38 rules to the encoder seeds and the confirmation cohort.',
+)(scale_analyze_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
 app.command(
