@@ -47,3 +47,7 @@ The remaining population scores of the reset and shuffled recordings are in the 
 The confirmed model is the MaleCNS v1.0 effective graph from `flybrain` (166,700 neurons, 25,088,107 signed, row-normalized edges, sensory inputs masked) with **graded leaky-tanh units** (leak 0.02, gain 1.0, fast input neurons, no noise). No synapse, gain or time constant was trained. The only trained component is the linear readout of the final state. The original `flybrain` spiking regime fails this task (#62, #64). That failure comes from its operating point: subthreshold input, noise, reset to zero, a 100 ms membrane time constant against a 3.2 s sequence, and a saturated mushroom body. The wiring is not the cause.
 
 These are held-out results from a single, preregistered run. Archive and remote verification follow.
+
+### Coefficient preservation
+
+After the single confirmation, a separate replay from committed code `faa63fd` exported all 31 fitted linear classifiers without altering the original evaluation. The replay selected the same C and CV scores for every case; its 3,720 held-out predictions match the original Parquet file byte for byte. All 31 sets of scaler, PCA and logistic coefficients are archived under `snapshot/evaluate-model-export/models/` as numeric NPZ files through Git LFS (187,011,920 bytes in total). An independent NumPy inference replay from those arrays reproduced all 3,720 original predicted labels. This is an artifact-preservation correction, not another model-selection or confirmation result.
