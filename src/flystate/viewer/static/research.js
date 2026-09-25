@@ -11,16 +11,102 @@ const status = (value) =>
     },
     value || 'unknown',
   );
-export function experimentTable(entries) {
+// Register columns in display order, each with the value it sorts by.
+const COLUMNS = [
+  { key: 'name', label: 'Experiment / study', value: (row) => row.name },
+  { key: 'kind', label: 'Kind / representation', value: (row) => row.kind },
+  { key: 'classes', label: 'Classes', value: (row) => row.classes },
+  { key: 'validation', label: 'Validation', value: (row) => row.scores?.validation?.accuracy },
+  { key: 'status', label: 'Status', value: (row) => row.status },
+  { key: 'created', label: 'Created', value: (row) => row.created_utc },
+  { key: 'result', label: 'Idea and results', value: (row) => interpretation(row).result },
+];
+const RECORD_FIELDS = [
+  ['study', 'Study'],
+  ['mode', 'Memory mode'],
+  ['config_name', 'Configuration'],
+  ['id', 'Path'],
+];
+const MAX_FIELD_DEPTH = 3;
+// Newest attempts first unless the viewer chooses otherwise.
+export const DEFAULT_SORT = { key: 'created', descending: true };
+
+function scalarLeaves(value, prefix, depth, found) {
+  if (value == null || depth > MAX_FIELD_DEPTH) return;
+  if (['number', 'string', 'boolean'].includes(typeof value)) found.add(prefix);
+  else if (typeof value === 'object' && !Array.isArray(value))
+    for (const [key, child] of Object.entries(value))
+      scalarLeaves(child, `${prefix}.${key}`, depth + 1, found);
+}
+
+/**
+ * List every field the register can be sorted by: its columns, record fields, and each scalar
+ * parameter or score path that occurs in at least one entry.
+ * @param {object[]} entries Catalog rows.
+ * @returns {{key: string, label: string, value: function(object): *}[]} Sortable fields.
+ */
+export function sortFields(entries) {
+  const found = new Set();
+  for (const row of entries) {
+    scalarLeaves(row.parameters, 'parameters', 1, found);
+    scalarLeaves(row.scores, 'scores', 1, found);
+  }
+  const lookup = (path) => (row) =>
+    path.split('.').reduce((value, part) => (value == null ? undefined : value[part]), row);
+  return [
+    ...COLUMNS,
+    ...RECORD_FIELDS.map(([key, label]) => ({ key, label, value: (row) => row[key] })),
+    ...[...found].sort().map((path) => ({ key: path, label: path, value: lookup(path) })),
+  ];
+}
+
+/**
+ * Return the rows ordered by one field. Missing values always come last, numbers compare
+ * numerically, text compares naturally (s2 before s16), and ties keep a stable order by path.
+ * @param {object[]} entries Catalog rows.
+ * @param {{key: string, value: function(object): *}[]} fields Fields from sortFields.
+ * @param {{key: string, descending: boolean}} sort Selected field and direction.
+ * @returns {object[]} A sorted copy of the rows.
+ */
+export function sortEntries(entries, fields, sort) {
+  const field =
+    fields.find((item) => item.key === sort.key) ||
+    COLUMNS.find((item) => item.key === DEFAULT_SORT.key);
+  const direction = sort.descending ? -1 : 1;
+  const text = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+  return entries
+    .map((row) => ({ row, value: field.value(row) }))
+    .sort((a, b) => {
+      const aMissing = a.value == null || a.value === '';
+      const bMissing = b.value == null || b.value === '';
+      if (aMissing || bMissing) return aMissing - bMissing || text.compare(a.row.id, b.row.id);
+      const order =
+        typeof a.value === 'number' && typeof b.value === 'number'
+          ? a.value - b.value
+          : text.compare(String(a.value), String(b.value));
+      return direction * order || text.compare(a.row.id, b.row.id);
+    })
+    .map((item) => item.row);
+}
+
+export function experimentTable(entries, sort = null, onSort = null) {
+  const headers = COLUMNS.map((column) => {
+    if (!onSort) return column.label;
+    const active = sort?.key === column.key;
+    const arrow = active ? (sort.descending ? ' ↓' : ' ↑') : '';
+    return {
+      content: el(
+        'button',
+        { class: 'sort-header', type: 'button', onclick: () => onSort(column.key) },
+        `${column.label}${arrow}`,
+      ),
+      attrs: {
+        'aria-sort': active ? (sort.descending ? 'descending' : 'ascending') : 'none',
+      },
+    };
+  });
   return table(
-    [
-      'Experiment / study',
-      'Kind / representation',
-      'Classes',
-      'Validation',
-      'Status',
-      'Idea and results',
-    ],
+    headers,
     entries.map((row) => [
       el(
         'div',
@@ -65,6 +151,13 @@ export function experimentTable(entries) {
         status(row.status),
         row.warnings?.length ? el('small', {}, 'Some evidence is unreadable') : null,
       ),
+      row.created_utc
+        ? el(
+            'time',
+            { datetime: row.created_utc, class: 'mono' },
+            `${row.created_utc.slice(0, 16).replace('T', ' ')} UTC`,
+          )
+        : '—',
       el(
         'div',
         {},
