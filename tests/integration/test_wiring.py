@@ -134,6 +134,8 @@ def test_wiring_study_records_selects_and_analyzes(
     assert radii[FLY] == radii[RESET] != radii[DEGREE0]
     again = _record(config=config, name=FLY, graph=graphs[FLY])
     assert set(again[COHORTS_KEY].values()) == {'existing'}
+    assert again[GRAPH]['radius_source'] == 'cache'
+    assert again[GRAPH]['giant_component_radius'] == radii[FLY]
 
     evaluations = []
     for seed in COHORTS:

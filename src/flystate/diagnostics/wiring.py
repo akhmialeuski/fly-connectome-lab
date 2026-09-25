@@ -16,6 +16,7 @@ from typing import Any
 import numba
 import numpy as np
 from numpy.typing import NDArray
+from scipy import sparse
 
 from flystate.brain.benchmark import resolve_threads
 from flystate.brain.rate import (
@@ -60,6 +61,10 @@ NAME: str = 'name'
 PHOTOGRAPHS: str = 'photographs'
 PREDICTED: str = 'predicted'
 ISSUE: int = 74
+RADIUS_CACHE: str = 'spectral-radius'
+# Changes whenever giant_component_radius changes its solver settings.
+RADIUS_METHOD: str = 'arpack-k6-ones-v1'
+RADIUS_KEY: str = 'giant_component_radius'
 KEEP: tuple[str, ...] = ('central_brain', 'descending')
 SEEDED: tuple[str, ...] = (DEGREE, RANDOM_TARGET)
 BOOTSTRAP_SAMPLES: int = 10000
@@ -149,6 +154,31 @@ def _require_completed(directory: Path, paths: Paths) -> None:
         raise ValueError(f'The attempt is not completed; move it aside: {directory}.')
 
 
+def _radius(matrix: sparse.csr_matrix, digest: str, paths: Paths) -> tuple[float, str]:
+    """Return the giant-component spectral radius, computed once per exact graph.
+
+    The radius is a deterministic function of the stored CSR arrays, whose SHA-256 is ``digest``.
+    It is cached as JSON, which round-trips a float exactly, so every recording of the same graph
+    derives exactly the same gain without repeating the eigenvalue solve.
+
+    :param matrix: Simulated weights with postsynaptic rows, shape (N,N).
+    :type matrix: sparse.csr_matrix
+    :param digest: SHA-256 of the matrix's indptr, indices and data bytes.
+    :type digest: str
+    :param paths: Working data home whose cache directory stores the radius.
+    :type paths: Paths
+    :returns: Radius, dimensionless, and whether it was ``computed`` or read from ``cache``.
+    :rtype: tuple[float, str]
+    """
+    source = paths.cache / RADIUS_CACHE / f'{RADIUS_METHOD}-{digest}.json'
+    if source.exists():
+        return float(_read_json(path=source)[RADIUS_KEY]), 'cache'
+    radius = giant_component_radius(matrix=matrix)
+    source.parent.mkdir(parents=True, exist_ok=True)
+    write_json(path=source, value={RADIUS_KEY: radius, 'graph_sha256': digest})
+    return radius, 'computed'
+
+
 def _cohort_invariant(cfg: ExperimentConfig) -> dict[str, Any]:
     """Return the configuration without its name and identity-selection seed.
 
@@ -233,18 +263,19 @@ def record_wiring(
         batch_size=cohort_size(cfg=first),
     )
     matrix = reservoir.matrix()
-    radius = giant_component_radius(matrix=matrix)
-    effective_gain = alpha / radius if alpha is not None else gain
-    assert effective_gain is not None
-    reservoir.gain = np.float32(effective_gain)
     digest = hashlib.sha256()
     for array in (matrix.indptr, matrix.indices, matrix.data):
         digest.update(np.ascontiguousarray(array).tobytes())
+    radius, radius_source = _radius(matrix=matrix, digest=digest.hexdigest(), paths=paths)
+    effective_gain = alpha / radius if alpha is not None else gain
+    assert effective_gain is not None
+    reservoir.gain = np.float32(effective_gain)
     graph = {
         'family': family,
         'seed': seed,
         'edges': reservoir.edges,
-        'giant_component_radius': radius,
+        RADIUS_KEY: radius,
+        'radius_source': radius_source,
         'alpha': alpha,
         'gain': effective_gain,
         'graph_sha256': digest.hexdigest(),
