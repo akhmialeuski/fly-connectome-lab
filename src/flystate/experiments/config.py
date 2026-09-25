@@ -7,7 +7,15 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializerFunctionWrapHandler,
+    ValidationError,
+    model_serializer,
+    model_validator,
+)
 
 from flystate.hashing import sha256_obj
 
@@ -16,6 +24,7 @@ PositiveInt = Annotated[int, Field(ge=1, strict=True)]
 PositiveFloat = Annotated[float, Field(gt=0)]
 NonnegativeFloat = Annotated[float, Field(ge=0)]
 FeatureName = Literal['spike_trace', 'voltage']
+UnitFraction = Annotated[float, Field(gt=0, le=1)]
 
 
 class ConfigError(Exception):
@@ -148,10 +157,24 @@ class NoiseConfig(FrozenConfig):
     amplitude: NonnegativeFloat = 0.22
 
 
+class RateConfig(FrozenConfig):
+    """Graded leaky-tanh dynamics on flybrain's effective graph; all values are dimensionless.
+
+    The update is ``x <- (1 - leak) x + leak tanh(gain W x + input_scale * encoded_current)``, with
+    ``driven_leak`` replacing ``leak`` for the encoder-driven neurons when it is given.
+    """
+
+    gain: PositiveFloat = 1.0
+    leak: UnitFraction = 0.02
+    driven_leak: UnitFraction | None = 1.0
+    input_scale: PositiveFloat = 20.0
+
+
 class BrainConfig(FrozenConfig):
     """CPU simulation timing, warmup, noise, and execution resources."""
 
-    backend: Literal['flybrain'] = 'flybrain'
+    backend: Literal['flybrain', 'rate'] = 'flybrain'
+    rate: RateConfig | None = None
     dt_s: PositiveFloat = 0.02
     sensory_input: Literal[False] = False
     warmup_steps: NonnegativeInt = 25
@@ -170,7 +193,25 @@ class BrainConfig(FrozenConfig):
         """
         if self.noise.rate_hz * self.dt_s > 1:
             raise ValueError('brain.noise.rate_hz * brain.dt_s must not exceed one.')
+        if (self.backend == 'rate') != (self.rate is not None):
+            raise ValueError('brain.rate must be given exactly when brain.backend is rate.')
+        if self.backend == 'rate' and (self.noise.enabled or self.warmup_steps):
+            raise ValueError('The rate backend is noise-free and starts at rest without warmup.')
         return self
+
+    @model_serializer(mode='wrap')
+    def omit_absent_rate(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        """Leave ``rate`` out of spiking configurations so their hashes and cache keys stay put.
+
+        :param handler: Pydantic's default serializer for this model.
+        :type handler: SerializerFunctionWrapHandler
+        :returns: Serialized fields, without ``rate`` when it is not set.
+        :rtype: dict[str, Any]
+        """
+        data = handler(self)
+        if self.rate is None:
+            data.pop('rate', None)
+        return data
 
 
 class MemoryConfig(FrozenConfig):
@@ -248,6 +289,8 @@ class ExperimentConfig(FrozenConfig):
             raise ValueError('Every identity must have at least one train, val, and test image.')
         if train < self.readout.cv_folds:
             raise ValueError('Training images per identity must be at least readout.cv_folds.')
+        if self.brain.backend == 'rate' and self.readout.features != ('voltage',):
+            raise ValueError('The rate backend records only its graded state as voltage.')
         return self
 
 
