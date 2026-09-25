@@ -1,0 +1,17 @@
+07:09:41 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=1
+07:09:45 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=2
+07:09:51 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=3
+07:09:55 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=4
+07:10:00 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=5
+07:10:05 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=6
+07:10:09 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=7
+07:10:13 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=8
+07:10:17 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=9
+07:10:22 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=10
+07:10:25 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=11
+07:10:29 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=12
+07:10:32 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=13
+07:10:37 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=14
+07:10:41 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=15
+07:10:45 [info     ] fit_readout                    phase=training run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a t=16
+07:10:49 [info     ] training_completed             final_val_accuracy=0.11666666666666667 phase=completed run_id=20260925-070936-celeba-confirm-rate-reset-cd1d8a
