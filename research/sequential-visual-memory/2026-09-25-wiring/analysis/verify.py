@@ -43,6 +43,7 @@ CASE: str = 'case'
 PREDICTED: str = 'predicted'
 LABEL: str = 'label'
 SAMPLE_ID: str = 'sample_id'
+COHORT_PREFIX: str = 's'
 CONTRASTS: str = 'contrasts'
 ENSEMBLE: str = 'ensemble'
 EVALUATE: str = 'evaluate'
@@ -321,9 +322,15 @@ def main() -> int:
     analysis = SNAPSHOT / PHASE_B / 'analyze'
     if analysis.exists():
         report = _json(path=analysis / REPORT)
+        # The analysis drew its bootstrap over the cohorts in the order run.sh passed them, which is
+        # increasing selection seed. Its report stores them as canonical JSON with sorted keys, so
+        # that order is restored here before the draws are repeated.
         evaluations = {
             name: SNAPSHOT / PHASE_B / EVALUATE / Path(path).name
-            for name, path in report[PARAMETERS][EVALUATIONS].items()
+            for name, path in sorted(
+                report[PARAMETERS][EVALUATIONS].items(),
+                key=lambda item: int(item[0].removeprefix(COHORT_PREFIX)),
+            )
         }
         seed = _json(path=analysis / 'config.json')['seed']
         verify_analysis(analysis=analysis, evaluations=evaluations, seed=seed)
