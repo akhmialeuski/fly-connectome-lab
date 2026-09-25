@@ -1,5 +1,4 @@
 18def1510f05e58c9360bb4df6d1780989f7d95926cc2250dad1e3580b4b3a57  ./README.md
-8320c50beb73c02078a0b9789637c3222ef5512701504b863cd188d3a9ba035d  ./analysis/__pycache__/verify.cpython-312.pyc
 9eb499d441d8472ed7146468b94f0e83803ea392dd699bd50d820d9c879c52ff  ./analysis/verify.py
 b2b39c747984f59d6944d407e9dd0d8c23ddf293e64e3c0fb7f9479abb3f8f6f  ./protocol.md
 5e29575b0bde75b5e7f26fa8a9e2fe0164d631a80dcb336d9cedf556bf5caea6  ./provenance/verify-with-states.json
