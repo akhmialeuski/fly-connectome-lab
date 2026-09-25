@@ -3,6 +3,62 @@ import { card, el, pct } from './charts.js';
 // Classification follows the recorded run contract, never a study-name allowlist.
 export const isSequential = (entry) => entry.kind === 'training';
 
+const words = (value) => String(value).replaceAll('_', ' ').replaceAll('-', ' ');
+const number = (value) => (Number.isFinite(value) ? Number(value.toPrecision(4)) : 'not recorded');
+const stateRule = (p) =>
+  p.reset_each_window ? 'state reset before every glimpse' : 'state kept across glimpses';
+const GRAPHS = {
+  fly: 'the MaleCNS graph',
+  degree: 'a degree-preserving shuffle',
+  random_target: 'a random-target null graph',
+  feedforward: 'the feedforward-only graph (synapses from driven neurons only)',
+};
+
+// Reader-facing ideas of diagnostic kinds that do not record their own hypothesis.
+const KIND_IDEAS = {
+  drive_sweep_record: (p) =>
+    `Record spiking fly responses with the image drive scaled ${number(p.amplitude_scale)} times ` +
+    `(at most ${number(p.max_kick_v_per_step)} V per step)${p.noise_enabled === false ? ', noise off' : ''}. ` +
+    'A separate decode scores them.',
+  drive_sweep_decode: () =>
+    'Decode identity from each recorded spiking population with the readout used for the encoded input, to locate where identity is lost.',
+  rate_access_record: (p) =>
+    `Run the same fly graph with graded, non-spiking units (leak ${number(p.leak)}, gain ${number(p.gain)}, ${stateRule(p)}). A separate decode scores them.`,
+  rate_access_memory: () =>
+    'Test memory: compare the final state carried across glimpses with the reset control on the same photographs, with a Bonferroni-corrected gate.',
+  rate_access_memory_curve: () =>
+    'Measure, without labels, how well the final state recalls each earlier glimpse input.',
+  confirmation_record: (p) =>
+    `Record the final graded state of every photograph of the untouched confirmation cohort on ${p.graph === 'fly' ? GRAPHS.fly : GRAPHS.degree}, ${stateRule(p)}.`,
+  confirmation_evaluate: () =>
+    'Fit the standard readout on training photographs only, then score the untouched held-out photographs once.',
+  wiring_record: (p) =>
+    `Record the final graded state on ${GRAPHS[p.family] || 'a recorded graph'}` +
+    `${p.seed == null ? '' : ` (seed ${p.seed})`} at gain ${number(p.gain)}` +
+    `${p.alpha == null ? '' : `, which is ${number(p.alpha)} over its spectral radius ${number(p.giant_component_radius)}`}` +
+    `, ${stateRule(p)}.`,
+  wiring_select: () =>
+    "Freeze each graph family's operating point by training-only cross-validation on the development cohort.",
+  wiring_analyze: () =>
+    'Pool the untouched cohorts and decide whether the MaleCNS wiring beats null graphs at matched operating points, with a 5-point margin.',
+  matched_neural_access: () =>
+    "Compare identity decoding from the fly's sampled state with the encoded input on identical photographs, folds and readout.",
+  input_access: () =>
+    'Measure how much identity the image pixels and encoded currents carry, on training photographs only.',
+  input_loss_selection: () =>
+    'Choose the input-control regularization by fit-fold log loss, then apply the prespecified gate.',
+};
+
+function heldOutSummary(scores) {
+  const scored = Object.entries(scores || {}).filter(
+    ([, value]) => Number.isFinite(value?.accuracy) && Number.isFinite(value?.held_out),
+  );
+  if (!scored.length) return null;
+  const [best, value] = scored.reduce((top, row) => (row[1].accuracy > top[1].accuracy ? row : top));
+  const chance = Number.isFinite(value.chance) ? `, chance ${pct(value.chance)}` : '';
+  return `Best held-out accuracy: ${pct(value.accuracy)} (${words(best)}, ${value.held_out} photographs${chance}) across ${scored.length} separately fitted readouts.`;
+}
+
 export function interpretation(entry) {
   const p = entry.parameters || {};
   let idea;
@@ -44,6 +100,8 @@ export function interpretation(entry) {
   } else if (entry.kind === 'cohort_audit') {
     idea =
       'Audit dataset membership and split integrity before interpreting recognition results.';
+  } else if (Object.hasOwn(KIND_IDEAS, entry.kind)) {
+    idea = KIND_IDEAS[entry.kind](p);
   } else if (typeof entry.kind === 'string' && entry.kind.endsWith('_analysis')) {
     const topic = entry.kind.slice(0, -'_analysis'.length).replaceAll('_', ' ');
     idea = `Compare the recorded ${topic} attempts and apply their saved decision rule.`;
@@ -75,6 +133,22 @@ export function interpretation(entry) {
       result += ` Best recorded validation: ${pct(bestAccuracy)} (${bestCase}); this is exploratory selection, not a test score.`;
     }
   }
+  else if (entry.status === 'completed' && Array.isArray(entry.decisions) && entry.decisions.length)
+    result = entry.decisions
+      .map((row) => {
+        const [low, high] = Array.isArray(row.interval_95_pp) ? row.interval_95_pp : [];
+        const sign = row.difference_pp > 0 ? '+' : '';
+        return `${words(row.name)}: ${row.decision} (${sign}${number(row.difference_pp)} points, 95% interval [${number(low)}, ${number(high)}]).`;
+      })
+      .join(' ');
+  else if (entry.status === 'completed' && entry.selection && typeof entry.selection === 'object')
+    result = `Frozen operating points: ${Object.entries(entry.selection)
+      .map(([family, alpha]) => `${words(family)} α ${number(alpha)}`)
+      .join(', ')}.`;
+  else if (entry.status === 'completed' && heldOutSummary(entry.scores))
+    result = heldOutSummary(entry.scores);
+  else if (entry.status === 'completed' && Number.isFinite(entry.episodes))
+    result = `Recorded the final states of ${entry.episodes} photographs. A separate evaluation scores them.`;
   else if (Array.isArray(measurements) && measurements.length)
     result = `Optimizer convergence: ${measurements.filter((m) => m.converged).length} of ${measurements.length} recorded budget checks converged. These are numerical checks, not recognition scores.`;
   else if (Number.isFinite(reserve))
