@@ -7,7 +7,7 @@ import numpy as np
 from scipy import sparse
 
 from flystate.brain.rate import RateReservoir
-from flystate.diagnostics.rate_access import simulate_states
+from flystate.diagnostics.rate_access import simulate_states, window_recall
 
 GAIN: float = 1.2
 LEAK: float = 0.5
@@ -106,3 +106,38 @@ def test_reset_makes_each_window_independent_of_history(synthetic_brain_dir: Pat
     }
     assert np.array_equal(outcomes[(True, 0)], outcomes[(True, 1)])
     assert not np.array_equal(outcomes[(False, 0)], outcomes[(False, 1)])
+
+
+def test_leak_override_applies_only_to_listed_neurons(synthetic_brain_dir: Path) -> None:
+    """Replace the driven neurons' state every step while the rest integrate slowly.
+
+    :param synthetic_brain_dir: Offline flybrain-format connectome.
+    :type synthetic_brain_dir: Path
+    """
+    driven, inputs = _inputs(windows=1)
+    slow = 0.1
+    reservoir = RateReservoir(
+        brain_dir=synthetic_brain_dir,
+        gain=GAIN,
+        leak=slow,
+        batch_size=BATCH,
+        leak_overrides={1.0: driven},
+    )
+    assert np.all(reservoir.leak[driven] == 1.0)
+    others = np.setdiff1d(np.arange(reservoir.n), driven)
+    assert np.all(reservoir.leak[others] == np.float32(slow))
+    drive = np.ascontiguousarray(inputs[:, 0].T)
+    reservoir.step(input_idx=driven, inputs=drive)
+    assert np.allclose(reservoir.state[driven], np.tanh(drive), atol=1e-6)
+    assert np.all(reservoir.state[others] == 0)
+
+
+def test_window_recall_finds_only_the_encoded_window() -> None:
+    """Recall the window that the final state encodes and nothing from independent windows."""
+    rng = np.random.default_rng(seed=5)
+    inputs = rng.normal(size=(200, 4, 30)).astype(np.float32)
+    mixing = rng.normal(size=(30, 50)).astype(np.float32)
+    final_state = (inputs[:, -1] @ mixing).astype(np.float32)
+    recall = window_recall(final_state=final_state, window_inputs=inputs, seed=0)
+    assert recall[-1] > 0.95
+    assert max(recall[:-1]) < 0.1
