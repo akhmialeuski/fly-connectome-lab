@@ -657,6 +657,51 @@ class TestViewerBrowser:
             assert errors == []
             browser.close()
 
+    def test_register_sorting(self) -> None:
+        """Sort diagnostics by date, by column header, and by a discovered parameter field."""
+        paths = get_paths()
+        attempts = {
+            's2': ('2026-09-25T01:00:00+00:00', 2),
+            's16': ('2026-09-25T03:00:00+00:00', 16),
+            'blank': ('2026-09-25T02:00:00+00:00', None),
+        }
+        for name, (created, scale) in attempts.items():
+            parameters: dict[str, Any] = {'kind': 'drive_sweep_record'}
+            if scale is not None:
+                parameters['amplitude_scale'] = scale
+            write_json(
+                path=paths.runs / 'sorting' / name / 'manifest.json',
+                value={'status': 'completed', 'created_utc': created, 'parameters': parameters},
+            )
+        client = TestClient(app=create_app(paths=paths), base_url='http://127.0.0.1')
+        order = "[...document.querySelectorAll('.run-link')].map((link) => link.textContent)"
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            page = browser.new_page(viewport={'width': 1280, 'height': 900})
+            errors: list[str] = []
+            page.on(event='pageerror', f=lambda error: errors.append(str(error)))
+            page.route(url='**/*', handler=partial(fulfill_local, client=client))
+            page.goto(url='http://127.0.0.1/#diagnostics')
+            expect(actual=page.get_by_role(role='link', name='s16', exact=True)).to_be_visible()
+            assert page.evaluate(expression=order) == ['s16', 'blank', 's2']
+            header = page.get_by_role(role='columnheader', name='Created')
+            expect(actual=header).to_have_attribute(name='aria-sort', value='descending')
+            header.get_by_role(role='button').click()
+            expect(actual=header).to_have_attribute(name='aria-sort', value='ascending')
+            assert page.evaluate(expression=order) == ['s2', 'blank', 's16']
+            page.get_by_label(text='Sort by').select_option(value='parameters.amplitude_scale')
+            assert page.evaluate(expression=order) == ['s2', 's16', 'blank']
+            page.get_by_role(role='button', name='Sort direction').click()
+            assert page.evaluate(expression=order) == ['s16', 's2', 'blank']
+            page.reload()
+            expect(actual=page.get_by_role(role='link', name='s16', exact=True)).to_be_visible()
+            expect(actual=page.get_by_label(text='Sort by')).to_have_value(
+                value='parameters.amplitude_scale'
+            )
+            assert page.evaluate(expression=order) == ['s16', 's2', 'blank']
+            assert errors == []
+            browser.close()
+
 
 def fulfill_local(route: Route, client: TestClient) -> None:
     """Serve browser requests directly through the API without external network access.

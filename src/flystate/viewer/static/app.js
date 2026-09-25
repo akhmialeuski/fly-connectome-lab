@@ -1,5 +1,11 @@
 import { isSequential, interpretationCard } from './interpretation.js';
-import { experimentTable, researchPage } from './research.js';
+import {
+  DEFAULT_SORT,
+  experimentTable,
+  researchPage,
+  sortEntries,
+  sortFields,
+} from './research.js';
 import { face, identityFace } from './identities.js';
 import {
   accuracySeries,
@@ -265,8 +271,27 @@ function experiments(diagnostics = false) {
   const study = el('select', { 'aria-label': 'Experiment study' });
   const kind = el('select', { 'aria-label': 'Experiment kind' });
   const policy = el('select', { 'aria-label': 'Memory mode' });
+  const sortBy = el('select', { 'aria-label': 'Sort by' });
+  const direction = el('button', { type: 'button', 'aria-label': 'Sort direction' });
   const list = el('div'),
     count = el('p', { class: 'muted' });
+  // The chosen order survives refreshes and visits; storage may be unavailable in private mode.
+  const storageKey = `flystate.sort.${diagnostics ? 'diagnostics' : 'runs'}`;
+  let sort = { ...DEFAULT_SORT };
+  try {
+    sort = { ...sort, ...JSON.parse(localStorage.getItem(storageKey) || '{}') };
+  } catch {
+    // Keep the default order.
+  }
+  function setSort(key, descending = sort.key === key ? !sort.descending : key === 'created') {
+    sort = { key, descending };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(sort));
+    } catch {
+      // The order still applies for this page view.
+    }
+    update();
+  }
   function choices(select, values, label) {
     const selected = select.value;
     select.replaceChildren(
@@ -303,20 +328,28 @@ function experiments(diagnostics = false) {
           .toLowerCase()
           .includes(search.value.toLowerCase()),
     );
+    const fields = sortFields(entries);
+    sortBy.replaceChildren(...fields.map((field) => option(field.key, `Sort: ${field.label}`)));
+    sortBy.value = fields.some((field) => field.key === sort.key) ? sort.key : DEFAULT_SORT.key;
+    direction.textContent = sort.descending ? '↓ Descending' : '↑ Ascending';
     list.replaceChildren(
-      filtered.length ? experimentTable(filtered) : empty('No matching experiments.'),
+      filtered.length
+        ? experimentTable(sortEntries(filtered, fields, sort), sort, (key) => setSort(key))
+        : empty('No matching experiments.'),
     );
     count.textContent = `${filtered.length} of ${entries.length} ${diagnostics ? 'diagnostics' : 'experiments'} · updates automatically every 5 seconds`;
   };
   search.oninput = update;
   for (const select of [study, kind, policy]) select.onchange = update;
+  sortBy.onchange = () => setSort(sortBy.value, sortBy.value === 'created');
+  direction.onclick = () => setSort(sort.key, !sort.descending);
   refreshView = update;
   update();
   content.append(
     card(
       diagnostics ? 'Diagnostic attempts' : 'Sequential experiments',
       'New studies require no viewer configuration.',
-      el('div', { class: 'toolbar' }, search, study, kind, policy),
+      el('div', { class: 'toolbar' }, search, study, kind, policy, sortBy, direction),
       count,
       list,
     ),
