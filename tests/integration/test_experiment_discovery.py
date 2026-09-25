@@ -25,6 +25,55 @@ from flystate.viewer.experiments import (
 class TestExperimentDiscovery:
     """Keep every manifest-backed attempt visible without a study-name allowlist."""
 
+    def test_recorded_outcomes_are_discovered(self) -> None:
+        """Expose contrast decisions, frozen selections and photograph counts, skipping junk."""
+        paths = get_paths()
+        reports = {
+            'analyze': {
+                'contrasts': [
+                    {
+                        'name': 'W1',
+                        'difference_pp': 1.5,
+                        'interval_95_pp': [-1.0, 4.0],
+                        'decision': 'no practically relevant difference',
+                        'per_cohort_pp': {'s4': 2.0},
+                    },
+                    {'name': 'broken'},
+                    'not a contrast',
+                ]
+            },
+            'select': {
+                'families': {'fly': {'selected_alpha': 0.75}, 'bad': {'selected_alpha': 'x'}}
+            },
+            'record': {'episodes': 400},
+            'rules': {'decisions': {'S1': True, 'S2': False, 'note': 'ignored'}},
+            'flag': {'episodes': True},
+        }
+        for name, report in reports.items():
+            directory = paths.runs / 'outcomes' / name
+            write_json(
+                path=directory / 'manifest.json',
+                value={'status': 'completed', 'parameters': {'kind': f'{name}_kind'}},
+            )
+            write_json(path=directory / 'report.json', value=report)
+        entries = {
+            entry['name']: entry
+            for entry in ExperimentStore(root=paths.runs).discover(legacy_runs=[])
+        }
+        assert entries['analyze']['decisions'] == [
+            {
+                'name': 'W1',
+                'difference_pp': 1.5,
+                'interval_95_pp': [-1.0, 4.0],
+                'decision': 'no practically relevant difference',
+            }
+        ]
+        assert entries['select']['selection'] == {'fly': 0.75}
+        assert entries['record']['episodes'] == 400
+        assert entries['rules']['checks'] == {'S1': True, 'S2': False}
+        assert 'episodes' not in entries['flag']
+        assert experiments.recorded_outcome(payload={'contrasts': 'x', 'families': []}) == {}
+
     def test_analysis_gate_discovery(self) -> None:
         """Expose a saved decision and case count for an unfamiliar analysis kind."""
         paths = get_paths()
