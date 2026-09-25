@@ -29,7 +29,12 @@ class TestConfiguration:
     def test_examples(self) -> None:
         """Load all complete examples and check the isolated control differences."""
         configs = {path.stem: load_config(path=path) for path in CONFIG_DIRECTORY.glob('*.yaml')}
-        assert len(configs) == 3
+        assert set(configs) == {
+            'celeba-smoke',
+            'celeba-persistent',
+            'celeba-reset',
+            'celeba-confirm',
+        }
         for name, cfg in configs.items():
             supplied = yaml.safe_load(stream=(CONFIG_DIRECTORY / f'{name}.yaml').read_text())
             assert supplied == cfg.model_dump(mode='json')
@@ -40,6 +45,12 @@ class TestConfiguration:
         assert persistent.pop('memory') == {'mode': 'persistent'}
         assert reset.pop('memory') == {'mode': 'reset'}
         assert persistent == reset
+        smoke = configs['celeba-smoke'].model_dump(mode='json')
+        confirm = configs['celeba-confirm'].model_dump(mode='json')
+        assert (smoke.pop('name'), confirm.pop('name')) == ('celeba-smoke', 'celeba-confirm')
+        assert smoke['dataset']['subset'].pop('selection_seed') == 0
+        assert confirm['dataset']['subset'].pop('selection_seed') == 2
+        assert smoke == confirm
 
     @pytest.mark.parametrize(
         'override',
