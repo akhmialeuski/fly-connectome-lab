@@ -1,5 +1,8 @@
 import { predictionCards } from './identities.js';
-import { el, heatColor, number, raw } from './charts.js';
+import { colorScale, el, number, raw } from './charts.js';
+
+// Spatial view height follows its width (half of it), within these CSS-pixel bounds.
+const SPATIAL_HEIGHT = { min: 360, max: 620, ratio: 0.5 };
 
 const dialog = document.querySelector('#episode');
 const content = document.querySelector('#episode-content');
@@ -94,8 +97,6 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
     const heatHint = el('p', { class: 'canvas-hint' });
     const spatial = el('canvas', {
       class: 'neuron-canvas',
-      width: 700,
-      height: 310,
       role: 'img',
       'aria-label': 'Rotatable 3D projection of readout neurons colored by current feature value',
     });
@@ -117,9 +118,25 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
       1,
       ...positions.flatMap((p) => p.map((v, i) => Math.abs(v - center[i]))),
     );
-    function range() {
-      const values = data.activity[feature.value].flat();
-      return [Math.min(...values), Math.max(...values)];
+    // One outlier-resistant scale per feature, shared by the heatmap and the spatial view.
+    let scale = colorScale(data.activity[feature.value].flat());
+    const legend = el('div', { class: 'colorbar' });
+    function drawLegend() {
+      legend.replaceChildren(
+        el('div', { class: 'colorbar-ramp', style: `background:${scale.gradient}` }),
+        el(
+          'div',
+          { class: 'colorbar-ticks' },
+          scale.ticks.map((tick) =>
+            el('span', { style: `left:${tick.position * 100}%` }, number(tick.value, 4)),
+          ),
+        ),
+        el(
+          'p',
+          { class: 'canvas-hint' },
+          `${feature.value.replaceAll('_', ' ')}, model units. ${scale.diverging ? 'Blue is below zero, red above, centered on zero; color follows the square root of the magnitude, so small values stay visible (see the tick values).' : 'Blue is low, red is high, on a linear scale.'} The range covers the 1st to 99th percentile of this episode across all observations, so a few extreme neurons do not wash out the rest; values beyond it take the end colors.`,
+        ),
+      );
     }
     function draw() {
       const t = Number(slider.value) - 1,
@@ -153,26 +170,35 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
     }
     function drawHeat() {
       const values = data.activity[feature.value],
-        ctx = heatmap.getContext('2d'),
-        [low, high] = range();
+        ctx = heatmap.getContext('2d');
       values.forEach((row, t) =>
         row.forEach((v, n) => {
-          ctx.fillStyle = heatColor((v - low) / (high - low || 1));
+          ctx.fillStyle = scale.color(v);
           ctx.fillRect(n, t, 1, 1);
         }),
       );
-      heatHint.textContent = `${values[0].length} readout neurons × ${values.length} observations. Color range ${number(low, 4)}–${number(high, 4)} (${feature.value}, model units); fixed across time. Click a row to select it.`;
+      heatHint.textContent = `${values[0].length} readout neurons × ${values.length} observations, colored on the scale below (fixed across time). Click a row to select it.`;
     }
     function drawNeurons() {
+      // Match the backing store to the displayed size and pixel density, so points stay sharp.
+      const width = Math.round(spatial.getBoundingClientRect().width) || 700,
+        height = Math.round(
+          Math.min(SPATIAL_HEIGHT.max, Math.max(SPATIAL_HEIGHT.min, width * SPATIAL_HEIGHT.ratio)),
+        ),
+        ratio = window.devicePixelRatio || 1;
+      if (spatial.width !== Math.round(width * ratio)) spatial.width = Math.round(width * ratio);
+      if (spatial.height !== Math.round(height * ratio)) spatial.height = Math.round(height * ratio);
+      spatial.style.height = `${height}px`;
       const ctx = spatial.getContext('2d'),
         t = Number(slider.value) - 1,
-        [low, high] = range();
+        size = 0.45 * height * zoom;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.fillStyle = '#152e3b';
-      ctx.fillRect(0, 0, 700, 310);
+      ctx.fillRect(0, 0, width, height);
       if (!positions.length) {
         ctx.fillStyle = '#c6dedf';
         ctx.font = '14px sans-serif';
-        ctx.fillText('Matching neuron geometry unavailable', 25, 155);
+        ctx.fillText('Matching neuron geometry unavailable', 25, height / 2);
         return;
       }
       projected = positions
@@ -183,18 +209,21 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
           const ry = y * Math.cos(pitch) - rz * Math.sin(pitch),
             depth = y * Math.sin(pitch) + rz * Math.cos(pitch);
           return {
-            x: 350 + rx * 130 * zoom,
-            y: 155 + ry * 130 * zoom,
+            x: width / 2 + rx * size,
+            y: height / 2 + ry * size,
             z: depth,
             i: data.neurons.feature_indices[i],
           };
         })
         .sort((a, b) => a.z - b.z);
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = 'rgba(8, 18, 26, 0.7)';
       projected.forEach((p) => {
         ctx.beginPath();
-        ctx.fillStyle = heatColor((data.activity[feature.value][t][p.i] - low) / (high - low || 1));
-        ctx.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = scale.color(data.activity[feature.value][t][p.i]);
+        ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
       });
       ctx.fillStyle = '#b4d2da';
       ctx.font = '11px sans-serif';
@@ -245,8 +274,8 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
         return;
       }
       const rect = spatial.getBoundingClientRect(),
-        x = ((e.clientX - rect.left) / rect.width) * 700,
-        y = ((e.clientY - rect.top) / rect.height) * 310;
+        x = e.clientX - rect.left,
+        y = e.clientY - rect.top;
       const nearest = projected.reduce(
         (best, p) =>
           Math.hypot(p.x - x, p.y - y) < (best?.distance ?? 12)
@@ -268,9 +297,14 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
     );
     slider.oninput = draw;
     feature.onchange = () => {
+      scale = colorScale(data.activity[feature.value].flat());
+      drawLegend();
       drawHeat();
       draw();
     };
+    const resize = new ResizeObserver(() => drawNeurons());
+    resize.observe(spatial);
+    signal.addEventListener('abort', () => resize.disconnect());
     play.onclick = () => {
       if (timer) {
         clearInterval(timer);
@@ -306,6 +340,7 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
         heatHint,
         spatial,
         spatialHint,
+        legend,
         el(
           'p',
           { class: 'readout-note' },
@@ -329,6 +364,7 @@ export async function openEpisode(runId, evalId, sampleId, initialStep, identiti
         'Episode metadata & spike summaries',
       ),
     );
+    drawLegend();
     drawHeat();
     draw();
   } catch (error) {

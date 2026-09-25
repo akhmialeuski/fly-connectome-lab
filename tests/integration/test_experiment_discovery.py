@@ -25,6 +25,22 @@ from flystate.viewer.experiments import (
 class TestExperimentDiscovery:
     """Keep every manifest-backed attempt visible without a study-name allowlist."""
 
+    def test_analysis_gate_discovery(self) -> None:
+        """Expose a saved decision and case count for an unfamiliar analysis kind."""
+        paths = get_paths()
+        directory = paths.runs / 'future-analysis' / 'decision'
+        write_json(
+            path=directory / 'manifest.json',
+            value={'status': 'completed', 'parameters': {'kind': 'custom_analysis'}},
+        )
+        write_json(
+            path=directory / 'report.json',
+            value={'gate': 'do_not_advance', 'fits': {'A': {}, 'B': {}}},
+        )
+        entry = ExperimentStore(root=paths.runs).discover(legacy_runs=[])[0]
+        assert entry['gate'] == 'do_not_advance'
+        assert entry['case_count'] == 2
+
     def test_nested_attempts(self) -> None:
         """Create an unfamiliar nested attempt, read it, then observe a new completed result."""
         paths = get_paths()
@@ -44,7 +60,10 @@ class TestExperimentDiscovery:
         )
         write_json(
             path=directory / 'report.json',
-            value={'scores': {'validation': {'accuracy': 0.5, 'n': 4}}},
+            value={
+                'scores': {'validation': {'accuracy': 0.5, 'n': 4}},
+                'conclusion': 'Recorded study conclusion.',
+            },
         )
         updated = next(
             row
@@ -52,6 +71,7 @@ class TestExperimentDiscovery:
             if row['id'] == relative
         )
         assert updated['status'] == 'completed'
+        assert updated['result_summary'] == 'Recorded study conclusion.'
         assert updated['scores']['validation']['accuracy'] == 0.5
         assert updated['revision'] != entry['revision']
         detail = client.get(url='/api/experiments/detail', params={'path': relative})

@@ -446,6 +446,7 @@ class TestViewerBrowser:
             expect(actual=page.get_by_text(text='No matching experiments.')).to_be_visible()
             page.get_by_label(text='Search experiments').fill(value='tiny')
             page.get_by_role(role='link', name='tiny', exact=True).click()
+            expect(actual=page.get_by_text(text='Idea and results', exact=True)).to_be_visible()
             expect(actual=page.get_by_role(role='button', name='View episode')).to_have_count(
                 count=4
             )
@@ -484,13 +485,13 @@ class TestViewerBrowser:
             expect(actual=page.get_by_role(role='button', name='View episode')).to_have_count(
                 count=1
             )
-            page.get_by_role(role='link', name='03 Comparisons').click()
+            page.get_by_role(role='link', name='04 Comparisons').click()
             expect(
                 actual=page.get_by_text(text='Difference across observations', exact=True)
             ).to_be_visible()
             expect(actual=page.get_by_text(text='Final memory effect', exact=True)).to_be_visible()
             assert 'NaN' not in page.locator('#content').inner_text()
-            page.get_by_role(role='link', name='04 Evidence library').click()
+            page.get_by_role(role='link', name='05 Evidence library').click()
             expect(actual=page.locator('.report-text')).to_contain_text(expected='<script>')
             assert page.evaluate(expression='window.injected') is None
             for category, title in (
@@ -500,7 +501,7 @@ class TestViewerBrowser:
             ):
                 page.get_by_label(text='Report category', exact=True).select_option(value=category)
                 expect(actual=page.get_by_text(text=title, exact=True)).to_be_visible()
-            page.get_by_role(role='link', name='05 Trace caches').click()
+            page.get_by_role(role='link', name='06 Trace caches').click()
             expect(
                 actual=page.get_by_text(text='Stored neural recordings', exact=True)
             ).to_be_visible()
@@ -537,6 +538,64 @@ class TestViewerBrowser:
             page.goto(url='http://127.0.0.1/#runs')
             expect(
                 actual=page.get_by_role(role='link', name='attempt-a', exact=True)
+            ).to_have_count(count=0)
+            page.get_by_role(role='link', name='03 Diagnostics').click()
+            summaries = page.evaluate(
+                expression="""async () => {
+                    const {interpretation} = await import('/interpretation.js');
+                    return [
+                        {kind: 'training', mode: 'reset'},
+                        {kind: 'training', mode: 'reset_concat'},
+                        {kind: 'identity_probe', parameters: {representation: 'pixels'}},
+                        {kind: 'identity_probe', parameters: {representation: 'neural',
+                            history: 'last', train_per_class: 2, subset_seed: 0}},
+                        {kind: 'identity_probe', parameters: {representation: 'neural',
+                            history: 'all', label_mode: 'shuffled'}},
+                        {kind: 'convergence_diagnostic', report: {
+                            budget_measurements: [{converged: false}, {converged: true}]}},
+                        {kind: 'cohort_audit', report: {reserve_count: 0}},
+                        {kind: 'future_kind', status: 'running'},
+                        {kind: 'new_kind', status: 'completed',
+                            parameters: {hypothesis: 'Recorded idea'},
+                            result_summary: 'Recorded outcome'},
+                        {kind: 'new_kind', status: 'failed',
+                            result_summary: 'Must not hide failure'},
+                        {kind: 'identity_probe', status: 'completed', classes: 20,
+                            parameters: {representation: 'neural', history: 'last',
+                                features: 'voltage', pca_components: 60},
+                            scores: {validation: {accuracy: 0.1}}},
+                        {kind: 'readout_ablation_analysis', status: 'completed', report: {
+                            gate: 'do_not_advance', fits: {
+                                B0: {scores: {validation: {accuracy: 0.0333333333}}},
+                                B2: {scores: {validation: {accuracy: 0.1}}}
+                            }}},
+                        {kind: 'future_analysis', status: 'completed', gate: 'do_not_advance',
+                            case_count: 8}
+                    ].map(interpretation);
+                }"""
+            )
+            assert 'Reset neural state' in summaries[0]['idea']
+            assert 'combine' in summaries[1]['idea']
+            assert 'without simulating neural memory' in summaries[2]['idea']
+            assert 'final observation' in summaries[3]['idea']
+            assert '2 photographs' in summaries[3]['idea']
+            assert 'combined observations' in summaries[4]['idea']
+            assert 'shuffled' in summaries[4]['idea']
+            assert '1 of 2' in summaries[5]['result']
+            assert '0 reserved' in summaries[6]['result']
+            assert 'No specific hypothesis' in summaries[7]['idea']
+            assert 'No completed recognition result' in summaries[7]['result']
+            assert summaries[8] == {'idea': 'Recorded idea', 'result': 'Recorded outcome'}
+            assert 'Attempt failed' in summaries[9]['result']
+            assert 'voltage block' in summaries[10]['idea']
+            assert '60 components' in summaries[10]['idea']
+            assert '10.00%' in summaries[10]['result']
+            assert 'readout ablation' in summaries[11]['idea']
+            assert 'do not advance' in summaries[11]['result']
+            assert '10.00% (B2)' in summaries[11]['result']
+            assert '8 recorded cases' in summaries[12]['result']
+            expect(
+                actual=page.get_by_role(role='link', name='attempt-a', exact=True)
             ).to_be_visible()
             page.get_by_label(text='Search experiments').fill(value='attempt')
             page.get_by_label(text='Experiment study').select_option(value='future/study')
@@ -563,8 +622,18 @@ class TestViewerBrowser:
                 expected='RecordedFailure'
             )
             assert page.evaluate(expression='window.unsafe') is None
-            page.get_by_role(role='link', name='02 Experiments').click()
+            page.get_by_role(role='link', name='03 Diagnostics').click()
             page.get_by_role(role='link', name='attempt-a', exact=True).click()
+            expect(actual=page.get_by_text(text='Idea and results', exact=True)).to_be_visible()
+            expect(
+                actual=page.get_by_text(
+                    text=(
+                        'Test identity information in encoded input currents, '
+                        'without simulating neural memory.'
+                    ),
+                    exact=True,
+                )
+            ).to_be_visible()
             expect(
                 actual=page.get_by_text(text='Recorded recognition scores', exact=True)
             ).to_be_visible()
@@ -586,6 +655,82 @@ class TestViewerBrowser:
             page.set_viewport_size(viewport_size={'width': 390, 'height': 844})
             assert page.evaluate(expression='document.documentElement.scrollWidth <= innerWidth')
             assert errors == []
+            browser.close()
+
+    def test_register_sorting(self) -> None:
+        """Sort diagnostics by date, by column header, and by a discovered parameter field."""
+        paths = get_paths()
+        attempts = {
+            's2': ('2026-09-25T01:00:00+00:00', 2),
+            's16': ('2026-09-25T03:00:00+00:00', 16),
+            'blank': ('2026-09-25T02:00:00+00:00', None),
+        }
+        for name, (created, scale) in attempts.items():
+            parameters: dict[str, Any] = {'kind': 'drive_sweep_record'}
+            if scale is not None:
+                parameters['amplitude_scale'] = scale
+            write_json(
+                path=paths.runs / 'sorting' / name / 'manifest.json',
+                value={'status': 'completed', 'created_utc': created, 'parameters': parameters},
+            )
+        client = TestClient(app=create_app(paths=paths), base_url='http://127.0.0.1')
+        order = "[...document.querySelectorAll('.run-link')].map((link) => link.textContent)"
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            page = browser.new_page(viewport={'width': 1280, 'height': 900})
+            errors: list[str] = []
+            page.on(event='pageerror', f=lambda error: errors.append(str(error)))
+            page.route(url='**/*', handler=partial(fulfill_local, client=client))
+            page.goto(url='http://127.0.0.1/#diagnostics')
+            expect(actual=page.get_by_role(role='link', name='s16', exact=True)).to_be_visible()
+            assert page.evaluate(expression=order) == ['s16', 'blank', 's2']
+            header = page.get_by_role(role='columnheader', name='Created')
+            expect(actual=header).to_have_attribute(name='aria-sort', value='descending')
+            header.get_by_role(role='button').click()
+            expect(actual=header).to_have_attribute(name='aria-sort', value='ascending')
+            assert page.evaluate(expression=order) == ['s2', 'blank', 's16']
+            page.get_by_label(text='Sort by').select_option(value='parameters.amplitude_scale')
+            assert page.evaluate(expression=order) == ['s2', 's16', 'blank']
+            page.get_by_role(role='button', name='Sort direction').click()
+            assert page.evaluate(expression=order) == ['s16', 's2', 'blank']
+            page.reload()
+            expect(actual=page.get_by_role(role='link', name='s16', exact=True)).to_be_visible()
+            expect(actual=page.get_by_label(text='Sort by')).to_have_value(
+                value='parameters.amplitude_scale'
+            )
+            assert page.evaluate(expression=order) == ['s16', 's2', 'blank']
+            assert errors == []
+            browser.close()
+
+    def test_color_scale_resists_outliers(self) -> None:
+        """Clip to percentiles, center signed data on zero, and place legend ticks correctly."""
+        client = TestClient(app=create_app(paths=get_paths()), base_url='http://127.0.0.1')
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch()
+            page = browser.new_page()
+            page.route(url='**/*', handler=partial(fulfill_local, client=client))
+            page.goto(url='http://127.0.0.1/')
+            result = page.evaluate(
+                expression="""async () => {
+                    const {colorScale} = await import('/charts.js');
+                    const signed = [...Array(1000).keys()].map((i) => (i - 500) / 500);
+                    signed.push(1000);
+                    const positive = [...Array(1000).keys()].map((i) => i / 1000);
+                    const s = colorScale(signed), p = colorScale(positive);
+                    return {
+                        diverging: s.diverging, high: s.high, low: s.low,
+                        quarter: s.ticks.find((t) => t.position === 0.75).value,
+                        zero: s.color(0), top: s.color(1000), bound: s.color(s.high),
+                        sequential: p.diverging, pTicks: p.ticks.map((t) => t.position),
+                    };
+                }"""
+            )
+            assert result['diverging'] and not result['sequential']
+            assert result['high'] == pytest.approx(0.98) and result['low'] == -result['high']
+            assert result['quarter'] == pytest.approx(result['high'] / 4)
+            assert result['top'] == result['bound']
+            assert result['zero'] == 'rgb(247,247,247)'
+            assert result['pTicks'] == [0, 0.25, 0.5, 0.75, 1]
             browser.close()
 
 

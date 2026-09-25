@@ -142,6 +142,16 @@ class ExperimentStore:
                             if not isinstance(scores, dict):
                                 raise ValueError('Recorded scores must be an object.')
                             entry['scores'] = scores
+                            conclusion = payload.get('conclusion')
+                            entry['result_summary'] = (
+                                conclusion if isinstance(conclusion, str) else None
+                            )
+                            gate = payload.get('gate')
+                            if isinstance(gate, str):
+                                entry['gate'] = gate
+                            fits = payload.get('fits')
+                            if isinstance(fits, dict):
+                                entry['case_count'] = len(fits)
                         else:
                             entry['config_name'] = payload.get('name')
                             entry['classes'] = (
