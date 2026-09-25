@@ -34,6 +34,7 @@ class TestConfiguration:
             'celeba-persistent',
             'celeba-reset',
             'celeba-confirm',
+            'celeba-confirm-rate',
         }
         for name, cfg in configs.items():
             supplied = yaml.safe_load(stream=(CONFIG_DIRECTORY / f'{name}.yaml').read_text())
@@ -51,6 +52,15 @@ class TestConfiguration:
         assert smoke['dataset']['subset'].pop('selection_seed') == 0
         assert confirm['dataset']['subset'].pop('selection_seed') == 2
         assert smoke == confirm
+        graded = configs['celeba-confirm-rate'].model_dump(mode='json')
+        assert graded.pop('name') == 'celeba-confirm-rate'
+        assert graded.pop('brain')['backend'] == 'rate'
+        assert graded['readout'].pop('features') == ['voltage']
+        spiking = configs['celeba-confirm'].model_dump(mode='json')
+        for key in ('name', 'brain'):
+            spiking.pop(key)
+        spiking['readout'].pop('features')
+        assert graded == spiking
 
     @pytest.mark.parametrize(
         'override',

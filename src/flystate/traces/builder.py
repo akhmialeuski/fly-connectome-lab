@@ -15,6 +15,7 @@ from numpy.typing import NDArray
 from threadpoolctl import threadpool_limits
 
 from flystate.brain.benchmark import resolve_threads
+from flystate.brain.rate import RateEpisodeBrain
 from flystate.brain.runtime import EpisodeBrain, RestState
 from flystate.datasets.preprocess import PreparedDataset, prepare_dataset
 from flystate.encoders.sparse_projection import SparseProjectionEncoder
@@ -74,7 +75,7 @@ def _simulate_chunk(
     cfg: ExperimentConfig,
     prepared: PreparedDataset,
     builder: EpisodeBuilder,
-    brain: EpisodeBrain,
+    brain: EpisodeBrain | RateEpisodeBrain,
     encoder: SparseProjectionEncoder,
     rest: RestState,
     start: int,
@@ -90,7 +91,7 @@ def _simulate_chunk(
     :param builder: Shared observation geometry builder.
     :type builder: EpisodeBuilder
     :param brain: Fixed-thread batched simulation runtime.
-    :type brain: EpisodeBrain
+    :type brain: EpisodeBrain | RateEpisodeBrain
     :param encoder: Frozen input-current mapping.
     :type encoder: SparseProjectionEncoder
     :param rest: Shared warmed state.
@@ -240,7 +241,8 @@ def build_trace(
         original_threads = numba.get_num_threads()
         try:
             with threadpool_limits(limits=1, user_api='blas'):
-                brain = EpisodeBrain(
+                runtime = RateEpisodeBrain if cfg.brain.backend == 'rate' else EpisodeBrain
+                brain = runtime(
                     brain_dir=paths.brain,
                     brain_cfg=cfg.brain,
                     readout_cfg=cfg.readout,
@@ -292,7 +294,7 @@ def _build_chunks(
     store: TraceStore,
     cfg: ExperimentConfig,
     prepared: PreparedDataset,
-    brain: EpisodeBrain,
+    brain: EpisodeBrain | RateEpisodeBrain,
     encoder: SparseProjectionEncoder,
     max_chunks: int | None,
 ) -> None:
@@ -305,7 +307,7 @@ def _build_chunks(
     :param prepared: Verified aligned dataset.
     :type prepared: PreparedDataset
     :param brain: Fixed-thread simulation runtime.
-    :type brain: EpisodeBrain
+    :type brain: EpisodeBrain | RateEpisodeBrain
     :param encoder: Frozen neuron/current mapping.
     :type encoder: SparseProjectionEncoder
     :param max_chunks: Optional attempt chunk budget.
