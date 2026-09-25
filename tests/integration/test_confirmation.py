@@ -6,7 +6,9 @@ from pathlib import Path
 import numpy as np
 
 from flystate.diagnostics import confirmation
+from flystate.diagnostics.artifacts import verify_attempt_inventory
 from flystate.experiments.config import ExperimentConfig
+from flystate.hashing import sha256_file
 from flystate.settings import get_paths
 
 PERSISTENT: str = 'persistent'
@@ -73,3 +75,17 @@ def test_confirmation_scores_every_held_out_photograph(tiny_experiment: Experime
     reset = report['scores'][f'{RESET}/{POPULATION}']['held_out_correct']
     assert np.isclose(comparison['a_minus_b_pp'], 100 * (persistent - reset) / held_out)
     assert report['scores'][f'{RESET}/{POPULATION}']['chance'] == 0.25
+    assert (
+        verify_attempt_inventory(directory=Path('runs/offline/evaluate'), paths=paths)['status']
+        == 'completed'
+    )
+    for case, summary in report['scores'].items():
+        model_dir = paths.home / 'runs/offline/evaluate/models' / case
+        metadata = json.loads(s=(model_dir / 'model.json').read_text(encoding='utf-8'))
+        assert metadata == summary['model']
+        assert metadata['C'] == summary['C']
+        assert metadata['weights_sha256'] == sha256_file(path=model_dir / 'weights.npz')
+        with np.load(file=model_dir / 'weights.npz', allow_pickle=False) as arrays:
+            assert {'scaler_mean', 'scaler_scale', 'coef', 'intercept', 'classes'} <= set(
+                arrays.files
+            )

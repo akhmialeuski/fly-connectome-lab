@@ -13,7 +13,7 @@ from threadpoolctl import threadpool_limits
 from flystate.brain.benchmark import resolve_threads
 from flystate.brain.rate import RateReservoir
 from flystate.datasets.preprocess import prepare_dataset
-from flystate.diagnostics.artifacts import attempt, verify_attempt_inventory
+from flystate.diagnostics.artifacts import attempt, export_classifier, verify_attempt_inventory
 from flystate.diagnostics.drive_sweep import (
     PARAMETERS,
     POPULATION_SIZES,
@@ -167,6 +167,7 @@ def _score(
     labels: NDArray[np.int64],
     train: NDArray[np.bool_],
     cfg: ExperimentConfig,
+    model_dir: Path,
 ) -> tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]:
     """Fit the project's standard readout on training photographs and score the held-out ones.
 
@@ -178,6 +179,8 @@ def _score(
     :type train: NDArray[np.bool_]
     :param cfg: Configuration providing PCA size, C grid, folds and seed.
     :type cfg: ExperimentConfig
+    :param model_dir: New directory for portable fitted arrays and metadata.
+    :type model_dir: Path
     :returns: Held-out correctness (M,), predictions (M,), and a metrics summary.
     :rtype: tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]
     """
@@ -191,6 +194,7 @@ def _score(
         tolerance=TOLERANCE,
         max_iterations=MAX_ITERATIONS,
     )
+    model_metadata = export_classifier(model=model, directory=model_dir)
     predicted = model.predict(X=x[~train].astype(np.float64)).astype(np.int64)
     correct = predicted == labels[~train]
     successes = int(correct.sum())
@@ -207,6 +211,7 @@ def _score(
         'chance': chance,
         'C': float(model.named_steps['classifier'].C),
         'cv_accuracy_by_C': cv_scores,
+        'model': model_metadata,
     }
     return correct, predicted, summary
 
@@ -281,7 +286,13 @@ def evaluate_confirmation(
         scores: dict[str, dict[str, Any]] = {}
         prediction_rows: list[dict[str, Any]] = []
         for case, x in cases.items():
-            correct, predicted, summary = _score(x=x, labels=labels, train=train, cfg=cfg)
+            correct, predicted, summary = _score(
+                x=x,
+                labels=labels,
+                train=train,
+                cfg=cfg,
+                model_dir=directory / 'models' / case,
+            )
             correctness[case] = correct
             scores[case] = summary
             prediction_rows.extend(
