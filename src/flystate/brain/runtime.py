@@ -72,11 +72,14 @@ class EpisodeBrain:
         :type batch_size: int
         :param threads: Fixed Numba thread count for reproducible accumulation.
         :type threads: int
-        :raises ValueError: If the batch, threads, or readout population are invalid.
+        :raises ValueError: If the backend is not flybrain, or the batch, threads, or readout
+            population are invalid.
         :raises FileNotFoundError: If either brain file is absent.
         """
         if batch_size < 1:
             raise ValueError('batch_size must be positive.')
+        if brain_cfg.backend != 'flybrain':
+            raise ValueError('EpisodeBrain simulates only the flybrain spiking backend.')
         verification = verify_brain_files(brain_dir=brain_dir, check_hash=False)
         if not all(item['exists'] for item in verification.values()):
             raise FileNotFoundError(
