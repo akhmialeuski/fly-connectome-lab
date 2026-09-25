@@ -583,7 +583,12 @@ class TestViewerBrowser:
                         {kind: 'confirmation_evaluate', status: 'completed', scores: {
                             'persistent/central_brain': {accuracy: 0.525, held_out: 120,
                                 chance: 0.05},
-                            'reset/central_brain': {accuracy: 0.1, held_out: 120}}}
+                            'reset/central_brain': {accuracy: 0.1, held_out: 120}}},
+                        {kind: 'scale_record', status: 'completed', episodes: 2000,
+                            parameters: {encoder_seed: 3, selection_seed: 0,
+                                reset_each_window: false, blank_delays: [0, 1, 16]}},
+                        {kind: 'scale_analysis', status: 'completed', checks: {
+                            S1_recognition_at_scale: true, S2_memory_at_scale: false}}
                     ].map(interpretation);
                 }"""
             )
@@ -617,6 +622,12 @@ class TestViewerBrowser:
             assert 'fly \u03b1 0.75, random target \u03b1 1' in summaries[15]['result']
             assert 'Best held-out accuracy: 52.50%' in summaries[16]['result']
             assert '2 separately fitted readouts' in summaries[16]['result']
+            assert 'encoder seed 3' in summaries[17]['idea']
+            assert 'after 0, 1, 16 blank windows' in summaries[17]['idea']
+            assert (
+                'S1 recognition at scale passed, S2 memory at scale failed'
+                in summaries[18]['result']
+            )
             assert all('No specific hypothesis' not in row['idea'] for row in summaries[13:])
             expect(
                 actual=page.get_by_role(role='link', name='attempt-a', exact=True)

@@ -39,6 +39,8 @@ STATUS: str = 'status'
 ENCODING: str = 'utf-8'
 WARNINGS: str = 'warnings'
 MAX_DECISIONS: int = 50
+DECISIONS: str = 'decisions'
+EPISODES: str = 'episodes'
 DECISION: str = 'decision'
 SELECTED_ALPHA: str = 'selected_alpha'
 DECISION_FIELDS: tuple[str, ...] = (NAME, 'difference_pp', 'interval_95_pp', DECISION)
@@ -105,7 +107,8 @@ def recorded_outcome(payload: dict[str, Any]) -> dict[str, Any]:
 
     :param payload: Parsed ``report.json`` object.
     :type payload: dict[str, Any]
-    :returns: Any of ``decisions`` (list), ``selection`` (family to alpha) and ``episodes`` (int).
+    :returns: Any of ``decisions`` (list), ``checks`` (rule name to pass or fail, from a
+        ``decisions`` mapping), ``selection`` (family to alpha) and ``episodes`` (int).
     :rtype: dict[str, Any]
     """
     outcome: dict[str, Any] = {}
@@ -117,7 +120,7 @@ def recorded_outcome(payload: dict[str, Any]) -> dict[str, Any]:
             if isinstance(item, dict) and isinstance(item.get(DECISION), str)
         ]
         if decisions:
-            outcome['decisions'] = decisions
+            outcome[DECISIONS] = decisions
     families = payload.get('families')
     if isinstance(families, dict):
         selection = {
@@ -127,9 +130,14 @@ def recorded_outcome(payload: dict[str, Any]) -> dict[str, Any]:
         }
         if selection:
             outcome['selection'] = selection
-    episodes = payload.get('episodes')
+    checks = payload.get(DECISIONS)
+    if isinstance(checks, dict):
+        passed = {str(name): value for name, value in checks.items() if isinstance(value, bool)}
+        if passed:
+            outcome['checks'] = passed
+    episodes = payload.get(EPISODES)
     if isinstance(episodes, int) and not isinstance(episodes, bool):
-        outcome['episodes'] = episodes
+        outcome[EPISODES] = episodes
     return outcome
 
 
