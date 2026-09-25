@@ -2,7 +2,7 @@
 9eb499d441d8472ed7146468b94f0e83803ea392dd699bd50d820d9c879c52ff  ./analysis/verify.py
 b2b39c747984f59d6944d407e9dd0d8c23ddf293e64e3c0fb7f9479abb3f8f6f  ./protocol.md
 5e29575b0bde75b5e7f26fa8a9e2fe0164d631a80dcb336d9cedf556bf5caea6  ./provenance/verify-with-states.json
-dc2b7bd9489776ee166e215cc784fa71b673c2caaa09b89b498c691a994ac263  ./results.md
+3e64ae80c844b855c860dfbf5418d2f72191b17be60a83856b2c7154fe4d5bae  ./results.md
 0c7191c4deed1518a0652505e5aca9c2d7a8bf8909f1d7894d245bb0ac02bc3c  ./run.sh
 b7f58770ce17655bf168d2fa14cb99c918b8d766cf6dea58f3098a1528e9bb36  ./selection.json
 06e11531acf950cc2f9dc70791f3c22226151e26fd3f6cdb35a73d13296e26c3  ./snapshot/phase-a/evaluate/s0/checksums.sha256
