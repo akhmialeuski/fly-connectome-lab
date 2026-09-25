@@ -178,7 +178,10 @@ def _cohort_documents(directory: Path) -> tuple[Path, Path, Path, list[int]]:
             'max_iterations': 5000,
         },
     )
-    return cohort, parent, selection, [item[LABEL] for item in samples]
+    labels = [
+        label for label in range(IDENTITIES) for _ in range(FIT_PER_IDENTITY + QUERY_PER_IDENTITY)
+    ]
+    return cohort, parent, selection, labels
 
 
 def test_decode_scores_informative_population_above_flat_one(
