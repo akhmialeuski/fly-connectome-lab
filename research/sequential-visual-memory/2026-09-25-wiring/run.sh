@@ -26,6 +26,9 @@ guard() {
 # record <root> <name> <cohort flags...> -- <graph flags...>
 record() {
   local root="$1" name="$2"; shift 2
+  local result="$FLYSTATE_HOME/$BASE/$root/logs/$name.json"
+  # A completed call printed its per-cohort status; rerunning would only rebuild the graph.
+  if grep -q '"cohorts"' "$result" 2>/dev/null; then return 0; fi
   guard
   uv run flystate diagnose wiring-record "$CFG" --output "$BASE/$root/record/$name" "$@" \
     "${MODEL[@]}" --json >"$FLYSTATE_HOME/$BASE/$root/logs/$name.json" \
@@ -38,7 +41,8 @@ evaluate() {
   local output="$BASE/$root/evaluate/s$seed"
   [ -f "$FLYSTATE_HOME/$output/report.json" ] && return 0
   local items=()
-  for name in "$@"; do items+=(--recording "$name=$BASE/$root/record/$name/s$seed"); done
+  # Case names become model paths and may not contain dots, so 0.25 is written 0p25.
+  for name in "$@"; do items+=(--recording "${name//./p}=$BASE/$root/record/$name/s$seed"); done
   uv run flystate diagnose wiring-evaluate "$CFG" --output "$output" --cohort "$seed" "${items[@]}" \
     --json >"$FLYSTATE_HOME/$BASE/$root/logs/evaluate-s$seed.json" \
     2>"$FLYSTATE_HOME/$BASE/$root/logs/evaluate-s$seed.log"
@@ -55,9 +59,9 @@ if [ "$PHASE" = phase-a ]; then
     record phase-a "random0-a$alpha" --cohort "$DEV" --family random_target --graph-seed 0 \
       --alpha "$alpha"
     names+=("fly-a$alpha" "degree0-a$alpha" "random0-a$alpha")
-    candidates+=(--candidate "fly:$alpha=fly-a$alpha/central_brain"
-                 --candidate "degree:$alpha=degree0-a$alpha/central_brain"
-                 --candidate "random_target:$alpha=random0-a$alpha/central_brain")
+    candidates+=(--candidate "fly:$alpha=fly-a${alpha//./p}/central_brain"
+                 --candidate "degree:$alpha=degree0-a${alpha//./p}/central_brain"
+                 --candidate "random_target:$alpha=random0-a${alpha//./p}/central_brain")
   done
   evaluate phase-a "$DEV" "${names[@]}"
   uv run flystate diagnose wiring-select "$CFG" --output "$BASE/phase-a/select" --cohort "$DEV" \
