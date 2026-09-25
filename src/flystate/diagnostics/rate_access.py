@@ -330,18 +330,17 @@ def analyze_memory(
                         'error_overlap': summary['error_overlap'],
                     }
                 )
+        gate = {
+            population: any(
+                row['memory_supported'] for row in comparisons if row['population'] == population
+            )
+            for population in populations
+        }
         report = {
             PARAMETERS: parameters,
             'bonferroni_level': level,
             'comparisons': comparisons,
-            'gate': {
-                population: any(
-                    row['memory_supported']
-                    for row in comparisons
-                    if row['population'] == population
-                )
-                for population in populations
-            },
+            'gate': gate,
         }
         write_json(path=directory / REPORT_FILE, value=report)
-    return report['gate']
+    return gate
