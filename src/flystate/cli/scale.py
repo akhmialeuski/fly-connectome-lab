@@ -10,6 +10,7 @@ from flystate.cli.drive_sweep import JSON_HELP, JSON_OPTION, OUTPUT_HELP, OUTPUT
 from flystate.cli.wiring import _pairs
 from flystate.diagnostics.confirmation import DELAY_INFIX, evaluate_confirmation
 from flystate.diagnostics.scale import (
+    INTERFERENCE,
     ISSUE,
     KEEP,
     PERSISTENT,
@@ -48,6 +49,13 @@ def scale_record_command(
         bool,
         typer.Option('--reset-each-window/--persistent', help='Zero the state before each window.'),
     ] = False,
+    interference: Annotated[
+        bool,
+        typer.Option(
+            '--interference/--blank',
+            help="After the last glimpse show another identity's glimpses instead of blanks.",
+        ),
+    ] = False,
     overrides: Annotated[list[str] | None, typer.Option(SET_OPTION, help=SET_HELP)] = None,
     threads: Annotated[
         int | None, typer.Option('--threads', help='Numba threads; default from the config.')
@@ -76,6 +84,8 @@ def scale_record_command(
     :type delays: Optional[list[int]]
     :param reset_each_window: Whether to zero the state before each window.
     :type reset_each_window: bool
+    :param interference: Whether windows after the last glimpse show a partner photograph.
+    :type interference: bool
     :param overrides: Dotted configuration overrides.
     :type overrides: Optional[list[str]]
     :param threads: Numba threads.
@@ -98,6 +108,7 @@ def scale_record_command(
             delays=tuple(delays or (0,)),
             batch_size=batch_size,
             threads=threads,
+            interference=interference,
         )
     except (Exception, KeyboardInterrupt) as error:
         raise _fail(error=error, event='scale_record_failed', as_json=as_json) from error
@@ -111,6 +122,10 @@ def scale_evaluate_command(
         Path, typer.Option('--persistent-recording', help='Persistent recording with delays.')
     ],
     reset: Annotated[Path, typer.Option('--reset-recording', help='Reset recording.')],
+    interference: Annotated[
+        Path | None,
+        typer.Option('--interference-recording', help='Optional interference recording.'),
+    ] = None,
     delays: Annotated[list[int] | None, typer.Option(DELAY_OPTION, help=DELAY_HELP)] = None,
     references: Annotated[
         bool,
@@ -129,6 +144,8 @@ def scale_evaluate_command(
     :type persistent: Path
     :param reset: Completed reset recording.
     :type reset: Path
+    :param interference: Completed interference recording with the same delays, or none.
+    :type interference: Optional[Path]
     :param delays: Blank delays recorded in the persistent recording.
     :type delays: Optional[list[int]]
     :param references: Whether the three input-reference cases are scored.
@@ -141,11 +158,16 @@ def scale_evaluate_command(
     """
     try:
         delayed = [f'{PRIMARY}{DELAY_INFIX}{delay}' for delay in delays or () if delay > 0]
+        recordings = {PERSISTENT: persistent, RESET: reset}
+        only = {RESET: list(KEEP)}
+        if interference is not None:
+            recordings[INTERFERENCE] = interference
+            only[INTERFERENCE] = delayed
         result = evaluate_confirmation(
             cfg=load_config(path=config, overrides=overrides or ()),
             paths=get_paths(),
             output=output,
-            recordings={PERSISTENT: persistent, RESET: reset},
+            recordings=recordings,
             populations=[*KEEP, *delayed],
             comparisons=[
                 (f'{PERSISTENT}{CASE_SEPARATOR}{name}', f'{RESET}{CASE_SEPARATOR}{name}')
@@ -153,7 +175,7 @@ def scale_evaluate_command(
             ],
             issue=ISSUE,
             references=references,
-            recording_populations={RESET: list(KEEP)},
+            recording_populations=only,
         )
     except (Exception, KeyboardInterrupt) as error:
         raise _fail(error=error, event='scale_evaluate_failed', as_json=as_json) from error
