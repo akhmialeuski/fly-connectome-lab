@@ -1,6 +1,7 @@
 """Single frozen confirmation of the graded MaleCNS memory model on untouched identities (T35)."""
 
 from pathlib import Path
+from re import fullmatch
 from time import perf_counter
 from typing import Any
 
@@ -48,6 +49,7 @@ SAMPLE_IDS: str = 'sample_ids'
 SCORES: str = 'scores'
 COMPARISONS: str = 'comparisons'
 HELD_OUT_CORRECT: str = 'held_out_correct'
+RECORDING_NAME_PATTERN: str = r'[A-Za-z][A-Za-z0-9_-]*'
 
 
 def record_confirmation(
@@ -245,8 +247,12 @@ def evaluate_confirmation(
     :type comparisons: list[tuple[str, str]]
     :returns: Per-case held-out scores and paired comparisons.
     :rtype: dict[str, Any]
-    :raises ValueError: If a recording is incomplete or belongs to another cohort.
+    :raises ValueError: If a recording name is unsafe, incomplete, or belongs to another cohort.
     """
+    if any(fullmatch(pattern=RECORDING_NAME_PATTERN, string=name) is None for name in recordings):
+        raise ValueError(
+            'Recording names must contain only ASCII letters, digits, hyphens and underscores.'
+        )
     parameters = {
         KIND: 'confirmation_evaluate',
         ISSUE_KEY: ISSUE,
