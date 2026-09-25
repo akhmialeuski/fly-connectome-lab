@@ -154,6 +154,61 @@ def sample_image(run_id: str, sample_id: str, store: Store) -> Response:
     return Response(content=store.image(run_id=run_id, sample_id=sample_id), media_type='image/png')
 
 
+def experiment(path: str, store: Store) -> dict[str, Any]:
+    """Read a manifest-backed experiment at any depth.
+
+    :param path: Relative experiment directory in the catalog.
+    :type path: str
+    :param store: Read-only artifact repository.
+    :type store: Repository
+    :returns: Available documents, evidence, and identity references.
+    :rtype: dict[str, Any]
+    """
+    return store.experiment_detail(relative=path)
+
+
+def evidence(
+    path: str,
+    name: str,
+    store: Store,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> dict[str, Any]:
+    """Read a bounded saved evidence preview.
+
+    :param path: Relative experiment directory.
+    :type path: str
+    :param name: Relative evidence filename.
+    :type name: str
+    :param store: Read-only artifact repository.
+    :type store: Repository
+    :param offset: Nonnegative table offset.
+    :type offset: int
+    :param limit: Maximum table rows, bounded by 200.
+    :type limit: int
+    :returns: Text or a table page.
+    :rtype: dict[str, Any]
+    """
+    return store.experiments.evidence(relative=path, name=name, offset=offset, limit=limit)
+
+
+def experiment_image(path: str, sample_id: str, store: Store) -> Response:
+    """Serve an existing image recorded in generic experiment membership.
+
+    :param path: Relative experiment directory.
+    :type path: str
+    :param sample_id: Recorded sample identifier.
+    :type sample_id: str
+    :param store: Read-only artifact repository.
+    :type store: Repository
+    :returns: Prepared PNG response.
+    :rtype: Response
+    """
+    return Response(
+        content=store.experiment_image(relative=path, sample_id=sample_id), media_type='image/png'
+    )
+
+
 async def artifact_error(request: Request, exc: Exception) -> JSONResponse:
     """Translate missing or damaged artifacts into usable browser errors.
 
@@ -207,6 +262,9 @@ def create_app(paths: Paths) -> FastAPI:
     for error in (OSError, ValueError, KeyError, TypeError, ConfigError):
         app.add_exception_handler(exc_class_or_status_code=error, handler=artifact_error)
     app.get('/api/catalog')(catalog)
+    app.get('/api/experiments/detail')(experiment)
+    app.get('/api/experiments/evidence')(evidence)
+    app.get('/api/experiments/image')(experiment_image)
     app.get('/api/runs/{run_id}')(run)
     prefix = '/api/runs/{run_id}/evaluations/{eval_id}'
     app.get(prefix)(evaluation)
