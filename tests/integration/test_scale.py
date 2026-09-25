@@ -303,6 +303,12 @@ def test_scale_cli_records_evaluates_and_analyzes(
     assert confirmation[CURVE]['0'] == confirmation[ACCURACY]
     assert list(confirmation['interference_curve_pct']) == [str(delay) for delay in DELAYS]
     assert confirmation['interference_curve_pct']['0'] == confirmation[ACCURACY]
+    low_blank, high_blank = confirmation['blank_longest_delay_interval_95_pp']
+    for prefix in ('blank', 'interference'):
+        low, high = confirmation[f'{prefix}_longest_delay_interval_95_pp']
+        assert low <= confirmation[f'{prefix}_longest_delay_change_pp'] <= high
+    assert confirmation['blank_delays_preserve_identity'] == (low_blank > -5 and high_blank < 5)
+    assert isinstance(analysis['decisions']['F1_blank_windows_preserve_identity'], bool)
     assert set(analysis['decisions']) == {
         'S1_recognition_at_scale',
         'S2_memory_at_scale',

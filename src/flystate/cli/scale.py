@@ -170,8 +170,18 @@ def scale_evaluate_command(
             recordings=recordings,
             populations=[*KEEP, *delayed],
             comparisons=[
-                (f'{PERSISTENT}{CASE_SEPARATOR}{name}', f'{RESET}{CASE_SEPARATOR}{name}')
-                for name in KEEP
+                *(
+                    (f'{PERSISTENT}{CASE_SEPARATOR}{name}', f'{RESET}{CASE_SEPARATOR}{name}')
+                    for name in KEEP
+                ),
+                *(
+                    (
+                        f'{source}{CASE_SEPARATOR}{delayed[-1]}',
+                        f'{PERSISTENT}{CASE_SEPARATOR}{PRIMARY}',
+                    )
+                    for source in (PERSISTENT, *([INTERFERENCE] if interference else []))
+                    if delayed
+                ),
             ],
             issue=ISSUE,
             references=references,
