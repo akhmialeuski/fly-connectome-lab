@@ -44,7 +44,7 @@ PRIMARY: str = 'central_brain'
 PERSISTENT: str = 'persistent'
 RESET: str = 'reset'
 MINIMUM_MEMORY_GAIN_PP: float = 10.0
-# F1: blank windows are predicted to leave held-out accuracy within this band of delay 0.
+# F1: the paired change after the longest blank delay is predicted to lie inside this band.
 BLANK_TOLERANCE_PP: float = 5.0
 INTERFERENCE: str = 'interference'
 INTERFERENCE_NAMESPACE: str = 't38-interference-partners'
@@ -260,11 +260,50 @@ def _summary(report: dict[str, Any], delays: list[int]) -> dict[str, Any]:
         'half_retention_windows': half_retention(
             delays=delays, accuracies=curve, chance=persistent[CHANCE]
         ),
-        'blank_delays_preserve_identity': all(
-            abs(accuracy - curve[0]) * PERCENT < BLANK_TOLERANCE_PP for accuracy in curve
-        ),
+        **_longest_delay(report=report, source=PERSISTENT, delays=delays, key='blank'),
+        **_longest_delay(report=report, source=INTERFERENCE, delays=delays, key=INTERFERENCE),
         **_interference(scores=scores, delays=delays, first=curve[0], chance=persistent[CHANCE]),
     }
+
+
+def _longest_delay(
+    report: dict[str, Any], source: str, delays: list[int], key: str
+) -> dict[str, Any]:
+    """Return the paired change from no delay to the longest delay, if the evaluation scored it.
+
+    The change is the central-brain accuracy after the longest delay minus the accuracy at delay 0,
+    on the same held-out photographs, with its 95% identity-cluster bootstrap interval. For blank
+    windows, rule F1 holds when that interval lies inside the preregistered band of 5 points.
+
+    :param report: T35-style evaluation report.
+    :type report: dict[str, Any]
+    :param source: Recording name, persistent (blank windows) or interference.
+    :type source: str
+    :param delays: Windows after the last glimpse, starting with 0.
+    :type delays: list[int]
+    :param key: Prefix of the returned keys.
+    :type key: str
+    :returns: Change, interval and, for blank windows, the F1 outcome, or nothing.
+    :rtype: dict[str, Any]
+    """
+    case = f'{source}/{PRIMARY}{DELAY_INFIX}{delays[-1]}'
+    match = [
+        item
+        for item in report[COMPARISONS]
+        if item['a'] == case and item['b'] == f'{PERSISTENT}/{PRIMARY}'
+    ]
+    if len(delays) < 2 or not match:
+        return {}
+    low, high = match[0]['identity_cluster_95_pp']
+    result: dict[str, Any] = {
+        f'{key}_longest_delay_change_pp': match[0][DIFFERENCE],
+        f'{key}_longest_delay_interval_95_pp': [low, high],
+    }
+    if source == PERSISTENT:
+        result['blank_delays_preserve_identity'] = (
+            low > -BLANK_TOLERANCE_PP and high < BLANK_TOLERANCE_PP
+        )
+    return result
 
 
 def _interference(
@@ -362,7 +401,9 @@ def analyze_scale(
             'decisions': {
                 'S1_recognition_at_scale': confirmed[RECOGNITION_PASSES],
                 'S2_memory_at_scale': confirmed[MEMORY_PASSES],
-                'F1_blank_windows_preserve_identity': confirmed['blank_delays_preserve_identity'],
+                'F1_blank_windows_preserve_identity': confirmed.get(
+                    'blank_delays_preserve_identity'
+                ),
                 'E_every_encoder_seed_keeps_memory': all(s[MEMORY_PASSES] for s in seeds.values()),
             },
         }
