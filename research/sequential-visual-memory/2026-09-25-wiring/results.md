@@ -13,7 +13,7 @@ Differences are in percentage points on the 1,200 held-out photographs. Interval
 | **W1**: MaleCNS minus mean of 5 degree-preserving shuffles | **−2.65** | [−4.63, −0.53] | **disadvantage**, smaller than the 5-point margin |
 | **W2**: MaleCNS minus mean of 2 random-target nulls | −1.58 | [−3.67, +0.58] | no practically relevant difference |
 | **M1**: memory, MaleCNS persistent minus reset (gain 1) | **+28.50** | [+25.17, +31.83] | advantage, McNemar 401 against 59, p = 6.4e-57 |
-| **M2**: recurrence, MaleCNS minus feedforward-only (gain 1) | +4.50 | [+2.08, +6.92] | advantage, smaller than the 5-point margin, p = 3.5e-4 |
+| **M2**: recurrence, MaleCNS minus feedforward-only (gain 1) | +4.50 | [+2.08, +6.92] | advantage, p = 3.5e-4 |
 | **R**: T35 replication, MaleCNS minus shuffle seed 0 (gain 1) | +0.42 | [−1.83, +2.67] | no practically relevant difference, p = 0.77 |
 
 The same rules for **descending neurons**, the secondary population:
@@ -45,7 +45,7 @@ Chance is 5%, since every cohort is a 20-identity task.
 1. **The specific MaleCNS wiring confers no recognition-with-memory advantage.** At matched operating points MaleCNS is 2.65 points below the degree-preserving ensemble, with an interval entirely below 0 and entirely inside the ±5-point margin. It is not distinguishable from the random-target nulls, which lose the in-degree distribution as well. For descending neurons, the original PoC readout, the nulls are better by 3.6 to 4.3 points. The claim "the fly wiring helps" is ruled out at the preregistered margin. What remains is a small, well-resolved advantage for the shuffled graphs at the selected operating points.
 2. **T35's +5.8 points was sampling variation.** The exact T35 comparison (gain 1, shuffle seed 0) gives +0.42 [−1.83, +2.67] on ten times as many photographs, with McNemar 98 against 93.
 3. **Memory replicates on 200 new identities.** Carrying the state across glimpses adds 28.5 points in the central brain, and every cohort gains between 20.0 and 35.0 points.
-4. **Most of the memory needs no recurrence among non-driven neurons.** Keeping only the synapses that leave the driven neurons gives 37.2% against 13.2% with reset, which is 24.0 of the 28.5 points. Each non-driven neuron then integrates its direct drive with its own slow leak. Recurrence adds a significant 4.5 points [+2.1, +6.9] in the central brain and 6.6 points in descending neurons.
+4. **Most of the memory needs no recurrence among non-driven neurons.** Keeping only the synapses that leave the driven neurons gives 37.2% against 13.2% with reset, which is 24.0 of the 28.5 points. Each non-driven neuron then integrates its direct drive with its own slow leak. Recurrence adds a significant 4.5 points [+2.1, +6.9] in the central brain and 6.6 points in descending neurons. The central-brain interval crosses +5, so whether this gain is smaller than the 5-point margin is not resolved.
 5. **The operating point hardly matters.** Phase A found at most 2.5 points of CV range across α within each family, and gain 1 against α 0.25 changes MaleCNS by 0.5 points on the untouched cohorts.
 
 The mechanism is therefore a large, sparse, signed, row-normalized network of slow leaky units that receive direct projections from the input neurons. The MaleCNS connectome is one such network, but not a privileged one for this task. This agrees with [arXiv 2604.04033](https://arxiv.org/abs/2604.04033), where Drosophila-connectome advantages largely disappear under degree-preserving nulls with fair controls.
@@ -57,7 +57,26 @@ Per-cohort W1 differences range from −9.8 (s5) to +1.8 (s11) in the central br
 ### Failures and corrections, all recorded in #74
 
 - **Phase A evaluation.** The first attempt stopped before creating an attempt, because case names containing a dot are not allowed. `09d5764` renamed the cases. [Comment](https://github.com/akhmialeuski/fly-connectome-lab/issues/74#issuecomment-5832277913).
-- **Solver budget.** The cohort s8 evaluation failed when `fly-g1-reset/central_brain` stopped at SciPy's L-BFGS function-evaluation cap of 15,000. That is below the declared budget of 50,000 iterations. `e5b812c` continues such fits with `warm_start` within the same budget. Refits of cohort s4 gave identical predictions and CV scores, so s4 to s6 were kept. The failed attempt is preserved in `snapshot/phase-b/evaluate-failed/`. Two fits in s8 were continued, after 14,029 and 13,860 iterations. [Comment](https://github.com/akhmialeuski/fly-connectome-lab/issues/74#issuecomment-5839048959).
+- **Solver budget.** The cohort s8 evaluation failed when `fly-g1-reset/central_brain` stopped at SciPy's L-BFGS function-evaluation cap of 15,000. That is below the declared budget of 50,000 iterations. `e5b812c` continues such fits with `warm_start` within the same budget. Refits of cohort s4 gave identical predictions and CV scores, so s4 to s6 were kept. The failed attempt is preserved in `snapshot/phase-b/evaluate-failed/`. Three fits were continued: two in s8, after 14,029 and 13,860 iterations, and one in s25, after 14,129 iterations. The logs name no case. By iteration count, the s25 fit is `fly-g1-reset/central_brain`. [Comment](https://github.com/akhmialeuski/fly-connectome-lab/issues/74#issuecomment-5839048959).
 - **Spectral radius solver.** Two ARPACK defects were fixed before any recording: a random start vector and a single requested eigenvalue.
 - **conn2res normalization.** It uses `eigh`, so it is exact only for symmetric matrices. [Comment](https://github.com/akhmialeuski/fly-connectome-lab/issues/74#issuecomment-5832311871).
 - **Verifier order.** The first verifier run failed on W1's interval. The analysis report stores its cohorts as canonical JSON with sorted keys, while the bootstrap drew them in `run.sh` order. The verifier now restores `run.sh` order, and every interval then reproduced exactly.
+
+### Corrections made after the first version of this file (2026-09-25)
+
+- **M2 qualifier.** M2 was first described as "smaller than the 5-point margin". Its interval reaches +6.92, so under the pre-results note the qualifier does not apply. The frozen reading, advantage, is unchanged.
+- **McNemar method.** The protocol promised exact McNemar tests, but `flystate.evaluation.stats.mcnemar` switches to the continuity-corrected chi-square at 25 or more discordant pairs. That applies to every contrast here. Exact two-sided binomial p-values from the same counts:
+
+  | Contrast | Only first correct | Only second correct | Exact p |
+  | --- | ---: | ---: | ---: |
+  | M1, central brain | 401 | 59 | 1.5e-63 |
+  | M2, central brain | 137 | 83 | 3.3e-4 |
+  | R, central brain | 98 | 93 | 0.77 |
+  | M1, descending | 346 | 66 | 6.7e-47 |
+  | M2, descending | 143 | 64 | 4.1e-8 |
+  | R, descending | 91 | 101 | 0.52 |
+
+  No reading changes.
+- **Continued fits.** The count of continued L-BFGS fits was first given as two. It is three, and the s25 fit was added above.
+
+The three discrepancies were found while writing the T37 report for the project knowledge base.
