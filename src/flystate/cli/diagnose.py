@@ -23,6 +23,12 @@ from flystate.cli.rate_access import (
 from flystate.cli.stability import stability_command
 from flystate.cli.temporal import temporal_command
 from flystate.cli.temporal_analysis import temporal_analysis_command
+from flystate.cli.wiring import (
+    wiring_analyze_command,
+    wiring_evaluate_command,
+    wiring_record_command,
+    wiring_select_command,
+)
 from flystate.diagnostics.audit import audit_cohort
 from flystate.diagnostics.convergence import diagnose_convergence
 from flystate.diagnostics.probes import run_probe
@@ -76,6 +82,22 @@ app.command(
     name='confirm-evaluate',
     help='Fit on training photographs and score the untouched T35 held-out photographs once.',
 )(confirm_evaluate_command)
+app.command(
+    name='wiring-record',
+    help='Record T37 final graded states of every cohort on MaleCNS or a null graph.',
+)(wiring_record_command)
+app.command(
+    name='wiring-evaluate',
+    help='Fit and score the T37 recordings of one cohort with the standard readout.',
+)(wiring_evaluate_command)
+app.command(
+    name='wiring-select',
+    help='Freeze each T37 graph family operating point by training-only CV accuracy.',
+)(wiring_select_command)
+app.command(
+    name='wiring-analyze',
+    help='Pool the T37 cohorts and decide each preregistered wiring contrast.',
+)(wiring_analyze_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
 app.command(

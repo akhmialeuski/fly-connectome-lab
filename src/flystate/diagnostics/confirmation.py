@@ -1,5 +1,6 @@
 """Single frozen confirmation of the graded MaleCNS memory model on untouched identities (T35)."""
 
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from re import fullmatch
 from time import perf_counter
@@ -9,6 +10,7 @@ import numba
 import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import binomtest
+from sklearn.pipeline import Pipeline
 from threadpoolctl import threadpool_limits
 
 from flystate.brain.benchmark import resolve_threads
@@ -50,6 +52,8 @@ SCORES: str = 'scores'
 COMPARISONS: str = 'comparisons'
 HELD_OUT_CORRECT: str = 'held_out_correct'
 RECORDING_NAME_PATTERN: str = r'[A-Za-z][A-Za-z0-9_-]*'
+# Writes a fitted pipeline's arrays into a new directory and returns their metadata.
+Exporter = Callable[[Pipeline, Path], dict[str, Any]]
 
 
 def record_confirmation(
@@ -107,60 +111,138 @@ def record_confirmation(
         'trainable_fly_parameters': [],
     }
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
-        prepared = prepare_dataset(cfg=cfg, paths=paths)
-        rows = list(range(len(prepared.samples)))
-        features, provenance = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
-        currents = features[ENCODED_CURRENT].reshape(len(rows), cfg.episodes.steps, -1)
-        with np.load(file=paths.brain / BRAIN_METADATA, allow_pickle=False) as meta:
-            candidates = np.flatnonzero(meta['superclass'] == cfg.encoder.target_population)
-        encoder = SparseProjectionEncoder(
-            cfg=cfg.encoder, window=cfg.episodes.window, candidate_neurons=candidates
-        )
+        input_idx = driven_neurons(cfg=cfg, paths=paths)
         numba.set_num_threads(threads)
         reservoir = RateReservoir(
             brain_dir=paths.brain,
             gain=gain,
             leak=leak,
-            batch_size=len(rows),
-            leak_overrides=None if driven_leak is None else {driven_leak: encoder.input_idx},
+            batch_size=cohort_size(cfg=cfg),
+            leak_overrides=None if driven_leak is None else {driven_leak: input_idx},
             shuffle_seed=shuffle_seed,
         )
-        populations = {
-            name: indices
-            for name, indices in population_indices(
-                brain_file=paths.brain / BRAIN_METADATA, input_idx=encoder.input_idx
-            ).items()
-            if indices.size
-        }
-        started = perf_counter()
-        with threadpool_limits(limits=1, user_api='blas'):
-            states = simulate_states(
-                reservoir=reservoir,
-                input_idx=encoder.input_idx,
-                inputs=(currents * np.float32(input_scale)).astype(np.float32),
-                populations=populations,
-                steps_per_window=steps_per_window,
-                reset_each_window=reset_each_window,
-            )
-        elapsed = perf_counter() - started
-        finals = {
-            f'{FINAL_PREFIX}{key.split("_", 1)[1]}': value[:, -1] for key, value in states.items()
-        }
-        if not all(np.isfinite(value).all() for value in finals.values()):
-            raise ValueError('Recorded final states contain nonfinite values.')
-        _write_arrays(path=directory / RESPONSES_FILE, arrays=finals)
-        summary = {
-            PARAMETERS: parameters,
-            'simulation_seconds': elapsed,
-            'episodes': len(rows),
-            'edges': reservoir.edges,
-            'dataset_fingerprint': prepared.fingerprint,
-            'encoder_input_sha256': provenance['feature_sha256'][ENCODED_CURRENT],
-            SAMPLE_IDS: [sample.sample_id for sample in prepared.samples],
-            POPULATION_SIZES: {name: len(indices) for name, indices in populations.items()},
-            'responses_sha256': sha256_file(path=directory / RESPONSES_FILE),
-        }
-        write_json(path=directory / REPORT_FILE, value=summary)
+        summary = record_cohort(
+            cfg=cfg,
+            paths=paths,
+            directory=directory,
+            reservoir=reservoir,
+            input_idx=input_idx,
+            input_scale=input_scale,
+            steps_per_window=steps_per_window,
+            reset_each_window=reset_each_window,
+            parameters=parameters,
+        )
+    return summary
+
+
+def cohort_size(cfg: ExperimentConfig) -> int:
+    """Return the number of photographs the configuration selects, including calibration ones.
+
+    :param cfg: Configuration whose dataset subset defines the cohort.
+    :type cfg: ExperimentConfig
+    :returns: Photograph count, which is the reservoir batch size of a recording.
+    :rtype: int
+    """
+    subset = cfg.dataset.subset
+    return (subset.n_identities + subset.calibration_identities) * subset.images_per_identity
+
+
+def driven_neurons(cfg: ExperimentConfig, paths: Paths) -> NDArray[np.int64]:
+    """Return the neurons the sparse encoder drives, exactly as the confirmation recordings do.
+
+    :param cfg: Configuration providing the encoder and its target population.
+    :type cfg: ExperimentConfig
+    :param paths: Working data home with the flybrain metadata.
+    :type paths: Paths
+    :returns: Driven neuron indices, shape (I,), int64.
+    :rtype: NDArray[np.int64]
+    """
+    with np.load(file=paths.brain / BRAIN_METADATA, allow_pickle=False) as meta:
+        candidates = np.flatnonzero(meta['superclass'] == cfg.encoder.target_population)
+    encoder = SparseProjectionEncoder(
+        cfg=cfg.encoder, window=cfg.episodes.window, candidate_neurons=candidates
+    )
+    return np.asarray(encoder.input_idx, dtype=np.int64)
+
+
+def record_cohort(
+    cfg: ExperimentConfig,
+    paths: Paths,
+    directory: Path,
+    reservoir: RateReservoir,
+    input_idx: NDArray[np.int64],
+    input_scale: float,
+    steps_per_window: int,
+    reset_each_window: bool,
+    parameters: dict[str, Any],
+    keep: Sequence[str] | None = None,
+) -> dict[str, Any]:
+    """Simulate every photograph of one cohort and write its final population states.
+
+    :param cfg: Configuration whose dataset defines the cohort.
+    :type cfg: ExperimentConfig
+    :param paths: Working data home.
+    :type paths: Paths
+    :param directory: Open attempt directory that receives the responses and report.
+    :type directory: Path
+    :param reservoir: Reservoir whose batch size equals the cohort's photograph count.
+    :type reservoir: RateReservoir
+    :param input_idx: Driven neuron indices, shape (I,), int64.
+    :type input_idx: NDArray[np.int64]
+    :param input_scale: Multiplier of the encoded current, dimensionless.
+    :type input_scale: float
+    :param steps_per_window: Synaptic updates per window.
+    :type steps_per_window: int
+    :param reset_each_window: Whether the state is zeroed before every window.
+    :type reset_each_window: bool
+    :param parameters: Attempt parameters repeated in the report.
+    :type parameters: dict[str, Any]
+    :param keep: Populations whose final states are written; all populations when omitted.
+    :type keep: Optional[Sequence[str]]
+    :returns: Recording summary, also written to the report.
+    :rtype: dict[str, Any]
+    :raises ValueError: If a recorded state is not finite.
+    """
+    prepared = prepare_dataset(cfg=cfg, paths=paths)
+    rows = list(range(len(prepared.samples)))
+    features, provenance = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
+    currents = features[ENCODED_CURRENT].reshape(len(rows), cfg.episodes.steps, -1)
+    populations = {
+        name: indices
+        for name, indices in population_indices(
+            brain_file=paths.brain / BRAIN_METADATA, input_idx=input_idx
+        ).items()
+        if indices.size and (keep is None or name in keep)
+    }
+    started = perf_counter()
+    with threadpool_limits(limits=1, user_api='blas'):
+        states = simulate_states(
+            reservoir=reservoir,
+            input_idx=input_idx,
+            inputs=(currents * np.float32(input_scale)).astype(np.float32),
+            populations=populations,
+            steps_per_window=steps_per_window,
+            reset_each_window=reset_each_window,
+        )
+    elapsed = perf_counter() - started
+    finals = {
+        f'{FINAL_PREFIX}{key.split("_", 1)[1]}': value[:, -1] for key, value in states.items()
+    }
+    if not all(np.isfinite(value).all() for value in finals.values()):
+        raise ValueError('Recorded final states contain nonfinite values.')
+    _write_arrays(path=directory / RESPONSES_FILE, arrays=finals)
+    summary = {
+        PARAMETERS: parameters,
+        'simulation_seconds': elapsed,
+        'episodes': len(rows),
+        'edges': reservoir.edges,
+        'dataset_fingerprint': prepared.fingerprint,
+        'encoder_input_sha256': provenance['feature_sha256'][ENCODED_CURRENT],
+        SAMPLE_IDS: [sample.sample_id for sample in prepared.samples],
+        POPULATION_SIZES: {name: len(indices) for name, indices in populations.items()},
+        'responses_sha256': sha256_file(path=directory / RESPONSES_FILE),
+    }
+    write_json(path=directory / REPORT_FILE, value=summary)
     return summary
 
 
@@ -170,6 +252,7 @@ def _score(
     train: NDArray[np.bool_],
     cfg: ExperimentConfig,
     model_dir: Path,
+    export: Exporter = export_classifier,
 ) -> tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]:
     """Fit the project's standard readout on training photographs and score the held-out ones.
 
@@ -183,6 +266,8 @@ def _score(
     :type cfg: ExperimentConfig
     :param model_dir: New directory for portable fitted arrays and metadata.
     :type model_dir: Path
+    :param export: Writes the fitted pipeline's arrays to ``model_dir`` and returns metadata.
+    :type export: Exporter
     :returns: Held-out correctness (M,), predictions (M,), and a metrics summary.
     :rtype: tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]
     """
@@ -196,7 +281,7 @@ def _score(
         tolerance=TOLERANCE,
         max_iterations=MAX_ITERATIONS,
     )
-    model_metadata = export_classifier(model=model, directory=model_dir)
+    model_metadata = export(model, model_dir)
     predicted = model.predict(X=x[~train].astype(np.float64)).astype(np.int64)
     correct = predicted == labels[~train]
     successes = int(correct.sum())
@@ -225,6 +310,9 @@ def evaluate_confirmation(
     recordings: dict[str, Path],
     populations: list[str],
     comparisons: list[tuple[str, str]],
+    issue: int = ISSUE,
+    references: bool = True,
+    export: Exporter = export_classifier,
 ) -> dict[str, Any]:
     """Train on each identity's training photographs and score every untouched held-out photograph.
 
@@ -245,6 +333,12 @@ def evaluate_confirmation(
     :type populations: list[str]
     :param comparisons: Pairs of case names (a, b); the difference is a minus b.
     :type comparisons: list[tuple[str, str]]
+    :param issue: Owning research issue recorded in the attempt.
+    :type issue: int
+    :param references: Whether the three input-reference cases are scored as well.
+    :type references: bool
+    :param export: Writes each fitted pipeline's arrays; see :func:`_score`.
+    :type export: Exporter
     :returns: Per-case held-out scores and paired comparisons.
     :rtype: dict[str, Any]
     :raises ValueError: If a recording name is unsafe, incomplete, or belongs to another cohort.
@@ -255,7 +349,7 @@ def evaluate_confirmation(
         )
     parameters = {
         KIND: 'confirmation_evaluate',
-        ISSUE_KEY: ISSUE,
+        ISSUE_KEY: issue,
         'recordings': {name: str(path) for name, path in recordings.items()},
         'populations': populations,
         COMPARISONS: [list(pair) for pair in comparisons],
@@ -268,14 +362,16 @@ def evaluate_confirmation(
         train = np.array(
             [sample.split == TRAIN_SPLIT for sample in prepared.samples], dtype=np.bool_
         )
-        rows = list(range(len(ids)))
-        references, _ = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
-        width = references[ENCODED_CURRENT].shape[1] // cfg.episodes.steps
-        cases: dict[str, NDArray[np.float32]] = {
-            f'{INPUT_REFERENCE}/encoded_current_all': references[ENCODED_CURRENT],
-            f'{INPUT_REFERENCE}/encoded_current_last': references[ENCODED_CURRENT][:, -width:],
-            f'{INPUT_REFERENCE}/pixels_all': references['pixels'],
-        }
+        cases: dict[str, NDArray[np.float32]] = {}
+        if references:
+            rows = list(range(len(ids)))
+            inputs, _ = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
+            width = inputs[ENCODED_CURRENT].shape[1] // cfg.episodes.steps
+            cases = {
+                f'{INPUT_REFERENCE}/encoded_current_all': inputs[ENCODED_CURRENT],
+                f'{INPUT_REFERENCE}/encoded_current_last': inputs[ENCODED_CURRENT][:, -width:],
+                f'{INPUT_REFERENCE}/pixels_all': inputs['pixels'],
+            }
         for name, recording in recordings.items():
             if verify_attempt_inventory(directory=recording, paths=paths)['status'] != 'completed':
                 raise ValueError(f'The recording is not completed: {recording}.')
@@ -298,6 +394,7 @@ def evaluate_confirmation(
                 train=train,
                 cfg=cfg,
                 model_dir=directory / 'models' / case,
+                export=export,
             )
             correctness[case] = correct
             scores[case] = summary
