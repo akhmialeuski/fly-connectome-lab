@@ -12,6 +12,7 @@ deterministic function of the input.
 """
 
 from pathlib import Path
+from typing import Any
 
 import numba
 import numpy as np
@@ -22,6 +23,8 @@ from scipy import sparse
 from flystate.hashing import stable_int
 
 SHUFFLE_NAMESPACE: str = 'degree-preserving-shuffle'
+# The same numba.prange object under a name mypy treats as a callable returning a range.
+PARALLEL_RANGE: Any = numba.prange
 
 
 @numba.njit(parallel=True, cache=True)
@@ -45,7 +48,7 @@ def _propagate(
     :param out: Destination for postsynaptic input, shape (N,B), float32.
     :type out: NDArray[np.float32]
     """
-    for row in numba.prange(len(indptr) - 1):
+    for row in PARALLEL_RANGE(len(indptr) - 1):
         accumulator = np.zeros(state.shape[1], dtype=np.float32)
         for edge in range(indptr[row], indptr[row + 1]):
             accumulator += weights[edge] * state[indices[edge]]
