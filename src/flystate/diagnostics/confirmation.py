@@ -179,6 +179,7 @@ def record_cohort(
     parameters: dict[str, Any],
     keep: Sequence[str] | None = None,
     delays: Sequence[int] = (0,),
+    partners: NDArray[np.int64] | None = None,
 ) -> dict[str, Any]:
     """Simulate every photograph of one cohort and write its final population states.
 
@@ -186,7 +187,8 @@ def record_cohort(
     cohort. Every photograph's dynamics are independent of its batch. With blank delays, zero-input
     windows follow the last glimpse, and the state after ``d`` of them is written as
     ``final_<population>_delay<d>``. Delay 0 is the state after the last glimpse, written as
-    ``final_<population>``.
+    ``final_<population>``. With ``partners``, the windows after the last glimpse show the first
+    glimpses of the partner photograph instead of blank input (retroactive interference).
 
     :param cfg: Configuration whose dataset defines the cohort.
     :type cfg: ExperimentConfig
@@ -208,8 +210,11 @@ def record_cohort(
     :type parameters: dict[str, Any]
     :param keep: Populations whose final states are written; all populations when omitted.
     :type keep: Optional[Sequence[str]]
-    :param delays: Distinct nonnegative numbers of blank windows after the last glimpse.
+    :param delays: Distinct nonnegative numbers of windows after the last glimpse.
     :type delays: Sequence[int]
+    :param partners: Row of the interfering photograph for every photograph, shape (N,), int64,
+        or none for blank windows.
+    :type partners: Optional[NDArray[np.int64]]
     :returns: Recording summary, also written to the report.
     :rtype: dict[str, Any]
     :raises ValueError: If the batching or the delays are invalid, or a state is not finite.
@@ -218,7 +223,11 @@ def record_cohort(
         raise ValueError('Blank delays must be distinct and nonnegative.')
     if reset_each_window and max(delays) > 0:
         raise ValueError('Blank delays need a persistent state; a reset empties it.')
+    if partners is not None and max(delays) > cfg.episodes.steps:
+        raise ValueError('Interference cannot show more windows than a photograph has.')
     prepared = prepare_dataset(cfg=cfg, paths=paths)
+    if partners is not None and partners.shape != (len(prepared.samples),):
+        raise ValueError('Every photograph needs exactly one interfering partner.')
     rows = list(range(len(prepared.samples)))
     features, provenance = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
     currents = features[ENCODED_CURRENT].reshape(len(rows), cfg.episodes.steps, -1)
@@ -241,6 +250,9 @@ def record_cohort(
                 shape=(batch, glimpses + max(delays), currents.shape[2]), dtype=np.float32
             )
             drive[:, :glimpses] = currents[start : start + batch] * np.float32(input_scale)
+            if partners is not None:
+                drive[:, glimpses:] = currents[partners[start : start + batch], : max(delays)]
+                drive[:, glimpses:] *= np.float32(input_scale)
             states = simulate_states(
                 reservoir=reservoir,
                 input_idx=input_idx,

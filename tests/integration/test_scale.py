@@ -15,7 +15,7 @@ from flystate.diagnostics.confirmation import driven_neurons
 from flystate.diagnostics.drive_sweep import population_indices
 from flystate.diagnostics.input_access import _features
 from flystate.diagnostics.rate_access import simulate_states
-from flystate.diagnostics.scale import half_retention, record_scale
+from flystate.diagnostics.scale import half_retention, interference_partners, record_scale
 from flystate.experiments.config import ExperimentConfig, effective_yaml
 from flystate.settings import get_paths
 
@@ -37,6 +37,7 @@ CURVE: str = 'forgetting_curve_pct'
 PERSISTENT_RUN: str = 'runs/scale/p'
 RESET_RUN: str = 'runs/scale/r'
 EVALUATION_RUN: str = 'runs/scale/e'
+INTERFERENCE_RUN: str = 'runs/scale/i'
 RECORD: str = 'scale-record'
 RESPONSES: str = 'responses.npz'
 JSON: str = '--json'
@@ -126,6 +127,65 @@ def test_batches_and_delays_match_one_direct_simulation(tiny_experiment: Experim
     assert not np.array_equal(states[:, glimpses - 1], states[:, glimpses + 2])
 
 
+def test_interference_shows_partner_glimpses(tiny_experiment: ExperimentConfig) -> None:
+    """Pair photographs within their split across identities, and feed the partner's glimpses.
+
+    :param tiny_experiment: Offline synthetic experiment with installed brain files.
+    :type tiny_experiment: ExperimentConfig
+    """
+    paths = get_paths()
+    samples = prepare_dataset(cfg=tiny_experiment, paths=paths).samples
+    partners = interference_partners(samples=samples, seed=tiny_experiment.seed)
+    assert np.array_equal(
+        partners, interference_partners(samples=samples, seed=tiny_experiment.seed)
+    )
+    for row, partner in enumerate(partners):
+        assert samples[partner].split == samples[row].split
+        assert samples[partner].label != samples[row].label
+    output = Path('runs/scale/interference')
+    record_scale(
+        cfg=tiny_experiment,
+        paths=paths,
+        output=output,
+        reset_each_window=False,
+        delays=DELAYS,
+        batch_size=20,
+        interference=True,
+        **MODEL,
+    )
+    recorded = _arrays(path=paths.home / output)
+    rows = list(range(len(samples)))
+    features, _ = _features(
+        cfg=tiny_experiment,
+        paths=paths,
+        prepared=prepare_dataset(cfg=tiny_experiment, paths=paths),
+        rows=rows,
+    )
+    glimpses = tiny_experiment.episodes.steps
+    currents = features['encoded_current'].reshape(len(rows), glimpses, -1)
+    input_idx = driven_neurons(cfg=tiny_experiment, paths=paths)
+    reservoir = RateReservoir(
+        brain_dir=paths.brain,
+        gain=MODEL['gain'],
+        leak=MODEL['leak'],
+        batch_size=len(rows),
+        leak_overrides={MODEL['driven_leak']: input_idx},
+    )
+    drive = np.concatenate([currents, currents[partners, : max(DELAYS)]], axis=1)
+    drive = (drive * np.float32(MODEL['input_scale'])).astype(np.float32)
+    central = population_indices(brain_file=paths.brain / 'brain.npz', input_idx=input_idx)[CENTRAL]
+    states = simulate_states(
+        reservoir=reservoir,
+        input_idx=input_idx,
+        inputs=drive,
+        populations={CENTRAL: central},
+        steps_per_window=MODEL['steps_per_window'],
+        reset_each_window=False,
+    )[f'state_{CENTRAL}']
+    assert np.array_equal(recorded[FINAL_CENTRAL], states[:, glimpses - 1])
+    assert np.array_equal(recorded[FINAL_DELAY3], states[:, glimpses + 2])
+
+
 def test_record_scale_rejects_invalid_requests(tiny_experiment: ExperimentConfig) -> None:
     """Refuse blank delays with a reset state and a batch that does not divide the cohort.
 
@@ -197,6 +257,18 @@ def test_scale_cli_records_evaluates_and_analyzes(
     _invoke(
         [
             DIAGNOSE,
+            RECORD,
+            *common,
+            OUTPUT,
+            INTERFERENCE_RUN,
+            *delays,
+            *MODEL_OPTIONS,
+            '--interference',
+        ]
+    )
+    _invoke(
+        [
+            DIAGNOSE,
             'scale-evaluate',
             *common,
             OUTPUT,
@@ -205,6 +277,8 @@ def test_scale_cli_records_evaluates_and_analyzes(
             PERSISTENT_RUN,
             '--reset-recording',
             RESET_RUN,
+            '--interference-recording',
+            INTERFERENCE_RUN,
             *delays,
         ]
     )
@@ -227,9 +301,12 @@ def test_scale_cli_records_evaluates_and_analyzes(
     confirmation = analysis['confirmation']
     assert list(confirmation[CURVE]) == [str(delay) for delay in DELAYS]
     assert confirmation[CURVE]['0'] == confirmation[ACCURACY]
+    assert list(confirmation['interference_curve_pct']) == [str(delay) for delay in DELAYS]
+    assert confirmation['interference_curve_pct']['0'] == confirmation[ACCURACY]
     assert set(analysis['decisions']) == {
         'S1_recognition_at_scale',
         'S2_memory_at_scale',
+        'F1_blank_windows_preserve_identity',
         'E_every_encoder_seed_keeps_memory',
     }
     assert analysis['development_spread'][ACCURACY]['standard_deviation'] is None

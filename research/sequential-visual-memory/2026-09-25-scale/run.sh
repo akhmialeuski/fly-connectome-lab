@@ -31,19 +31,31 @@ run() {
 }
 
 cohort() {
-  local label="$1" references="$2"; shift 2
-  local sets=("$@")
-  run "$label-record-persistent" scale-record "$BASE/$label/persistent" "${sets[@]}"     "${MODEL[@]}" "${DELAYS[@]}" --persistent
-  run "$label-record-reset" scale-record "$BASE/$label/reset" "${sets[@]}" "${MODEL[@]}"     --reset-each-window
-  run "$label-evaluate" scale-evaluate "$BASE/$label/evaluate" "${sets[@]}" "${DELAYS[@]}"     --persistent-recording "$BASE/$label/persistent" --reset-recording "$BASE/$label/reset"     "$references"
+  local label="$1" extra="$2"; shift 2
+  local sets=("$@") evaluate=()
+  run "$label-record-persistent" scale-record "$BASE/$label/persistent" "${sets[@]}" \
+    "${MODEL[@]}" "${DELAYS[@]}" --persistent
+  run "$label-record-reset" scale-record "$BASE/$label/reset" "${sets[@]}" "${MODEL[@]}" \
+    --reset-each-window
+  if [ "$extra" = full ]; then
+    # Development seed 0 and the confirmation also get interference and input references.
+    run "$label-record-interference" scale-record "$BASE/$label/interference" "${sets[@]}" \
+      "${MODEL[@]}" "${DELAYS[@]}" --persistent --interference
+    evaluate=(--interference-recording "$BASE/$label/interference" --references)
+  else
+    evaluate=(--no-references)
+  fi
+  run "$label-evaluate" scale-evaluate "$BASE/$label/evaluate" "${sets[@]}" "${DELAYS[@]}" \
+    --persistent-recording "$BASE/$label/persistent" --reset-recording "$BASE/$label/reset" \
+    "${evaluate[@]}"
 }
 
 for seed in 0 1 2 3 4; do
-  references=--no-references
-  [ "$seed" = 0 ] && references=--references
-  cohort "development-encoder$seed" "$references" --set "encoder.seed=$seed"
+  extra=basic
+  [ "$seed" = 0 ] && extra=full
+  cohort "development-encoder$seed" "$extra" --set "encoder.seed=$seed"
 done
-cohort confirmation --references --set "dataset.subset.selection_seed=$CONFIRMATION_SEED" \
+cohort confirmation full --set "dataset.subset.selection_seed=$CONFIRMATION_SEED" \
   --set name=celeba-scale-confirm
 development=()
 for seed in 0 1 2 3 4; do

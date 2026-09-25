@@ -7,14 +7,19 @@ summary: recognition and memory per recording, their spread across encoder seeds
 forgetting curve with its half-retention delay.
 """
 
+import hashlib
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 import numba
 import numpy as np
+from numpy.typing import NDArray
 
 from flystate.brain.benchmark import resolve_threads
 from flystate.brain.rate import RateReservoir
+from flystate.datasets.preprocess import prepare_dataset
+from flystate.datasets.subset import Sample
 from flystate.diagnostics.artifacts import attempt, verify_attempt_inventory
 from flystate.diagnostics.confirmation import (
     CHANCE_ALPHA,
@@ -29,6 +34,7 @@ from flystate.diagnostics.confirmation import (
 from flystate.diagnostics.drive_sweep import PARAMETERS, REPORT_FILE
 from flystate.diagnostics.input_access import _read_json
 from flystate.experiments.config import ExperimentConfig, config_hash
+from flystate.hashing import stable_int
 from flystate.settings import Paths, output_path
 from flystate.storage.json import write_json
 
@@ -38,6 +44,10 @@ PRIMARY: str = 'central_brain'
 PERSISTENT: str = 'persistent'
 RESET: str = 'reset'
 MINIMUM_MEMORY_GAIN_PP: float = 10.0
+# F1: blank windows are predicted to leave held-out accuracy within this band of delay 0.
+BLANK_TOLERANCE_PP: float = 5.0
+INTERFERENCE: str = 'interference'
+INTERFERENCE_NAMESPACE: str = 't38-interference-partners'
 HALF: float = 0.5
 PERCENT: float = 100.0
 ACCURACY: str = 'accuracy'
@@ -68,6 +78,7 @@ def record_scale(
     delays: tuple[int, ...],
     batch_size: int,
     threads: int | None,
+    interference: bool = False,
 ) -> dict[str, Any]:
     """Record the final central-brain and descending states of a cohort, in photograph batches.
 
@@ -95,9 +106,17 @@ def record_scale(
     :type batch_size: int
     :param threads: Numba threads, or the configuration's setting.
     :type threads: Optional[int]
+    :param interference: Show the first glimpses of another identity's photograph after the last
+        glimpse (see :func:`interference_partners`) instead of blank windows.
+    :type interference: bool
     :returns: Recording summary.
     :rtype: dict[str, Any]
     """
+    partners = None
+    if interference:
+        partners = interference_partners(
+            samples=prepare_dataset(cfg=cfg, paths=paths).samples, seed=cfg.seed
+        )
     resolved = resolve_threads(paths=paths, configured=threads or cfg.brain.threads)
     parameters = {
         KIND: 'scale_record',
@@ -112,6 +131,10 @@ def record_scale(
         'steps_per_window': steps_per_window,
         'reset_each_window': reset_each_window,
         BLANK_DELAYS: list(delays),
+        'post_sequence_input': INTERFERENCE if interference else 'blank',
+        'interference_partners_sha256': None
+        if partners is None
+        else hashlib.sha256(partners.tobytes()).hexdigest(),
         'batch_size': batch_size,
         'numba_threads': resolved,
         'populations': list(KEEP),
@@ -140,7 +163,41 @@ def record_scale(
             parameters=parameters,
             keep=KEEP,
             delays=delays,
+            partners=partners,
         )
+
+
+def interference_partners(samples: Sequence[Sample], seed: int) -> NDArray[np.int64]:
+    """Pair every photograph with a photograph of another identity from the same split.
+
+    A seeded permutation orders the photographs, and each photograph takes the next one in that
+    order, within its own split, whose identity differs. Keeping partners inside the split means a
+    held-out photograph never appears inside a training state, and the reverse.
+
+    :param samples: The cohort's ordered samples.
+    :type samples: Sequence[Sample]
+    :param seed: Configuration seed.
+    :type seed: int
+    :returns: Partner row of every photograph, shape (N,), int64.
+    :rtype: NDArray[np.int64]
+    :raises ValueError: If a split holds a single identity.
+    """
+    generator = np.random.default_rng(
+        seed=np.random.SeedSequence(entropy=[seed, stable_int(key=INTERFERENCE_NAMESPACE)])
+    )
+    order = generator.permutation(len(samples))
+    partners = np.full(shape=len(samples), fill_value=-1, dtype=np.int64)
+    for split in sorted({sample.split for sample in samples}):
+        members = [int(row) for row in order if samples[row].split == split]
+        for position, row in enumerate(members):
+            for offset in range(1, len(members)):
+                candidate = members[(position + offset) % len(members)]
+                if samples[candidate].label != samples[row].label:
+                    partners[row] = candidate
+                    break
+            else:
+                raise ValueError(f'The {split} split holds a single identity.')
+    return partners
 
 
 def half_retention(delays: list[int], accuracies: list[float], chance: float) -> float | None:
@@ -202,6 +259,40 @@ def _summary(report: dict[str, Any], delays: list[int]) -> dict[str, Any]:
         ),
         'half_retention_windows': half_retention(
             delays=delays, accuracies=curve, chance=persistent[CHANCE]
+        ),
+        'blank_delays_preserve_identity': all(
+            abs(accuracy - curve[0]) * PERCENT < BLANK_TOLERANCE_PP for accuracy in curve
+        ),
+        **_interference(scores=scores, delays=delays, first=curve[0], chance=persistent[CHANCE]),
+    }
+
+
+def _interference(
+    scores: dict[str, Any], delays: list[int], first: float, chance: float
+) -> dict[str, Any]:
+    """Return the interference curve and its half-retention, if the evaluation scored one.
+
+    :param scores: Evaluation scores by case.
+    :type scores: dict[str, Any]
+    :param delays: Windows after the last glimpse, starting with 0.
+    :type delays: list[int]
+    :param first: Persistent delay-0 accuracy, which the interference recording shares, fraction.
+    :type first: float
+    :param chance: Uniform-choice accuracy, fraction.
+    :type chance: float
+    :returns: The curve and half-retention in glimpses, or nothing without interference cases.
+    :rtype: dict[str, Any]
+    """
+    cases = [f'{INTERFERENCE}/{PRIMARY}{DELAY_INFIX}{d}' for d in delays[1:]]
+    if not all(case in scores for case in cases):
+        return {}
+    curve = [first, *(scores[case][ACCURACY] for case in cases)]
+    return {
+        'interference_curve_pct': dict(
+            zip(map(str, delays), (a * PERCENT for a in curve), strict=True)
+        ),
+        'interference_half_retention_glimpses': half_retention(
+            delays=delays, accuracies=curve, chance=chance
         ),
     }
 
@@ -271,6 +362,7 @@ def analyze_scale(
             'decisions': {
                 'S1_recognition_at_scale': confirmed[RECOGNITION_PASSES],
                 'S2_memory_at_scale': confirmed[MEMORY_PASSES],
+                'F1_blank_windows_preserve_identity': confirmed['blank_delays_preserve_identity'],
                 'E_every_encoder_seed_keeps_memory': all(s[MEMORY_PASSES] for s in seeds.values()),
             },
         }
