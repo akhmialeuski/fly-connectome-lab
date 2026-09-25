@@ -11,7 +11,7 @@ There is no noise and no tonic drive, so ``x = 0`` is the rest state and every r
 deterministic function of the input.
 """
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -20,12 +20,22 @@ import numpy as np
 from flybrain import FlyBrain
 from numpy.typing import NDArray
 from scipy import sparse
+from scipy.sparse.csgraph import connected_components
+from scipy.sparse.linalg import eigs
+from threadpoolctl import threadpool_limits
 
 from flystate.brain.runtime import RestState, RunSummary
 from flystate.experiments.config import BrainConfig, ReadoutConfig
 from flystate.hashing import stable_int
 
 SHUFFLE_NAMESPACE: str = 'degree-preserving-shuffle'
+RANDOM_TARGET_NAMESPACE: str = 'random-target-shuffle'
+# ARPACK with a single requested eigenvalue can settle on a close neighbour of the largest one
+# (0.2361 instead of 0.2365 on the synthetic graph); six give the dense answer to 1e-15.
+EIGS_COUNT: int = 6
+# ARPACK needs k < n - 1; smaller components are solved densely.
+MIN_EIGS_SIZE: int = EIGS_COUNT + 2
+EIGS_MAX_ITERATIONS: int = 10000
 VOLTAGE: str = 'voltage'
 # The same numba.prange object under a name mypy treats as a callable returning a range.
 PARALLEL_RANGE: Any = numba.prange
@@ -59,6 +69,44 @@ def _propagate(
         out[row] = accumulator
 
 
+def _retarget(
+    matrix: sparse.csr_matrix | sparse.csr_array,
+    seed: int,
+    namespace: str,
+    targets: Callable[[np.random.Generator, NDArray[np.int32]], NDArray[np.int32]],
+) -> sparse.csr_matrix:
+    """Move every edge to a drawn postsynaptic target, then restore each row's absolute sum.
+
+    :param matrix: Effective weights with postsynaptic rows, shape (N,N), float32.
+    :type matrix: sparse.csr_matrix | sparse.csr_array
+    :param seed: Nonnegative null-model seed.
+    :type seed: int
+    :param namespace: Name that separates the random streams of different null models.
+    :type namespace: str
+    :param targets: Draws the new target row of every edge from the canonical rows, shape (E,).
+    :type targets: Callable[[np.random.Generator, NDArray[np.int32]], NDArray[np.int32]]
+    :returns: Retargeted, renormalized float32 CSR matrix, shape (N,N).
+    :rtype: sparse.csr_matrix
+    """
+    # Canonical order on a copy: the draw must not depend on the caller's storage order.
+    canonical = sparse.csr_matrix(matrix, copy=True)
+    canonical.sum_duplicates()
+    canonical.sort_indices()
+    coo = canonical.tocoo()
+    generator = np.random.default_rng(
+        seed=np.random.SeedSequence(entropy=[seed, stable_int(key=namespace)])
+    )
+    shuffled = sparse.csr_matrix(
+        (coo.data.astype(np.float64), (targets(generator, coo.row), coo.col)), shape=matrix.shape
+    )
+    shuffled.sum_duplicates()
+    before = np.asarray(abs(canonical).sum(axis=1), dtype=np.float64).ravel()
+    after = np.asarray(abs(shuffled).sum(axis=1), dtype=np.float64).ravel()
+    scale = np.divide(before, after, out=np.zeros_like(before), where=after > 0)
+    shuffled = sparse.diags(scale) @ shuffled
+    return sparse.csr_matrix(shuffled, dtype=np.float32)
+
+
 def degree_preserving_shuffle(
     matrix: sparse.csr_matrix | sparse.csr_array, seed: int
 ) -> sparse.csr_matrix:
@@ -77,24 +125,96 @@ def degree_preserving_shuffle(
     :returns: Shuffled, renormalized float32 CSR matrix, shape (N,N).
     :rtype: sparse.csr_matrix
     """
-    # Canonical order on a copy: the permutation must not depend on the caller's storage order.
-    canonical = sparse.csr_matrix(matrix, copy=True)
-    canonical.sum_duplicates()
-    canonical.sort_indices()
-    coo = canonical.tocoo()
-    generator = np.random.default_rng(
-        seed=np.random.SeedSequence(entropy=[seed, stable_int(key=SHUFFLE_NAMESPACE)])
+    return _retarget(
+        matrix=matrix,
+        seed=seed,
+        namespace=SHUFFLE_NAMESPACE,
+        targets=lambda generator, rows: generator.permutation(rows),
     )
-    targets = generator.permutation(coo.row)
-    shuffled = sparse.csr_matrix(
-        (coo.data.astype(np.float64), (targets, coo.col)), shape=matrix.shape
+
+
+def random_target_shuffle(
+    matrix: sparse.csr_matrix | sparse.csr_array, seed: int
+) -> sparse.csr_matrix:
+    """Send every edge to a uniformly drawn neuron that has inputs, then restore row normalization.
+
+    Each neuron keeps its out-degree, the sign of its outgoing weights and their magnitudes, as in
+    :func:`degree_preserving_shuffle`, but in-degrees become binomial instead of the fly's.
+    Targets are drawn with replacement from the rows that had inputs, so sensory rows stay empty.
+    A row that had inputs but receives no edge stays empty; for the MaleCNS graph, with a mean
+    in-degree near 150, that has negligible probability.
+
+    :param matrix: Effective weights with postsynaptic rows, shape (N,N), float32.
+    :type matrix: sparse.csr_matrix | sparse.csr_array
+    :param seed: Nonnegative null-model seed.
+    :type seed: int
+    :returns: Retargeted, renormalized float32 CSR matrix, shape (N,N).
+    :rtype: sparse.csr_matrix
+    """
+    receiving = np.flatnonzero(np.diff(sparse.csr_matrix(matrix).indptr) > 0).astype(np.int32)
+    return _retarget(
+        matrix=matrix,
+        seed=seed,
+        namespace=RANDOM_TARGET_NAMESPACE,
+        targets=lambda generator, rows: generator.choice(a=receiving, size=len(rows)),
     )
-    shuffled.sum_duplicates()
-    before = np.asarray(abs(canonical).sum(axis=1), dtype=np.float64).ravel()
-    after = np.asarray(abs(shuffled).sum(axis=1), dtype=np.float64).ravel()
-    scale = np.divide(before, after, out=np.zeros_like(before), where=after > 0)
-    shuffled = sparse.diags(scale) @ shuffled
-    return sparse.csr_matrix(shuffled, dtype=np.float32)
+
+
+def feedforward_only(
+    matrix: sparse.csr_matrix | sparse.csr_array, sources: NDArray[np.int64]
+) -> sparse.csr_matrix:
+    """Keep only the synapses whose presynaptic neuron is listed, with unchanged weights.
+
+    With the driven neurons as sources, every other neuron receives exactly the drive it receives
+    in the full graph from those neurons, but nothing from any non-driven neuron. Rows are not
+    renormalized, so no synapse is strengthened.
+
+    :param matrix: Effective weights with postsynaptic rows, shape (N,N), float32.
+    :type matrix: sparse.csr_matrix | sparse.csr_array
+    :param sources: Presynaptic neuron indices to keep, shape (S,), int64.
+    :type sources: NDArray[np.int64]
+    :returns: Pruned float32 CSR matrix, shape (N,N).
+    :rtype: sparse.csr_matrix
+    """
+    pruned = sparse.csr_matrix(matrix, copy=True, dtype=np.float32)
+    pruned.data[~np.isin(element=pruned.indices, test_elements=sources)] = 0
+    pruned.eliminate_zeros()
+    return pruned
+
+
+def giant_component_radius(matrix: sparse.csr_matrix | sparse.csr_array) -> float:
+    """Return the spectral radius of the largest strongly connected component.
+
+    The eigenvalues of a directed graph are the union of those of its strongly connected
+    components, so this is the radius of the recurrent core that nearly all neurons belong to. It
+    ignores small isolated loops, such as the MaleCNS pair of ENS neurons that are each other's
+    only input and alone give eigenvalues of modulus 1.
+
+    :param matrix: Signed weights with postsynaptic rows, shape (N,N).
+    :type matrix: sparse.csr_matrix | sparse.csr_array
+    :returns: Largest eigenvalue modulus of the giant component, dimensionless, identical on
+        every call for the same matrix.
+    :rtype: float
+    """
+    graph = sparse.csr_matrix(matrix)
+    _, labels = connected_components(csgraph=graph, directed=True, connection='strong')
+    members = np.flatnonzero(labels == np.bincount(labels).argmax())
+    core = graph[members][:, members].astype(np.float64)
+    if members.size < MIN_EIGS_SIZE:
+        return float(np.abs(np.linalg.eigvals(core.toarray())).max())
+    # ARPACK starts from a random vector unless given one; a fixed start and one BLAS thread make
+    # the radius, and therefore every gain derived from it, bitwise reproducible.
+    start = np.full(shape=members.size, fill_value=1 / np.sqrt(members.size))
+    with threadpool_limits(limits=1, user_api='blas'):
+        values = eigs(
+            A=core,
+            k=EIGS_COUNT,
+            which='LM',
+            v0=start,
+            return_eigenvectors=False,
+            maxiter=EIGS_MAX_ITERATIONS,
+        )
+    return float(np.abs(values).max())
 
 
 class RateReservoir:
@@ -108,6 +228,7 @@ class RateReservoir:
         batch_size: int,
         leak_overrides: dict[float, NDArray[np.int64]] | None = None,
         shuffle_seed: int | None = None,
+        transform: Callable[[sparse.csr_matrix], sparse.csr_matrix] | None = None,
     ) -> None:
         """Load the effective graph exactly as flybrain builds it for ``sensory_input=False``.
 
@@ -124,6 +245,9 @@ class RateReservoir:
         :param shuffle_seed: When given, replace the graph by a degree-preserving shuffle (see
             :func:`degree_preserving_shuffle`); the unchanged graph otherwise.
         :type shuffle_seed: Optional[int]
+        :param transform: Optional replacement of the (possibly shuffled) graph, for null models
+            such as :func:`random_target_shuffle` or :func:`feedforward_only`.
+        :type transform: Optional[Callable[[sparse.csr_matrix], sparse.csr_matrix]]
         :raises ValueError: If a parameter is outside its valid range.
         """
         overrides = leak_overrides or {}
@@ -137,6 +261,8 @@ class RateReservoir:
         ).tocsr()
         if shuffle_seed is not None:
             matrix = degree_preserving_shuffle(matrix=matrix, seed=shuffle_seed)
+        if transform is not None:
+            matrix = sparse.csr_matrix(transform(sparse.csr_matrix(matrix)), dtype=np.float32)
         matrix.sort_indices()
         self._flybrain: FlyBrain = spiking
         self.n: int = spiking.n
@@ -162,6 +288,16 @@ class RateReservoir:
         :rtype: NDArray[np.int64]
         """
         return np.asarray(self._flybrain.cells(types=list(types)), dtype=np.int64)
+
+    def matrix(self) -> sparse.csr_matrix:
+        """Return the simulated weights without the gain, sharing the stored arrays.
+
+        :returns: Signed float32 CSR matrix with postsynaptic rows, shape (N,N).
+        :rtype: sparse.csr_matrix
+        """
+        return sparse.csr_matrix(
+            (self._weights, self._indices, self._indptr), shape=(self.n, self.n), copy=False
+        )
 
     def reset(self) -> None:
         """Return every episode to the zero rest state."""

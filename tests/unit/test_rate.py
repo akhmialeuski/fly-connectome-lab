@@ -1,12 +1,19 @@
 """Graded-dynamics reservoir equivalence, determinism and reset behaviour."""
 
+from functools import partial
 from pathlib import Path
 
 import numba
 import numpy as np
 from scipy import sparse
 
-from flystate.brain.rate import RateReservoir, degree_preserving_shuffle
+from flystate.brain.rate import (
+    RateReservoir,
+    degree_preserving_shuffle,
+    feedforward_only,
+    giant_component_radius,
+    random_target_shuffle,
+)
 from flystate.diagnostics.rate_access import simulate_states, window_recall
 
 GAIN: float = 1.2
@@ -163,3 +170,88 @@ def test_degree_preserving_shuffle_keeps_row_normalization(synthetic_brain_dir: 
     assert np.array_equal(first.toarray(), again.toarray())
     assert not np.array_equal(first.toarray(), other.toarray())
     assert not np.array_equal(first.toarray(), matrix.toarray())
+
+
+def test_random_target_shuffle_keeps_out_degrees_and_row_sums(synthetic_brain_dir: Path) -> None:
+    """Keep every presynaptic out-degree, sign and row sum while redrawing in-degrees.
+
+    :param synthetic_brain_dir: Offline flybrain-format connectome.
+    :type synthetic_brain_dir: Path
+    """
+    matrix = sparse.load_npz(file=synthetic_brain_dir / 'weights.npz').tocsr()
+    matrix = sparse.csr_matrix(sparse.diags(np.r_[np.ones(1900), np.zeros(100)]) @ matrix)
+    matrix.eliminate_zeros()
+    first = random_target_shuffle(matrix=matrix, seed=0)
+    assert np.array_equal(first.toarray(), random_target_shuffle(matrix=matrix, seed=0).toarray())
+    assert not np.array_equal(first.toarray(), degree_preserving_shuffle(matrix, seed=0).toarray())
+    before = np.asarray(abs(matrix).sum(axis=1)).ravel()
+    after = np.asarray(abs(first).sum(axis=1)).ravel()
+    assert np.allclose(before, after, atol=1e-5)
+    assert first[1900:].nnz == 0
+    original, shuffled = sparse.csc_matrix(matrix), sparse.csc_matrix(first)
+    for column in range(len(original.indptr) - 1):
+        before_signs = np.sign(original.data[original.indptr[column] : original.indptr[column + 1]])
+        after_signs = np.sign(shuffled.data[shuffled.indptr[column] : shuffled.indptr[column + 1]])
+        assert set(after_signs.tolist()) <= set(before_signs.tolist())
+    assert np.array_equal(np.diff(original.indptr) > 0, np.diff(shuffled.indptr) > 0)
+    assert not np.array_equal(np.diff(matrix.indptr), np.diff(first.indptr))
+
+
+def test_feedforward_only_keeps_listed_sources_unchanged(synthetic_brain_dir: Path) -> None:
+    """Remove every synapse from unlisted neurons and leave the listed ones exactly as they were.
+
+    :param synthetic_brain_dir: Offline flybrain-format connectome.
+    :type synthetic_brain_dir: Path
+    """
+    matrix = sparse.load_npz(file=synthetic_brain_dir / 'weights.npz').tocsr()
+    sources = np.arange(100, 100 + DRIVEN, dtype=np.int64)
+    pruned = feedforward_only(matrix=matrix, sources=sources)
+    dense, kept = matrix.toarray(), pruned.toarray()
+    assert np.array_equal(kept[:, sources], dense[:, sources])
+    others = np.setdiff1d(np.arange(matrix.shape[1]), sources)
+    assert not kept[:, others].any()
+
+
+def test_giant_component_radius_ignores_isolated_loops() -> None:
+    """Report the radius of the largest strongly connected component, not of a separate loop."""
+    core = 6
+    scale = 0.5
+    rows = [*range(core), core, core + 1]
+    columns = [*[(index + 1) % core for index in range(core)], core + 1, core]
+    values = [scale] * core + [1.0, 1.0]
+    matrix = sparse.csr_matrix((values, (rows, columns)), shape=(core + 2, core + 2))
+    assert np.isclose(np.abs(np.linalg.eigvals(matrix.toarray())).max(), 1.0)
+    assert np.isclose(giant_component_radius(matrix=matrix), scale)
+
+
+def test_giant_component_radius_is_reproducible(synthetic_brain_dir: Path) -> None:
+    """Return the same radius on every call, so gains derived from it never drift.
+
+    :param synthetic_brain_dir: Offline flybrain-format connectome.
+    :type synthetic_brain_dir: Path
+    """
+    matrix = sparse.load_npz(file=synthetic_brain_dir / 'weights.npz').tocsr()
+    radii = {giant_component_radius(matrix=matrix) for _ in range(5)}
+    assert len(radii) == 1
+    dense = np.abs(np.linalg.eigvals(matrix.toarray().astype(np.float64))).max()
+    assert np.isclose(radii.pop(), dense, rtol=1e-9)
+
+
+def test_reservoir_applies_transform_and_exposes_its_matrix(synthetic_brain_dir: Path) -> None:
+    """Simulate the transformed graph, and return exactly the weights the kernel uses.
+
+    :param synthetic_brain_dir: Offline flybrain-format connectome.
+    :type synthetic_brain_dir: Path
+    """
+    sources = np.arange(100, 100 + DRIVEN, dtype=np.int64)
+    full = RateReservoir(brain_dir=synthetic_brain_dir, gain=GAIN, leak=LEAK, batch_size=BATCH)
+    pruned = RateReservoir(
+        brain_dir=synthetic_brain_dir,
+        gain=GAIN,
+        leak=LEAK,
+        batch_size=BATCH,
+        transform=partial(feedforward_only, sources=sources),
+    )
+    expected = feedforward_only(matrix=full.matrix(), sources=sources)
+    assert np.array_equal(pruned.matrix().toarray(), expected.toarray())
+    assert pruned.edges == expected.nnz < full.edges
