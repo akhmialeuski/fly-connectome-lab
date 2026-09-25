@@ -370,6 +370,18 @@ table {
   text-align: left;
   font-size: 12px;
 }
+.sort-header {
+  all: unset;
+  cursor: pointer;
+}
+.sort-header:focus-visible {
+  outline: 2px solid #087f79;
+  outline-offset: 2px;
+}
+th[aria-sort='ascending'],
+th[aria-sort='descending'] {
+  color: #087f79;
+}
 th {
   color: #70818a;
   text-transform: uppercase;

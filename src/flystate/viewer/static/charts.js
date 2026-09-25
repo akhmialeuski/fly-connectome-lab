@@ -60,7 +60,12 @@ export function table(headers, rows) {
         el(
           'tr',
           {},
-          headers.map((h) => el('th', { scope: 'col' }, h)),
+          // A header is plain content, or {content, attrs} when the cell needs attributes.
+          headers.map((h) =>
+            h?.content === undefined
+              ? el('th', { scope: 'col' }, h)
+              : el('th', { scope: 'col', ...h.attrs }, h.content),
+          ),
         ),
       ),
       el(
