@@ -45,6 +45,11 @@ const KIND_IDEAS = {
     "Compare identity decoding from the fly's sampled state with the encoded input on identical photographs, folds and readout.",
   input_access: () =>
     'Measure how much identity the image pixels and encoded currents carry, on training photographs only.',
+  scale_record: (p) =>
+    `Record the confirmed graded model (encoder seed ${p.encoder_seed ?? 'not recorded'}, identity selection seed ${p.selection_seed ?? 'not recorded'}), ${stateRule(p)}` +
+    `${Array.isArray(p.blank_delays) && p.blank_delays.length > 1 ? `, keeping the state after ${p.blank_delays.join(', ')} blank windows` : ''}.`,
+  scale_analysis: () =>
+    'Apply the frozen rules for recognition and memory at 100 identities, their spread over encoder seeds, and forgetting after blank windows.',
   input_loss_selection: () =>
     'Choose the input-control regularization by fit-fold log loss, then apply the prespecified gate.',
 };
@@ -141,6 +146,10 @@ export function interpretation(entry) {
         return `${words(row.name)}: ${row.decision} (${sign}${number(row.difference_pp)} points, 95% interval [${number(low)}, ${number(high)}]).`;
       })
       .join(' ');
+  else if (entry.status === 'completed' && entry.checks && typeof entry.checks === 'object')
+    result = `Decisions: ${Object.entries(entry.checks)
+      .map(([name, passed]) => `${words(name)} ${passed ? 'passed' : 'failed'}`)
+      .join(', ')}.`;
   else if (entry.status === 'completed' && entry.selection && typeof entry.selection === 'object')
     result = `Frozen operating points: ${Object.entries(entry.selection)
       .map(([family, alpha]) => `${words(family)} α ${number(alpha)}`)

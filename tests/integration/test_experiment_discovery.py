@@ -46,6 +46,7 @@ class TestExperimentDiscovery:
                 'families': {'fly': {'selected_alpha': 0.75}, 'bad': {'selected_alpha': 'x'}}
             },
             'record': {'episodes': 400},
+            'rules': {'decisions': {'S1': True, 'S2': False, 'note': 'ignored'}},
             'flag': {'episodes': True},
         }
         for name, report in reports.items():
@@ -69,6 +70,7 @@ class TestExperimentDiscovery:
         ]
         assert entries['select']['selection'] == {'fly': 0.75}
         assert entries['record']['episodes'] == 400
+        assert entries['rules']['checks'] == {'S1': True, 'S2': False}
         assert 'episodes' not in entries['flag']
         assert experiments.recorded_outcome(payload={'contrasts': 'x', 'families': []}) == {}
 
