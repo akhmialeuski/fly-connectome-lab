@@ -1,0 +1,1 @@
+{"created_utc":"2026-09-25T07:14:04.527083+00:00","eval_id":"20260925-071404-test","n_classes":20,"n_samples":60,"run_id":"20260925-071109-celeba-confirm-rate-reset-concat-b5a615","schema_version":1,"split":"test","status":"completed","timesteps":16,"versions":{"flystate":"0.1.0.dev0","scikit-learn":"1.9.1"}}
