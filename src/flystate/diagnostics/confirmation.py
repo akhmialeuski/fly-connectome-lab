@@ -293,6 +293,7 @@ def _score(
     cfg: ExperimentConfig,
     model_dir: Path,
     export: Exporter = export_classifier,
+    max_iterations: int = MAX_ITERATIONS,
 ) -> tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]:
     """Fit the project's standard readout on training photographs and score the held-out ones.
 
@@ -308,6 +309,8 @@ def _score(
     :type model_dir: Path
     :param export: Writes the fitted pipeline's arrays to ``model_dir`` and returns metadata.
     :type export: Exporter
+    :param max_iterations: L-BFGS iteration budget of every fit, continued fits included.
+    :type max_iterations: int
     :returns: Held-out correctness (M,), predictions (M,), and a metrics summary.
     :rtype: tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]
     """
@@ -319,7 +322,7 @@ def _score(
         cv_folds=cfg.readout.cv_folds,
         seed=cfg.seed,
         tolerance=TOLERANCE,
-        max_iterations=MAX_ITERATIONS,
+        max_iterations=max_iterations,
     )
     model_metadata = export(model, model_dir)
     predicted = model.predict(X=x[~train].astype(np.float64)).astype(np.int64)
@@ -354,6 +357,7 @@ def evaluate_confirmation(
     references: bool = True,
     export: Exporter = export_classifier,
     recording_populations: dict[str, list[str]] | None = None,
+    max_iterations: int = MAX_ITERATIONS,
 ) -> dict[str, Any]:
     """Train on each identity's training photographs and score every untouched held-out photograph.
 
@@ -383,6 +387,8 @@ def evaluate_confirmation(
     :param recording_populations: Populations scored for the named recordings instead of
         ``populations``, for recordings that hold fewer arrays.
     :type recording_populations: Optional[dict[str, list[str]]]
+    :param max_iterations: L-BFGS iteration budget of every fit; see :func:`_score`.
+    :type max_iterations: int
     :returns: Per-case held-out scores and paired comparisons.
     :rtype: dict[str, Any]
     :raises ValueError: If a recording name is unsafe, incomplete, or belongs to another cohort.
@@ -398,6 +404,7 @@ def evaluate_confirmation(
         'populations': populations,
         COMPARISONS: [list(pair) for pair in comparisons],
         'readout': 'flystate.readouts.fitting.fit_classifier (CV accuracy selects C, then refit)',
+        'max_iterations': max_iterations,
     }
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
         prepared = prepare_dataset(cfg=cfg, paths=paths)
@@ -439,6 +446,7 @@ def evaluate_confirmation(
                 cfg=cfg,
                 model_dir=directory / 'models' / case,
                 export=export,
+                max_iterations=max_iterations,
             )
             correctness[case] = correct
             scores[case] = summary

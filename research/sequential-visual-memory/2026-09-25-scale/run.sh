@@ -9,6 +9,8 @@ CONFIRMATION_SEED=92
 MIN_FREE_BYTES=1000000000
 MODEL=(--gain 1.0 --leak 0.02 --driven-leak 1.0 --input-scale 20 --steps-per-window 4
        --batch-size 250 --threads 12)
+# Third amendment: 100-class fits need more than the T35 budget of 50,000 L-BFGS iterations.
+BUDGET=(--max-iterations 500000)
 DELAYS=(--delay 0 --delay 1 --delay 2 --delay 4 --delay 8 --delay 16)
 mkdir -p "$FLYSTATE_HOME/$BASE/logs"
 
@@ -47,7 +49,7 @@ cohort() {
   fi
   run "$label-evaluate" scale-evaluate "$BASE/$label/evaluate" "${sets[@]}" "${DELAYS[@]}" \
     --persistent-recording "$BASE/$label/persistent" --reset-recording "$BASE/$label/reset" \
-    "${evaluate[@]}"
+    "${evaluate[@]}" "${BUDGET[@]}"
 }
 
 for seed in 0 1 2 3 4; do

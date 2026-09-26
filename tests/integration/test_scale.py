@@ -279,9 +279,13 @@ def test_scale_cli_records_evaluates_and_analyzes(
             RESET_RUN,
             '--interference-recording',
             INTERFERENCE_RUN,
+            '--max-iterations',
+            '60000',
             *delays,
         ]
     )
+    evaluated = json.loads(s=(get_paths().home / EVALUATION_RUN / 'manifest.json').read_text())
+    assert evaluated['parameters']['max_iterations'] == 60000
     recorded = json.loads(s=(get_paths().home / PERSISTENT_RUN / 'manifest.json').read_text())
     assert recorded['parameters']['encoder_seed'] == 1
     analysis = _invoke(
