@@ -8,6 +8,7 @@ import typer
 from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
 from flystate.cli.confirmation import confirm_evaluate_command, confirm_record_command
 from flystate.cli.drive_sweep import drive_decode_command, drive_record_command
+from flystate.cli.eye import eye_decide_command, eye_evaluate_command, eye_record_command
 from flystate.cli.identity import identity_command
 from flystate.cli.identity_analysis import identity_analysis_command
 from flystate.cli.input_access import input_access_command
@@ -111,6 +112,18 @@ app.command(
     name='scale-analyze',
     help='Apply the frozen T38 rules to the encoder seeds and the confirmation cohort.',
 )(scale_analyze_command)
+app.command(
+    name='eye-record',
+    help='Sample every photograph through the modelled Drosophila compound eye (T39).',
+)(eye_record_command)
+app.command(
+    name='eye-evaluate',
+    help='Score the T39 eye cases and the full-resolution pixel reference once.',
+)(eye_evaluate_command)
+app.command(
+    name='eye-decide',
+    help='Apply the frozen T39 rule on whether faces remain a target.',
+)(eye_decide_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
 app.command(
