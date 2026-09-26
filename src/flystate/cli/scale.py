@@ -8,7 +8,7 @@ import typer
 from flystate.cli.common import emit
 from flystate.cli.drive_sweep import JSON_HELP, JSON_OPTION, OUTPUT_HELP, OUTPUT_OPTION, _fail
 from flystate.cli.wiring import _pairs
-from flystate.diagnostics.confirmation import DELAY_INFIX, evaluate_confirmation
+from flystate.diagnostics.confirmation import DELAY_INFIX, MAX_ITERATIONS, evaluate_confirmation
 from flystate.diagnostics.scale import (
     INTERFERENCE,
     ISSUE,
@@ -131,6 +131,9 @@ def scale_evaluate_command(
         bool,
         typer.Option('--references/--no-references', help='Also score the input references.'),
     ] = False,
+    max_iterations: Annotated[
+        int, typer.Option('--max-iterations', help='L-BFGS iteration budget of every fit.')
+    ] = MAX_ITERATIONS,
     overrides: Annotated[list[str] | None, typer.Option(SET_OPTION, help=SET_HELP)] = None,
     as_json: Annotated[bool, typer.Option(JSON_OPTION, help=JSON_HELP)] = False,
 ) -> None:
@@ -150,6 +153,8 @@ def scale_evaluate_command(
     :type delays: Optional[list[int]]
     :param references: Whether the three input-reference cases are scored.
     :type references: bool
+    :param max_iterations: L-BFGS iteration budget of every fit.
+    :type max_iterations: int
     :param overrides: Dotted configuration overrides identical to the recordings'.
     :type overrides: Optional[list[str]]
     :param as_json: Emit exactly one result JSON object to stdout.
@@ -186,6 +191,7 @@ def scale_evaluate_command(
             issue=ISSUE,
             references=references,
             recording_populations=only,
+            max_iterations=max_iterations,
         )
     except (Exception, KeyboardInterrupt) as error:
         raise _fail(error=error, event='scale_evaluate_failed', as_json=as_json) from error
