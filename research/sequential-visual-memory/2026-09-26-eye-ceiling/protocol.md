@@ -17,10 +17,10 @@ Our encoder feeds full-resolution 32×32 RGB patches into randomly chosen visual
 
 For every θ:
 
-- `hex_luma_w<θ>`, the primary case;
-- `hex_luma_w<θ>_a7p7` and `hex_luma_w<θ>_a9p5`, the acceptance bounds;
-- `hex_rgb_w<θ>`, colour;
-- `square_luma_w<θ>`, a square lattice with the same number of samples, which separates resolution from geometry;
+- `hex_luma_w<θ>`, the primary case
+- `hex_luma_w<θ>_a7p7` and `hex_luma_w<θ>_a9p5`, the acceptance bounds
+- `hex_rgb_w<θ>`, colour
+- `square_luma_w<θ>`, a square lattice with the same number of samples, which separates resolution from geometry
 - `hex_point_w<θ>`, point samples without acceptance blur.
 
 `pixels_full` is the full-resolution 128×128×3 image. The T35 evaluation also adds its three input references: encoded current of all windows, of the last window, and pixels of all 16 windows.
