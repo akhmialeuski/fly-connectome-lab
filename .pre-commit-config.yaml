@@ -1,0 +1,31 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: Ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+      - id: ruff
+        name: Ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: pyright
+        name: Pyright
+        entry: uv run pyright
+        language: system
+        pass_filenames: false
+      - id: docstrings
+        name: reStructuredText docstrings
+        entry: uv run python scripts/check_docstrings.py
+        language: system
+        pass_filenames: false
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ['--maxkb=500']
