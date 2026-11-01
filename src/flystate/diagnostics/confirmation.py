@@ -1,5 +1,6 @@
 """Single frozen confirmation of the graded MaleCNS memory model on untouched identities (T35)."""
 
+from collections import defaultdict
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from re import fullmatch
@@ -51,6 +52,7 @@ SAMPLE_IDS: str = 'sample_ids'
 SCORES: str = 'scores'
 COMPARISONS: str = 'comparisons'
 HELD_OUT_CORRECT: str = 'held_out_correct'
+DELAY_INFIX: str = '_delay'
 RECORDING_NAME_PATTERN: str = r'[A-Za-z][A-Za-z0-9_-]*'
 # Writes a fitted pipeline's arrays into a new directory and returns their metadata.
 Exporter = Callable[[Pipeline, Path], dict[str, Any]]
@@ -176,8 +178,17 @@ def record_cohort(
     reset_each_window: bool,
     parameters: dict[str, Any],
     keep: Sequence[str] | None = None,
+    delays: Sequence[int] = (0,),
+    partners: NDArray[np.int64] | None = None,
 ) -> dict[str, Any]:
     """Simulate every photograph of one cohort and write its final population states.
+
+    Photographs run in consecutive batches of the reservoir's batch size, which must divide the
+    cohort. Every photograph's dynamics are independent of its batch. With blank delays, zero-input
+    windows follow the last glimpse, and the state after ``d`` of them is written as
+    ``final_<population>_delay<d>``. Delay 0 is the state after the last glimpse, written as
+    ``final_<population>``. With ``partners``, the windows after the last glimpse show the first
+    glimpses of the partner photograph instead of blank input (retroactive interference).
 
     :param cfg: Configuration whose dataset defines the cohort.
     :type cfg: ExperimentConfig
@@ -199,11 +210,24 @@ def record_cohort(
     :type parameters: dict[str, Any]
     :param keep: Populations whose final states are written; all populations when omitted.
     :type keep: Optional[Sequence[str]]
+    :param delays: Distinct nonnegative numbers of windows after the last glimpse.
+    :type delays: Sequence[int]
+    :param partners: Row of the interfering photograph for every photograph, shape (N,), int64,
+        or none for blank windows.
+    :type partners: Optional[NDArray[np.int64]]
     :returns: Recording summary, also written to the report.
     :rtype: dict[str, Any]
-    :raises ValueError: If a recorded state is not finite.
+    :raises ValueError: If the batching or the delays are invalid, or a state is not finite.
     """
+    if len(set(delays)) != len(delays) or min(delays) < 0:
+        raise ValueError('Blank delays must be distinct and nonnegative.')
+    if reset_each_window and max(delays) > 0:
+        raise ValueError('Blank delays need a persistent state; a reset empties it.')
+    if partners is not None and max(delays) > cfg.episodes.steps:
+        raise ValueError('Interference cannot show more windows than a photograph has.')
     prepared = prepare_dataset(cfg=cfg, paths=paths)
+    if partners is not None and partners.shape != (len(prepared.samples),):
+        raise ValueError('Every photograph needs exactly one interfering partner.')
     rows = list(range(len(prepared.samples)))
     features, provenance = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
     currents = features[ENCODED_CURRENT].reshape(len(rows), cfg.episodes.steps, -1)
@@ -214,20 +238,36 @@ def record_cohort(
         ).items()
         if indices.size and (keep is None or name in keep)
     }
+    batch = reservoir.state.shape[1]
+    if len(rows) % batch:
+        raise ValueError('The cohort size must be a multiple of the reservoir batch size.')
+    glimpses = cfg.episodes.steps
+    parts: dict[str, list[NDArray[np.float32]]] = defaultdict(list)
     started = perf_counter()
     with threadpool_limits(limits=1, user_api='blas'):
-        states = simulate_states(
-            reservoir=reservoir,
-            input_idx=input_idx,
-            inputs=(currents * np.float32(input_scale)).astype(np.float32),
-            populations=populations,
-            steps_per_window=steps_per_window,
-            reset_each_window=reset_each_window,
-        )
+        for start in range(0, len(rows), batch):
+            drive = np.zeros(
+                shape=(batch, glimpses + max(delays), currents.shape[2]), dtype=np.float32
+            )
+            drive[:, :glimpses] = currents[start : start + batch] * np.float32(input_scale)
+            if partners is not None:
+                drive[:, glimpses:] = currents[partners[start : start + batch], : max(delays)]
+                drive[:, glimpses:] *= np.float32(input_scale)
+            states = simulate_states(
+                reservoir=reservoir,
+                input_idx=input_idx,
+                inputs=drive,
+                populations=populations,
+                steps_per_window=steps_per_window,
+                reset_each_window=reset_each_window,
+            )
+            for key, value in states.items():
+                name = f'{FINAL_PREFIX}{key.split("_", 1)[1]}'
+                for delay in delays:
+                    label = name if delay == 0 else f'{name}{DELAY_INFIX}{delay}'
+                    parts[label].append(value[:, glimpses - 1 + delay])
     elapsed = perf_counter() - started
-    finals = {
-        f'{FINAL_PREFIX}{key.split("_", 1)[1]}': value[:, -1] for key, value in states.items()
-    }
+    finals = {label: np.concatenate(values) for label, values in parts.items()}
     if not all(np.isfinite(value).all() for value in finals.values()):
         raise ValueError('Recorded final states contain nonfinite values.')
     _write_arrays(path=directory / RESPONSES_FILE, arrays=finals)
@@ -253,6 +293,7 @@ def _score(
     cfg: ExperimentConfig,
     model_dir: Path,
     export: Exporter = export_classifier,
+    max_iterations: int = MAX_ITERATIONS,
 ) -> tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]:
     """Fit the project's standard readout on training photographs and score the held-out ones.
 
@@ -268,6 +309,8 @@ def _score(
     :type model_dir: Path
     :param export: Writes the fitted pipeline's arrays to ``model_dir`` and returns metadata.
     :type export: Exporter
+    :param max_iterations: L-BFGS iteration budget of every fit, continued fits included.
+    :type max_iterations: int
     :returns: Held-out correctness (M,), predictions (M,), and a metrics summary.
     :rtype: tuple[NDArray[np.bool_], NDArray[np.int64], dict[str, Any]]
     """
@@ -279,7 +322,7 @@ def _score(
         cv_folds=cfg.readout.cv_folds,
         seed=cfg.seed,
         tolerance=TOLERANCE,
-        max_iterations=MAX_ITERATIONS,
+        max_iterations=max_iterations,
     )
     model_metadata = export(model, model_dir)
     predicted = model.predict(X=x[~train].astype(np.float64)).astype(np.int64)
@@ -313,6 +356,8 @@ def evaluate_confirmation(
     issue: int = ISSUE,
     references: bool = True,
     export: Exporter = export_classifier,
+    recording_populations: dict[str, list[str]] | None = None,
+    max_iterations: int = MAX_ITERATIONS,
 ) -> dict[str, Any]:
     """Train on each identity's training photographs and score every untouched held-out photograph.
 
@@ -339,6 +384,11 @@ def evaluate_confirmation(
     :type references: bool
     :param export: Writes each fitted pipeline's arrays; see :func:`_score`.
     :type export: Exporter
+    :param recording_populations: Populations scored for the named recordings instead of
+        ``populations``, for recordings that hold fewer arrays.
+    :type recording_populations: Optional[dict[str, list[str]]]
+    :param max_iterations: L-BFGS iteration budget of every fit; see :func:`_score`.
+    :type max_iterations: int
     :returns: Per-case held-out scores and paired comparisons.
     :rtype: dict[str, Any]
     :raises ValueError: If a recording name is unsafe, incomplete, or belongs to another cohort.
@@ -354,6 +404,7 @@ def evaluate_confirmation(
         'populations': populations,
         COMPARISONS: [list(pair) for pair in comparisons],
         'readout': 'flystate.readouts.fitting.fit_classifier (CV accuracy selects C, then refit)',
+        'max_iterations': max_iterations,
     }
     with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
         prepared = prepare_dataset(cfg=cfg, paths=paths)
@@ -380,7 +431,7 @@ def evaluate_confirmation(
             if report[SAMPLE_IDS] != ids:
                 raise ValueError(f'The recording belongs to another cohort: {recording}.')
             with np.load(file=source / RESPONSES_FILE, allow_pickle=False) as data:
-                for population in populations:
+                for population in (recording_populations or {}).get(name, populations):
                     cases[f'{name}/{population}'] = data[f'{FINAL_PREFIX}{population}']
         held_out_ids = [sample_id for sample_id, keep in zip(ids, ~train, strict=True) if keep]
         held_out_labels = labels[~train]
@@ -395,6 +446,7 @@ def evaluate_confirmation(
                 cfg=cfg,
                 model_dir=directory / 'models' / case,
                 export=export,
+                max_iterations=max_iterations,
             )
             correctness[case] = correct
             scores[case] = summary
