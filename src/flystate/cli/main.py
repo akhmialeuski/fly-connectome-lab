@@ -10,6 +10,7 @@ from flystate.cli.brain import app as brain_app
 from flystate.cli.common import emit
 from flystate.cli.dataset import app as dataset_app
 from flystate.cli.doctor import doctor_command
+from flystate.cli.episode import app as episode_app
 from flystate.cli.experiment import app as experiment_app
 from flystate.log import configure_logging
 from flystate.settings import get_paths
@@ -42,7 +43,7 @@ def group_help() -> None:
     """Inspect the available commands in this group."""
 
 
-for group_name in ('episode', 'trace'):
+for group_name in ('trace',):
     group = typer.Typer(no_args_is_help=True, help=f'{group_name.capitalize()} commands.')
     group.callback()(group_help)
     app.add_typer(typer_instance=group, name=group_name)
@@ -50,6 +51,7 @@ for group_name in ('episode', 'trace'):
 app.add_typer(typer_instance=experiment_app, name='experiment')
 app.add_typer(typer_instance=brain_app, name='brain')
 app.add_typer(typer_instance=dataset_app, name='dataset')
+app.add_typer(typer_instance=episode_app, name='episode')
 app.command(name='doctor')(doctor_command)
 
 
