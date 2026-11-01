@@ -1,0 +1,17 @@
+{
+  "source_membership_sha256": "5af10356b3ff565bf515144983758763fb8b346737520c50647885cdf88a92d8",
+  "source_config_sha256": "9406ee5b0f5b2ba794b71bad4def5d906248af35165f49a8fceb7f0c96fe82b3",
+  "preprocess_cache_key": "185851868d46dc571b345c1a555d858b73e6f76ca52301fca59c3002aeea7899",
+  "selection_rule": "For labels 0, 5, 10, and 15, take the two training samples with the smallest stable_int(sample_id), breaking ties by sample_id.",
+  "windows": [0, 7, 15],
+  "samples": [
+    {"label": 0, "sample_id": "celeba-170257", "source_sha256": "2e5d3be9c23d292cd3ace89aa86ac52ac5cf2830c3ac81702389f5285a4e2832", "aligned_sha256": "2f6363548e6eff6dae0706fce30ac249eab29523a753cfe8d75f9b74a653b261"},
+    {"label": 0, "sample_id": "celeba-180834", "source_sha256": "19ab68f4f4292f498368a3feec1da4c08cb5a297e3f9400be01d9a8edecf1b31", "aligned_sha256": "2c0c437bcf3aafa1fbee3ca47c8e74f71e26612f685f5819aec3c67db9421c4b"},
+    {"label": 5, "sample_id": "celeba-032051", "source_sha256": "52e83ae088def90b1ff1d0188d712305630b329b26d0c0ea55ddc8bb75ad199c", "aligned_sha256": "75027a11d07a0d3a692e5570aa881125f317b19eee0fbd17cbcd056332b744bc"},
+    {"label": 5, "sample_id": "celeba-064652", "source_sha256": "79c2ffcfadbbbf68e5a58a6ae3ff2c5a13347911b92b14dbcba451d6c0ed7b3e", "aligned_sha256": "bd0079d24ebe65d7b4c655671ea203902f0a573b7288ecf87907448883d5b61f"},
+    {"label": 10, "sample_id": "celeba-081666", "source_sha256": "1f69cba0356b6a9d7c276a9a8ac3fbacdddae446b5f959e3cf471e01331b2bde", "aligned_sha256": "8eb791aa394a899b2c119245c88a8777d3586c132b211522656bc8b67c4a3a01"},
+    {"label": 10, "sample_id": "celeba-044942", "source_sha256": "688ddc840a08c39e31b611881f1874555c23824752827a6ca1ac452bd3096dc2", "aligned_sha256": "22d788c48c46832e0f5f66ca41aaf7890c1b2f2f0c02a72ca3996f7082fc781f"},
+    {"label": 15, "sample_id": "celeba-026743", "source_sha256": "409d71af36a310702ce6c80da08bb76394d8ede8992c162dcb051c02c46b60a0", "aligned_sha256": "c60733e84b1581bcd7dedbccdabe953ce668bdcb67a4ab056f0f25e3d1b4b20f"},
+    {"label": 15, "sample_id": "celeba-148389", "source_sha256": "652107997dddfabc65e4a94a9595489db6a8917648e90c8fdf4911f6d01ac36d", "aligned_sha256": "d1ee122401a6d534d3f2f51792a23c6d3922d43448840056cf99b6aa1cc587a4"}
+  ]
+}

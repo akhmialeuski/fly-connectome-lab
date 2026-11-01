@@ -34,6 +34,19 @@ class RunSummary:
     input_spikes: NDArray[np.int64]
 
 
+@dataclass(frozen=True)
+class TemporalResponse:
+    """Checkpoint states for one batch; voltages are float32 and counts are int32/int64."""
+
+    checkpoints: tuple[int, ...]
+    voltages: dict[str, NDArray[np.float32]]
+    spike_counts: dict[str, NDArray[np.int32]]
+    readout_traces: NDArray[np.float32]
+    noise_kicks: NDArray[np.int64]
+    total_spikes: NDArray[np.int64]
+    active_neurons: NDArray[np.int64]
+
+
 class EpisodeBrain:
     """Use flybrain propagation with deterministic, episode-specific CPU noise."""
 
@@ -296,3 +309,127 @@ class EpisodeBrain:
             for kind in kinds
         ]
         return np.concatenate(blocks, axis=1).astype(np.float32, copy=False)
+
+    def run_recorded(
+        self,
+        input_idx: NDArray[np.int64],
+        currents: NDArray[np.float32] | None,
+        stimulus_steps: int,
+        recovery_steps: int,
+        populations: dict[str, NDArray[np.int64]],
+        checkpoints: tuple[int, ...],
+    ) -> TemporalResponse:
+        """Record selected neuron states during fixed input and input-free recovery.
+
+        :param input_idx: Distinct int64 encoder neuron indices, shape (I,).
+        :type input_idx: NDArray[np.int64]
+        :param currents: Constant finite float32 stimulus kicks, shape (I,B), or blank.
+        :type currents: Optional[NDArray[np.float32]]
+        :param stimulus_steps: Positive number of 20 ms steps with the specified stimulus.
+        :type stimulus_steps: int
+        :param recovery_steps: Nonnegative number of input-free steps.
+        :type recovery_steps: int
+        :param populations: Nonempty named sorted unique int64 neuron indices, each shape (K,).
+        :type populations: dict[str, NDArray[np.int64]]
+        :param checkpoints: Strictly increasing steps including zero, at most total steps.
+        :type checkpoints: tuple[int, ...]
+        :returns: Voltage and cumulative spike arrays (C,B,K), traces (C,B,R), and
+            per-step noise/spike/active counts (S,B).
+        :rtype: TemporalResponse
+        :raises ValueError: If a checkpoint, population, or timing parameter is invalid.
+        :raises RuntimeError: If the episode has not been initialized.
+        """
+        total_steps = stimulus_steps + recovery_steps
+        if stimulus_steps < 1 or recovery_steps < 0:
+            raise ValueError('Stimulus steps must be positive and recovery steps nonnegative.')
+        if (
+            not checkpoints
+            or checkpoints[0] != 0
+            or checkpoints[-1] > total_steps
+            or (tuple(sorted(set(checkpoints))) != checkpoints)
+        ):
+            raise ValueError('Checkpoints must be distinct, increasing, and include zero.')
+        if not populations:
+            raise ValueError('At least one population must be selected.')
+        lookups: dict[str, NDArray[np.int64]] = {}
+        for name, indices in populations.items():
+            if (
+                not name
+                or indices.ndim != 1
+                or indices.dtype != np.int64
+                or not indices.size
+                or np.any(indices < 0)
+                or np.any(indices >= self.n)
+                or np.any(np.diff(indices) <= 0)
+            ):
+                raise ValueError('Population indices must be nonempty sorted unique int64.')
+            lookup = np.full(shape=self.n, fill_value=-1, dtype=np.int64)
+            lookup[indices] = np.arange(len(indices), dtype=np.int64)
+            lookups[name] = lookup
+        self.run(input_idx=input_idx, currents=currents, n_steps=0)
+        observed = set(checkpoints)
+        voltage_snapshots = {
+            name: np.empty(
+                shape=(len(checkpoints), self.batch_size, len(indices)), dtype=np.float32
+            )
+            for name, indices in populations.items()
+        }
+        spike_snapshots = {
+            name: np.empty(shape=(len(checkpoints), self.batch_size, len(indices)), dtype=np.int32)
+            for name, indices in populations.items()
+        }
+        cumulative = {
+            name: np.zeros(shape=(self.batch_size, len(indices)), dtype=np.int32)
+            for name, indices in populations.items()
+        }
+        traces = np.empty(
+            shape=(len(checkpoints), self.batch_size, len(self.readout_idx)), dtype=np.float32
+        )
+        noise = np.zeros(shape=(total_steps, self.batch_size), dtype=np.int64)
+        spikes = np.zeros_like(a=noise)
+        active_counts = np.zeros_like(a=noise)
+        active = np.zeros(shape=(self.n, self.batch_size), dtype=np.bool_)
+        active_total = np.zeros(shape=self.batch_size, dtype=np.int64)
+
+        def capture(index: int) -> None:
+            """Copy a checkpoint before later simulation steps can mutate it.
+
+            :param index: Position in the checkpoint list.
+            :type index: int
+            """
+            for name, indices in populations.items():
+                voltage_snapshots[name][index] = self._fb.v[indices, :].T
+                spike_snapshots[name][index] = cumulative[name]
+            traces[index] = self._trace.T
+
+        capture(index=0)
+        slot = 1
+        for step in range(1, total_steps + 1):
+            self._step(
+                input_idx=input_idx,
+                currents=currents if step <= stimulus_steps else None,
+            )
+            noise[step - 1] = self.last_noise_kicks
+            fired = self._fb.fired
+            newly_active = fired[~active.ravel()[fired]]
+            active.ravel()[fired] = True
+            rows, columns = np.divmod(fired, self.batch_size)
+            spikes[step - 1] = np.bincount(columns, minlength=self.batch_size)
+            active_total += np.bincount(newly_active % self.batch_size, minlength=self.batch_size)
+            active_counts[step - 1] = active_total
+            for name, lookup in lookups.items():
+                local = lookup[rows]
+                selected = local >= 0
+                np.add.at(cumulative[name], (columns[selected], local[selected]), 1)
+            if step in observed:
+                capture(index=slot)
+                slot += 1
+        return TemporalResponse(
+            checkpoints=checkpoints,
+            voltages=voltage_snapshots,
+            spike_counts=spike_snapshots,
+            readout_traces=traces,
+            noise_kicks=noise,
+            total_spikes=spikes,
+            active_neurons=active_counts,
+        )
