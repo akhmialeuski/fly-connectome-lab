@@ -1,5 +1,6 @@
 """Brain acquisition and inspection commands."""
 
+import math
 from pathlib import Path
 from typing import Annotated, Never
 from zipfile import BadZipFile
@@ -9,7 +10,10 @@ import typer
 
 from flystate.brain import files
 from flystate.brain.benchmark import default_threads, run_benchmark
-from flystate.cli.common import RUNTIME_ERROR, emit
+from flystate.brain.calibrate import calibrate
+from flystate.cli.common import CONFIG_ERROR, RUNTIME_ERROR, emit
+from flystate.datasets.errors import DatasetError
+from flystate.experiments.config import ConfigError, load_config
 from flystate.log import get_logger
 from flystate.settings import get_paths
 
@@ -52,13 +56,15 @@ def _report(check_hash: bool, require_published: bool, as_json: bool) -> bool:
     return valid
 
 
-def _failure(error: Exception, as_json: bool) -> Never:
+def _failure(error: Exception, as_json: bool, code: int = RUNTIME_ERROR) -> Never:
     """Report an expected file operation failure consistently.
 
     :param error: Operational exception.
     :type error: Exception
     :param as_json: Emit JSON in addition to the stderr log.
     :type as_json: bool
+    :param code: Command failure exit status.
+    :type code: int
     :returns: Never returns normally.
     :rtype: Never
     :raises typer.Exit: Always exits with the runtime error code.
@@ -66,7 +72,7 @@ def _failure(error: Exception, as_json: bool) -> Never:
     get_logger(name='brain').error('brain_files_failed', detail=str(error))
     if as_json:
         emit(result={'error': str(error)}, as_json=True)
-    raise typer.Exit(code=RUNTIME_ERROR) from error
+    raise typer.Exit(code=code) from error
 
 
 @app.command(name='download')
@@ -206,5 +212,77 @@ def benchmark_command(
                     )
                 },
             },
+            as_json=False,
+        )
+
+
+@app.command(name='calibrate')
+def calibrate_command(
+    config: Path,
+    amplitudes: Annotated[str, typer.Option('--amplitudes')] = '0.05,0.1,0.2,0.4,0.8',
+    probes: Annotated[int, typer.Option('--probes', min=1)] = 32,
+    steps: Annotated[int, typer.Option('--steps', min=1)] = 10,
+    spontaneous_steps: Annotated[int, typer.Option('--spontaneous-steps', min=1)] = 50,
+    brain_dir: Annotated[Path | None, typer.Option('--brain-dir')] = None,
+    as_json: Annotated[bool, typer.Option('--json')] = False,
+) -> None:
+    """Measure firing rates and matched-noise response latency on validation images.
+
+    :param config: Experiment YAML file.
+    :type config: Path
+    :param amplitudes: Comma-separated voltage amplitudes in (0,1].
+    :type amplitudes: str
+    :param probes: Validation images to probe.
+    :type probes: int
+    :param steps: Measurement length in simulation steps.
+    :type steps: int
+    :param spontaneous_steps: Unstimulated measurement length in steps.
+    :type spontaneous_steps: int
+    :param brain_dir: Optional explicit installed brain directory.
+    :type brain_dir: Optional[Path]
+    :param as_json: Emit one JSON report identical to the saved artifact.
+    :type as_json: bool
+    """
+    paths = get_paths()
+    try:
+        grid = tuple(float(token.strip()) for token in amplitudes.split(','))
+        if any(not math.isfinite(value) or not 0 < value <= 1 for value in grid):
+            raise ValueError('Amplitudes must be finite values in (0,1].')
+    except ValueError as error:
+        _failure(error=error, as_json=as_json, code=CONFIG_ERROR)
+    try:
+        report = calibrate(
+            cfg=load_config(path=config),
+            paths=paths,
+            brain_dir=brain_dir or paths.brain,
+            amplitudes=grid,
+            probes=probes,
+            steps=steps,
+            spontaneous_steps=spontaneous_steps,
+        )
+    except ConfigError as error:
+        _failure(error=error, as_json=as_json, code=CONFIG_ERROR)
+    except (
+        DatasetError,
+        OSError,
+        ValueError,
+        RuntimeError,
+        KeyError,
+        BadZipFile,
+        EOFError,
+    ) as error:
+        _failure(error=error, as_json=as_json)
+    if as_json:
+        emit(result=report, as_json=True)
+    else:
+        typer.echo(message='amplitude  all Hz  input Hz  readout Hz  first step  half-peak step')
+        for row in report['amplitudes']:
+            typer.echo(
+                message=f'{row["amplitude"]:9.3f} {row["rate_all_hz"]:7.3f} '
+                f'{row["rate_input_hz"]:9.3f} {row["rate_readout_hz"]:11.3f} '
+                f'{row["latency_first"]!s:>11} {row["latency_half"]!s:>15}'
+            )
+        emit(
+            result={key: report[key] for key in ('warnings', 'recommendation', 'output')},
             as_json=False,
         )
