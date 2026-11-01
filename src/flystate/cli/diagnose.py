@@ -30,6 +30,8 @@ def diagnose_command(
     components: Annotated[int, typer.Option('--components')] = 60,
     label_mode: Annotated[str, typer.Option('--label-mode')] = 'true',
     max_iterations: Annotated[int, typer.Option('--max-iterations')] = MAX_LOGISTIC_ITERATIONS,
+    train_per_class: Annotated[int | None, typer.Option('--train-per-class')] = None,
+    subset_seed: Annotated[int, typer.Option('--subset-seed')] = 0,
     overrides: Annotated[list[str] | None, typer.Option('--set')] = None,
     as_json: Annotated[bool, typer.Option('--json')] = False,
 ) -> None:
@@ -53,6 +55,10 @@ def diagnose_command(
     :type label_mode: str
     :param max_iterations: Probe iteration cap; the original protocol uses 5000.
     :type max_iterations: int
+    :param train_per_class: Optional nested balanced training subset; probe phase only.
+    :type train_per_class: Optional[int]
+    :param subset_seed: Independent nonnegative subset draw seed.
+    :type subset_seed: int
     :param overrides: Optional original experiment overrides.
     :type overrides: Optional[list[str]]
     :param as_json: Emit exactly one JSON result.
@@ -66,11 +72,18 @@ def diagnose_command(
             phase not in {'audit', 'probe', 'convergence'}
             or components < 0
             or max_iterations < 1
+            or subset_seed < 0
+            or (train_per_class is None and subset_seed != 0)
+            or (
+                train_per_class is not None
+                and (train_per_class < 2 or phase != 'probe' or label_mode != 'true')
+            )
             or (phase == 'convergence' and label_mode != 'true')
         ):
             raise ConfigError(
                 'Use audit/probe/convergence, nonnegative components, positive iterations, '
-                'and true labels for convergence diagnosis.'
+                'true labels for convergence diagnosis, '
+                'and training subsets only for true-label probes.'
             )
         if phase == 'audit':
             result = audit_cohort(cfg=cfg, paths=paths, output=output)
@@ -95,6 +108,8 @@ def diagnose_command(
                 components=components or None,
                 label_mode=label_mode,
                 max_iterations=max_iterations,
+                train_per_class=train_per_class,
+                subset_seed=subset_seed,
             )
     except (Exception, KeyboardInterrupt) as error:
         code = (

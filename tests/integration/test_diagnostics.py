@@ -324,3 +324,118 @@ class TestConvergenceDiagnosis:
         assert not json.loads(s=result.stdout)['failure_reproduced']
         invalid = runner.invoke(app=app, args=[*args, '--label-mode', 'permuted'])
         assert invalid.exit_code == 2
+
+
+class TestLearningCurveProbes:
+    """Keep subset selection separate from representation seeds and validation membership."""
+
+    def test_full_endpoint(self, tiny_experiment: ExperimentConfig) -> None:
+        """Fit original and full subsets, compare model arrays, then inspect reduced support.
+
+        :param tiny_experiment: Offline balanced cohort with seven training photos per label.
+        :type tiny_experiment: ExperimentConfig
+        """
+        paths = get_paths()
+        directories = []
+        for count, subset_seed in ((None, 0), (7, 4), (2, 0)):
+            output = paths.runs / f'subset-{count}'
+            run_probe(
+                cfg=tiny_experiment,
+                paths=paths,
+                output=output,
+                representation='encoded',
+                history='all',
+                features='both',
+                components=10,
+                label_mode='true',
+                train_per_class=count,
+                subset_seed=subset_seed,
+            )
+            directories.append(output)
+        with (
+            np.load(file=directories[0] / 'model/weights.npz', allow_pickle=False) as original,
+            np.load(file=directories[1] / 'model/weights.npz', allow_pickle=False) as full,
+        ):
+            assert original.files == full.files
+            for name in original.files:
+                np.testing.assert_array_equal(actual=original[name], desired=full[name])
+        validation = [read_table(path=p / 'validation-predictions.parquet') for p in directories]
+        assert validation[0] == validation[1]
+        assert [r['sample_id'] for r in validation[0]] == [r['sample_id'] for r in validation[2]]
+        assert [r['y_true'] for r in validation[0]] == [r['y_true'] for r in validation[2]]
+        subset = json.loads(s=(directories[2] / 'training-subset.json').read_text())
+        assert len(subset['training_sample_ids']) == 8
+        assert subset['effective_cv_folds'] == 2
+        assert not set(subset['training_sample_ids']) & {r['sample_id'] for r in validation[2]}
+
+    @pytest.mark.parametrize(
+        'count,seed,mode', [(None, 1, 'true'), (2, -1, 'true'), (2, 0, 'permuted')]
+    )
+    def test_invalid_protocol(
+        self, tiny_experiment: ExperimentConfig, count: int | None, seed: int, mode: str
+    ) -> None:
+        """Reject incompatible subset settings and preserve the failed attempt manifest.
+
+        :param tiny_experiment: Offline source configuration.
+        :type tiny_experiment: ExperimentConfig
+        :param count: Optional selected training support.
+        :type count: Optional[int]
+        :param seed: Subset seed.
+        :type seed: int
+        :param mode: Label control mode.
+        :type mode: str
+        """
+        paths = get_paths()
+        with pytest.raises(expected_exception=ValueError):
+            run_probe(
+                cfg=tiny_experiment,
+                paths=paths,
+                output=paths.runs / 'invalid-subset',
+                representation='pixels',
+                history='all',
+                features='both',
+                components=10,
+                label_mode=mode,
+                train_per_class=count,
+                subset_seed=seed,
+            )
+        manifest = json.loads(s=(paths.runs / 'invalid-subset/manifest.json').read_text())
+        assert manifest['status'] == 'failed'
+
+    def test_cli(self, tiny_experiment: ExperimentConfig, tmp_path: Path) -> None:
+        """Run a subset through the CLI and reject unsupported phase or seed combinations.
+
+        :param tiny_experiment: Offline source configuration.
+        :type tiny_experiment: ExperimentConfig
+        :param tmp_path: Isolated configuration directory.
+        :type tmp_path: Path
+        """
+        config = tmp_path / 'config.yaml'
+        config.write_text(data=effective_yaml(cfg=tiny_experiment))
+        runner = CliRunner()
+        args = [
+            'diagnose',
+            'run',
+            str(config),
+            '--output',
+            'runs/subset-cli',
+            '--representation',
+            'encoded',
+            '--json',
+        ]
+        result = runner.invoke(
+            app=app, args=[*args, '--train-per-class', '2', '--subset-seed', '4']
+        )
+        assert result.exit_code == 0, result.output
+        report = json.loads(s=result.stdout)
+        assert report['scores']['train']['n'] == 8
+        assert report['parameters']['seed'] == tiny_experiment.seed
+        assert report['parameters']['subset_seed'] == 4
+        for extra in (
+            ['--subset-seed', '1'],
+            ['--train-per-class', '1'],
+            ['--train-per-class', '2', '--phase', 'convergence'],
+            ['--train-per-class', '2', '--label-mode', 'permuted'],
+        ):
+            invalid = runner.invoke(app=app, args=[*args, *extra])
+            assert invalid.exit_code == 2 and 'error' in json.loads(s=invalid.stdout)
