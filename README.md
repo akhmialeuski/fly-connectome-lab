@@ -42,14 +42,39 @@ Open **http://127.0.0.1:8765** in your browser. When using WSL, open that addres
 | Section | What you can inspect |
 | --- | --- |
 | **Overview** | Run counts and accuracy curves by class count and evaluation split. Toggle 95% Wilson bands, inspect point values, and export a chart as SVG. The dashed line marks chance accuracy. |
-| **Experiments** | Search runs and filter by memory policy. Open a run, choose a completed test/validation evaluation or the training validation curve, then inspect top-1/top-5 accuracy, final-observation confusion counts, timings, configuration, and provenance. |
+| **Experiments** | Automatically discover all manifest-backed attempts, including nested studies, running jobs, and failures. Search names/paths/parameters and filter by study, kind, or memory policy. Open a run, choose a completed test/validation evaluation or the training validation curve, then inspect top-1/top-5 accuracy, final-observation confusion counts, timings, configuration, and provenance. |
 | **Prediction explorer** | Inside a run: choose an observation, filter correct/incorrect predictions, search an exact sample ID, and page through results. The table shows the input photo beside training examples of the actual person and the person selected by the model. |
 | **Episode inspector** | Click **View episode**. Use **Play/Pause** or the observation slider to replay the aligned image and window trajectory alongside photographs of the top-five predicted identities and their model probabilities. The first choice is highlighted, and candidates matching the actual person are marked. These candidate photos are training examples, not generated images or retrieved test images. Technical class indices remain available in a disclosure. Switch between voltage and spike-trace features, inspect the heatmap, and click a heatmap row to select its observation. Drag the spatial view to rotate, scroll to zoom, and hover to inspect a neuron. |
 | **Comparisons** | Saved paired accuracy differences, bootstrap confidence intervals, and McNemar p-values. These reports retain the compatibility checks and split used by the CLI comparison. |
 | **Evidence library** | Select calibration curves and firing rates, CPU scaling and sustained-load measurements, pixel controls, or saved Markdown research reports. Expand source JSON to inspect or download the original values. |
 | **Trace caches** | Cache identity, build status, image/observation/feature dimensions, threads, and batch size. |
 
-Use **Refresh artifacts** after creating new results from another terminal. Pages have bookmarkable URL fragments, including individual runs. Charts include expandable numeric tables; confusion matrices include nonzero counts. Reports are rendered as plain text, so embedded HTML is not executed.
+The experiment register checks for changes every five seconds while the tab is
+visible, and when it regains focus. New attempts and status changes appear without
+restarting the server or adding experiment IDs to code. Search and filter choices
+are preserved. **Refresh artifacts** remains available for an immediate manual refresh.
+Reload the browser once after upgrading viewer code; subsequent experiments are
+discovered automatically.
+
+Discovery recursively reads `manifest.json` files under `$FLYSTATE_HOME/runs/`,
+regardless of study name or nesting depth. Keep new attempt outputs under that
+working directory. Legacy training runs retain their detailed episode pages;
+diagnostic and unfamiliar experiment kinds receive a generic evidence page.
+Recorded recognition scores, convergence measurements, cohort audits, failures,
+parameters, and available files appear according to the saved content. Prediction
+tables show the input photograph and training-only examples of predicted people
+when the matching prepared cache exists. A numerical diagnosis without recognition
+scores is labeled accordingly. Unknown future kinds remain browsable without a
+new per-experiment viewer configuration.
+
+Evidence tables are paginated, text previews are limited to 2 MiB, and oversized
+Parquet row groups/pages are rejected with an explicit preview-limit message.
+Numeric model arrays are listed without loading them into the catalog. Missing or
+partially written evidence produces a warning without hiding other attempts.
+Archived Git snapshots become visible after restoring them into the working data
+home using their study README; the viewer does not scan external datasets or
+silently restore snapshots.
+ Pages have bookmarkable URL fragments, including individual runs. Charts include expandable numeric tables; confusion matrices include nonzero counts. Reports are rendered as plain text, so embedded HTML is not executed.
 
 The episode heatmap includes the cached readout population, not every neuron in the connectome. Spatial positions are used only when the installed brain file matches the run's SHA-256. Neurons with missing coordinates stay in the heatmap and are explicitly counted as missing from the spatial view. Missing aligned images or matching brain geometry do not prevent inspecting metrics and cached activity. Episode reads verify the selected committed trace chunk; prepared images are verified against their recorded content digests.
 

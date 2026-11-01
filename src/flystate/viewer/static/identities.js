@@ -2,10 +2,12 @@ import { el, pct } from './charts.js';
 
 // A class prediction identifies a person. Its photograph is a training example,
 // never a generated face or a retrieved test image.
-export function face(runId, sampleId, caption, { small = false } = {}) {
+export function face(runId, sampleId, caption, { small = false, imageUrl = null } = {}) {
   const fallback = el('span', { class: 'face-unavailable', hidden: '' }, 'Photo unavailable');
   const image = el('img', {
-    src: `/api/runs/${encodeURIComponent(runId)}/samples/${encodeURIComponent(sampleId)}/image`,
+    src:
+      imageUrl ||
+      `/api/runs/${encodeURIComponent(runId)}/samples/${encodeURIComponent(sampleId)}/image`,
     alt: caption,
     loading: 'lazy',
     width: 128,
@@ -41,7 +43,11 @@ export function predictionCards(runId, prediction, identities, observationCount)
         class: `candidate${i === 0 ? ' first-choice' : ''}${label === prediction.y_true ? ' correct-identity' : ''}`,
         'data-label': label,
       },
-      el('div', { class: 'candidate-rank' }, i === 0 ? "Model's first choice" : `Choice ${i + 1}`),
+      el(
+        'div',
+        { class: 'candidate-rank' },
+        i === 0 ? "Model's first choice" : `Choice ${i + 1}`,
+      ),
       identityFace(runId, label, identities),
       el('strong', { class: 'candidate-probability' }, pct(prediction.top5_probs[i])),
       el('small', {}, 'Model probability'),
