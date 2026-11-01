@@ -19,12 +19,23 @@ dependencies = [
     "scikit-learn>=1.9.1",
     "zarr>=3",
     "filelock>=3.32.7",
+    "fastapi>=0.141.1",
+    "uvicorn>=0.53.0",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8", "pytest-cov>=5", "ruff>=0.6", "pyright>=1.1.380",
-    "pre-commit>=3.7", "mypy>=1.11", "flake8>=7", "types-PyYAML", "types-psutil",
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+    "pyright>=1.1.380",
+    "pre-commit>=3.7",
+    "mypy>=1.11",
+    "flake8>=7",
+    "types-PyYAML",
+    "types-psutil",
+    "httpx>=0.28.1",
+    "playwright>=1.63.0",
 ]
 
 [project.scripts]
