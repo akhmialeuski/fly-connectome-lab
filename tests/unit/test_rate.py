@@ -6,7 +6,7 @@ import numba
 import numpy as np
 from scipy import sparse
 
-from flystate.brain.rate import RateReservoir
+from flystate.brain.rate import RateReservoir, degree_preserving_shuffle
 from flystate.diagnostics.rate_access import simulate_states, window_recall
 
 GAIN: float = 1.2
@@ -141,3 +141,25 @@ def test_window_recall_finds_only_the_encoded_window() -> None:
     recall = window_recall(final_state=final_state, window_inputs=inputs, seed=0)
     assert recall[-1] > 0.95
     assert max(recall[:-1]) < 0.1
+
+
+def test_degree_preserving_shuffle_keeps_row_normalization(synthetic_brain_dir: Path) -> None:
+    """Change the wiring deterministically while keeping row sums, empty rows and edge counts.
+
+    :param synthetic_brain_dir: Offline flybrain-format connectome.
+    :type synthetic_brain_dir: Path
+    """
+    matrix = sparse.load_npz(file=synthetic_brain_dir / 'weights.npz').tocsr()
+    matrix = sparse.csr_matrix(sparse.diags(np.r_[np.ones(1900), np.zeros(100)]) @ matrix)
+    matrix.eliminate_zeros()
+    first = degree_preserving_shuffle(matrix=matrix, seed=0)
+    again = degree_preserving_shuffle(matrix=matrix, seed=0)
+    other = degree_preserving_shuffle(matrix=matrix, seed=1)
+    before = np.asarray(abs(matrix).sum(axis=1)).ravel()
+    after = np.asarray(abs(first).sum(axis=1)).ravel()
+    assert np.allclose(before, after, atol=1e-5)
+    assert first[1900:].nnz == 0
+    assert 0.97 * matrix.nnz <= first.nnz <= matrix.nnz
+    assert np.array_equal(first.toarray(), again.toarray())
+    assert not np.array_equal(first.toarray(), other.toarray())
+    assert not np.array_equal(first.toarray(), matrix.toarray())

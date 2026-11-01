@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
+from flystate.cli.confirmation import confirm_evaluate_command, confirm_record_command
 from flystate.cli.drive_sweep import drive_decode_command, drive_record_command
 from flystate.cli.identity import identity_command
 from flystate.cli.identity_analysis import identity_analysis_command
@@ -67,6 +68,14 @@ app.command(
     name='rate-memory-curve',
     help='Measure without labels how well final states recall each window input.',
 )(rate_memory_curve_command)
+app.command(
+    name='confirm-record',
+    help='Record T35 final graded states for every photograph of the confirmation cohort.',
+)(confirm_record_command)
+app.command(
+    name='confirm-evaluate',
+    help='Fit on training photographs and score the untouched T35 held-out photographs once.',
+)(confirm_evaluate_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
 app.command(
