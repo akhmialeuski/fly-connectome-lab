@@ -6,6 +6,8 @@ from typing import Annotated
 import typer
 
 from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
+from flystate.cli.noise import noise_trace_command
+from flystate.cli.noise_analysis import noise_analysis_command
 from flystate.cli.stability import stability_command
 from flystate.diagnostics.audit import audit_cohort
 from flystate.diagnostics.convergence import diagnose_convergence
@@ -20,6 +22,8 @@ app = typer.Typer(
 )
 
 app.command(name='stability')(stability_command)
+app.command(name='noise-trace')(noise_trace_command)
+app.command(name='noise-analyze')(noise_analysis_command)
 
 
 @app.command(name='run')
@@ -35,6 +39,8 @@ def diagnose_command(
     max_iterations: Annotated[int, typer.Option('--max-iterations')] = MAX_LOGISTIC_ITERATIONS,
     train_per_class: Annotated[int | None, typer.Option('--train-per-class')] = None,
     subset_seed: Annotated[int, typer.Option('--subset-seed')] = 0,
+    trace_source: Annotated[Path | None, typer.Option('--trace-source')] = None,
+    trace_precision: Annotated[str | None, typer.Option('--trace-precision')] = None,
     overrides: Annotated[list[str] | None, typer.Option('--set')] = None,
     as_json: Annotated[bool, typer.Option('--json')] = False,
 ) -> None:
@@ -62,6 +68,10 @@ def diagnose_command(
     :type train_per_class: Optional[int]
     :param subset_seed: Independent nonnegative subset draw seed.
     :type subset_seed: int
+    :param trace_source: Optional completed native trace to fit.
+    :type trace_source: Optional[Path]
+    :param trace_precision: Float32 or float16 treatment of the native trace.
+    :type trace_precision: Optional[str]
     :param overrides: Optional original experiment overrides.
     :type overrides: Optional[list[str]]
     :param as_json: Emit exactly one JSON result.
@@ -82,6 +92,9 @@ def diagnose_command(
                 and (train_per_class < 2 or phase != 'probe' or label_mode != 'true')
             )
             or (phase == 'convergence' and label_mode != 'true')
+            or (trace_source is None) != (trace_precision is None)
+            or (trace_source is not None and (phase != 'probe' or representation != 'neural'))
+            or (trace_precision is not None and trace_precision not in {'float32', 'float16'})
         ):
             raise ConfigError(
                 'Use audit/probe/convergence, nonnegative components, positive iterations, '
@@ -113,6 +126,8 @@ def diagnose_command(
                 max_iterations=max_iterations,
                 train_per_class=train_per_class,
                 subset_seed=subset_seed,
+                trace_source=trace_source,
+                trace_precision=trace_precision,
             )
     except (Exception, KeyboardInterrupt) as error:
         code = (
