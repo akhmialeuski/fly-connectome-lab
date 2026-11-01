@@ -14,6 +14,7 @@ from flystate.cli.input_loss_selection import input_loss_selection_command
 from flystate.cli.matched_neural import matched_neural_command
 from flystate.cli.noise import noise_trace_command
 from flystate.cli.noise_analysis import noise_analysis_command
+from flystate.cli.rate_access import rate_memory_command, rate_record_command
 from flystate.cli.stability import stability_command
 from flystate.cli.temporal import temporal_command
 from flystate.cli.temporal_analysis import temporal_analysis_command
@@ -50,6 +51,14 @@ app.command(
     name='drive-decode',
     help='Decode identity from T32 recordings with the T30 fit-only OOF readout.',
 )(drive_decode_command)
+app.command(
+    name='rate-record',
+    help='Record T33 population states under deterministic graded dynamics.',
+)(rate_record_command)
+app.command(
+    name='rate-memory',
+    help='Test T33 memory: persistent versus reset states, paired by photograph.',
+)(rate_memory_command)
 app.command(name='noise-trace')(noise_trace_command)
 app.command(name='noise-analyze')(noise_analysis_command)
 app.command(
