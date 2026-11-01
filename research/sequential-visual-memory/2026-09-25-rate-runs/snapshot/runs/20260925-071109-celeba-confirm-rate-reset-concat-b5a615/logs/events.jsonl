@@ -1,0 +1,17 @@
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 1, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:15.554834Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 2, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:19.385129Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 3, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:24.758606Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 4, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:29.717887Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 5, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:34.852234Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 6, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:40.507882Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 7, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:45.163567Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 8, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:49.775748Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 9, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:11:55.121650Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 10, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:12:01.868492Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 11, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:12:08.730480Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 12, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:12:16.496501Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 13, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:12:24.285757Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 14, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:12:32.637191Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 15, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:12:41.875226Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "training", "t": 16, "event": "fit_readout", "level": "info", "timestamp": "2026-09-25T07:12:52.306656Z"}
+{"run_id": "20260925-071109-celeba-confirm-rate-reset-concat-b5a615", "phase": "completed", "final_val_accuracy": 0.4666666666666667, "event": "training_completed", "level": "info", "timestamp": "2026-09-25T07:13:04.766661Z"}

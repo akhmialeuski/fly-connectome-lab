@@ -2,8 +2,6 @@
 
 import hashlib
 import io
-import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +17,10 @@ from flystate.storage.parquet import read_table
 from flystate.storage.runs import load_manifest
 from flystate.traces.key import cache_key
 from flystate.traces.store import DATA_ARRAYS, TraceStore
+from flystate.viewer.experiments import TABLE_BATCH_ROWS, ExperimentStore, nested_resource
+from flystate.viewer.files import document, resource
+
+MAX_IDENTITY_REFERENCES: int = 500
 
 REPORT_KINDS: tuple[str, ...] = (
     'comparisons',
@@ -27,47 +29,6 @@ REPORT_KINDS: tuple[str, ...] = (
     'design-checks',
     'reports',
 )
-
-
-def resource(root: Path, *parts: str) -> Path:
-    """Resolve artifact identifiers while rejecting traversal and escaping symlinks.
-
-    :param root: Allowed storage boundary.
-    :type root: Path
-    :param parts: Basenames identifying descendants.
-    :type parts: str
-    :returns: Checked resolved descendant.
-    :rtype: Path
-    :raises ValueError: If an identifier or resolved boundary is invalid.
-    :raises FileNotFoundError: If the resource is absent.
-    """
-    if any(
-        part in {'.', '..'} or not re.fullmatch(pattern=r'[A-Za-z0-9_.-]+', string=part)
-        for part in parts
-    ):
-        raise ValueError('Invalid artifact identifier.')
-    target = root.joinpath(*parts).resolve()
-    if not target.is_relative_to(root.resolve()):
-        raise ValueError('Artifact escapes its storage directory.')
-    if not target.exists():
-        raise FileNotFoundError('Requested artifact is unavailable.')
-    return target
-
-
-def document(path: Path) -> dict[str, Any]:
-    """Read one finite JSON object from an artifact.
-
-    :param path: Existing JSON file.
-    :type path: Path
-    :returns: Parsed object.
-    :rtype: dict[str, Any]
-    :raises ValueError: If JSON is not an object or contains nonfinite values.
-    """
-    value = json.loads(s=path.read_text(encoding='utf-8'))
-    if not isinstance(value, dict):
-        raise ValueError('Artifact must contain a JSON object.')
-    json.dumps(obj=value, allow_nan=False)
-    return value
 
 
 class Repository:
@@ -80,6 +41,7 @@ class Repository:
         :type paths: Paths
         """
         self.paths = paths
+        self.experiments = ExperimentStore(root=paths.runs)
         self._verified: set[tuple[str, int, int, str]] = set()
 
     def verify(self, path: Path, expected: str) -> None:
@@ -157,7 +119,13 @@ class Repository:
                 )
             except (OSError, ValueError, KeyError, TypeError, ConfigError) as error:
                 warnings.append({'artifact': source.parent.name, 'error': str(error)})
-        return {'runs': runs, 'reports': reports, 'caches': caches, 'warnings': warnings}
+        return {
+            'runs': runs,
+            'experiments': self.experiments.discover(legacy_runs=runs),
+            'reports': reports,
+            'caches': caches,
+            'warnings': warnings,
+        }
 
     def run(self, run_id: str) -> dict[str, Any]:
         """Read a run's provenance, validation curve, and evaluation inventory.
@@ -431,10 +399,24 @@ class Repository:
         :raises ValueError: If recorded cache artifacts fail integrity checks.
         """
         manifest = load_manifest(run_dir=resource(self.paths.runs, run_id, 'manifest.json').parent)
+        return self.prepared_image(fingerprint=manifest['dataset_fingerprint'], sample_id=sample_id)
+
+    def prepared_image(self, fingerprint: str, sample_id: str) -> bytes:
+        """Read an existing image through its recorded dataset fingerprint and verified cache.
+
+        :param fingerprint: Original prepared dataset fingerprint.
+        :type fingerprint: str
+        :param sample_id: Recorded sample identifier.
+        :type sample_id: str
+        :returns: PNG image bytes without regenerating source pixels.
+        :rtype: bytes
+        :raises ValueError: If image integrity or geometry differs from its cache metadata.
+        :raises FileNotFoundError: If the prepared image is unavailable.
+        """
         for source in self.paths.preprocess.glob('*/meta.json'):
             directory = resource(self.paths.preprocess, source.parent.name)
             meta = document(path=resource(directory, 'meta.json'))
-            if meta.get('fingerprint') != manifest['dataset_fingerprint']:
+            if meta.get('fingerprint') != fingerprint:
                 continue
             for name in ('images.npy', 'index.parquet'):
                 self.verify(path=resource(directory, name), expected=meta['artifacts'][name])
@@ -453,4 +435,64 @@ class Repository:
             return stream.getvalue()
         raise FileNotFoundError(
             'Aligned image cache is unavailable; metrics and traces remain viewable.'
+        )
+
+    def experiment_detail(self, relative: str) -> dict[str, Any]:
+        """Read a generic attempt and select training-only identity reference photographs.
+
+        :param relative: Relative manifest-backed experiment path.
+        :type relative: str
+        :returns: Generic evidence and available identity references.
+        :rtype: dict[str, Any]
+        """
+        result = self.experiments.detail(relative=relative)
+        result['identities'] = []
+        directory = self.experiments.directory(relative=relative)
+        if (directory / 'samples.parquet').exists():
+            try:
+                samples = pq.ParquetFile(
+                    source=nested_resource(root=directory, relative='samples.parquet')
+                )
+                identities: dict[int, dict[str, Any]] = {}
+                for batch in samples.iter_batches(
+                    batch_size=TABLE_BATCH_ROWS, columns=['sample_id', 'label', 'identity', 'split']
+                ):
+                    for row in batch.to_pylist():
+                        if row['split'] == 'train' and row['label'] not in identities:
+                            identities[row['label']] = {
+                                k: row[k] for k in ('sample_id', 'label', 'identity')
+                            }
+                    if len(identities) >= MAX_IDENTITY_REFERENCES:
+                        result['warnings'].append(
+                            f'Identity photo references are limited to '
+                            f'{MAX_IDENTITY_REFERENCES} classes.'
+                        )
+                        break
+                result['identities'] = list(identities.values())[:MAX_IDENTITY_REFERENCES]
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                result['warnings'].append(f'Identity references unavailable: {error}')
+        return result
+
+    def experiment_image(self, relative: str, sample_id: str) -> bytes:
+        """Serve a photograph only when it belongs to the recorded attempt membership.
+
+        :param relative: Relative experiment directory.
+        :type relative: str
+        :param sample_id: Training or validation sample saved in that attempt.
+        :type sample_id: str
+        :returns: Existing prepared photograph as PNG.
+        :rtype: bytes
+        :raises FileNotFoundError: If membership, provenance, or the photograph is unavailable.
+        :raises ValueError: If membership or prepared cache integrity is invalid.
+        """
+        directory = self.experiments.directory(relative=relative)
+        source = nested_resource(root=directory, relative='samples.parquet')
+        rows = pq.read_table(
+            source=source, columns=['sample_id'], filters=[('sample_id', '=', sample_id)]
+        )
+        if rows.num_rows != 1:
+            raise FileNotFoundError('Sample is not a recorded member of this experiment.')
+        provenance = document(path=nested_resource(root=directory, relative='provenance.json'))
+        return self.prepared_image(
+            fingerprint=provenance['dataset_fingerprint'], sample_id=sample_id
         )

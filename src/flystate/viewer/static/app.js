@@ -1,3 +1,11 @@
+import { isSequential, interpretationCard } from './interpretation.js';
+import {
+  DEFAULT_SORT,
+  experimentTable,
+  researchPage,
+  sortEntries,
+  sortFields,
+} from './research.js';
 import { face, identityFace } from './identities.js';
 import {
   accuracySeries,
@@ -20,11 +28,15 @@ import { openEpisode, closeEpisode } from './episode.js';
 const content = document.querySelector('#content');
 let inventory,
   generation = 0,
-  controller;
+  controller,
+  refreshView = null,
+  catalogPolling = false;
 const titles = {
   overview: 'Overview',
   runs: 'Experiments',
   run: 'Experiments',
+  experiment: 'Diagnostics',
+  diagnostics: 'Diagnostics',
   comparisons: 'Comparisons',
   evidence: 'Evidence library',
   caches: 'Trace caches',
@@ -33,7 +45,9 @@ export async function api(path, signal) {
   const response = await fetch(`/api/${path}`, { signal, cache: 'no-store' });
   const data = await response.json();
   if (!response.ok)
-    throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+    throw new Error(
+      typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail),
+    );
   return data;
 }
 const escapePath = encodeURIComponent;
@@ -76,24 +90,6 @@ function warnings(items) {
       )
     : document.createDocumentFragment();
 }
-function runTable(runs) {
-  return table(
-    ['Experiment / run', 'Memory mode', 'Classes', 'Observations', 'Final validation', 'Status'],
-    runs.map((r) => [
-      el(
-        'div',
-        {},
-        el('a', { href: `#run/${escapePath(r.run_id)}`, class: 'run-link' }, r.name),
-        el('small', { class: 'mono' }, r.run_id),
-      ),
-      mode(r.mode),
-      r.classes,
-      r.steps,
-      pct(r.summary.final_val_accuracy),
-      badge(r.status),
-    ]),
-  );
-}
 async function overview(signal) {
   const runs = inventory.runs;
   const classes = [...new Set(runs.map((r) => r.classes))].sort((a, b) => b - a);
@@ -103,7 +99,11 @@ async function overview(signal) {
       'Follow every observation, compare memory policies, and inspect the evidence behind each result.',
     ),
     stats([
-      ['Experiments', number(runs.length), 'Saved training runs'],
+      [
+        'Experiments',
+        number(inventory.experiments.filter(isSequential).length),
+        'Sequential training runs',
+      ],
       [
         'Completed',
         number(runs.filter((r) => r.status === 'completed').length),
@@ -119,11 +119,20 @@ async function overview(signal) {
     warnings(inventory.warnings),
   );
   if (!runs.length) {
+    const register = el('div', {}, experimentTable(inventory.experiments.filter(isSequential)));
     content.append(
-      empty(
-        'No experiments found in FLYSTATE_HOME. Train an experiment with the CLI, then refresh this page.',
+      card(
+        'Experiment register',
+        'Sequential image-patch experiments. Diagnostic controls are in Diagnostics.',
+        register,
       ),
     );
+    refreshView = () =>
+      register.replaceChildren(experimentTable(inventory.experiments.filter(isSequential)));
+    if (!inventory.experiments.some(isSequential))
+      content.append(
+        empty('No experiments found in FLYSTATE_HOME. New attempts appear automatically.'),
+      );
     return;
   }
   const cohort = el(
@@ -155,12 +164,15 @@ async function overview(signal) {
     ),
     plot,
   );
+  const register = el('div', {}, experimentTable(inventory.experiments.filter(isSequential)));
+  refreshView = () =>
+    register.replaceChildren(experimentTable(inventory.experiments.filter(isSequential)));
   content.append(
     curveCard,
     card(
       'Experiment register',
       'Open a run to inspect predictions, episodes, and provenance.',
-      runTable(runs),
+      register,
     ),
   );
   let updateId = 0;
@@ -242,42 +254,108 @@ async function overview(signal) {
   intervals.onchange = change;
   await update();
 }
-function experiments() {
+function experiments(diagnostics = false) {
   content.append(
-    head('Experiment register', 'Inspect training outcomes and drill into completed evaluations.'),
+    head(
+      diagnostics ? 'Diagnostic register' : 'Experiment register',
+      diagnostics
+        ? 'Probes, audits, and numerical checks. These are not sequential-memory training runs.'
+        : 'Sequential image-patch experiments. Open a run to inspect episodes and memory state.',
+    ),
   );
   const search = el('input', {
     type: 'search',
-    placeholder: 'Filter by run name or ID',
+    placeholder: 'Filter by name, path, or parameters',
     'aria-label': 'Search experiments',
   });
-  const policy = el(
-    'select',
-    { 'aria-label': 'Memory mode' },
-    option('', 'All memory modes'),
-    ...Object.keys(modeColors).map((v) => option(v, v.replaceAll('_', ' '))),
-  );
-  const list = el('div');
-  const update = () => {
-    const filtered = inventory.runs.filter(
-      (r) =>
-        (!policy.value || r.mode === policy.value) &&
-        `${r.name} ${r.run_id}`.toLowerCase().includes(search.value.toLowerCase()),
+  const study = el('select', { 'aria-label': 'Experiment study' });
+  const kind = el('select', { 'aria-label': 'Experiment kind' });
+  const policy = el('select', { 'aria-label': 'Memory mode' });
+  const sortBy = el('select', { 'aria-label': 'Sort by' });
+  const direction = el('button', { type: 'button', 'aria-label': 'Sort direction' });
+  const list = el('div'),
+    count = el('p', { class: 'muted' });
+  // The chosen order survives refreshes and visits; storage may be unavailable in private mode.
+  const storageKey = `flystate.sort.${diagnostics ? 'diagnostics' : 'runs'}`;
+  let sort = { ...DEFAULT_SORT };
+  try {
+    sort = { ...sort, ...JSON.parse(localStorage.getItem(storageKey) || '{}') };
+  } catch {
+    // Keep the default order.
+  }
+  function setSort(key, descending = sort.key === key ? !sort.descending : key === 'created') {
+    sort = { key, descending };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(sort));
+    } catch {
+      // The order still applies for this page view.
+    }
+    update();
+  }
+  function choices(select, values, label) {
+    const selected = select.value;
+    select.replaceChildren(
+      option('', label),
+      ...[...new Set(values.filter(Boolean))]
+        .sort()
+        .map((v) => option(v, v === '.' ? 'Training runs' : v.replaceAll('_', ' '))),
     );
-    list.replaceChildren(filtered.length ? runTable(filtered) : empty('No matching experiments.'));
+    select.value = [...select.options].some((item) => item.value === selected) ? selected : '';
+  }
+  const update = () => {
+    const entries = inventory.experiments.filter((row) => isSequential(row) !== diagnostics);
+    choices(
+      study,
+      entries.map((row) => row.study),
+      'All studies',
+    );
+    choices(
+      kind,
+      entries.map((row) => row.kind),
+      'All experiment kinds',
+    );
+    choices(
+      policy,
+      entries.map((row) => row.mode),
+      'All memory modes',
+    );
+    const filtered = entries.filter(
+      (row) =>
+        (!study.value || row.study === study.value) &&
+        (!kind.value || row.kind === kind.value) &&
+        (!policy.value || row.mode === policy.value) &&
+        `${row.name} ${row.id} ${row.config_name || ''} ${JSON.stringify(row.parameters)}`
+          .toLowerCase()
+          .includes(search.value.toLowerCase()),
+    );
+    const fields = sortFields(entries);
+    sortBy.replaceChildren(...fields.map((field) => option(field.key, `Sort: ${field.label}`)));
+    sortBy.value = fields.some((field) => field.key === sort.key) ? sort.key : DEFAULT_SORT.key;
+    direction.textContent = sort.descending ? '↓ Descending' : '↑ Ascending';
+    list.replaceChildren(
+      filtered.length
+        ? experimentTable(sortEntries(filtered, fields, sort), sort, (key) => setSort(key))
+        : empty('No matching experiments.'),
+    );
+    count.textContent = `${filtered.length} of ${entries.length} ${diagnostics ? 'diagnostics' : 'experiments'} · updates automatically every 5 seconds`;
   };
   search.oninput = update;
-  policy.onchange = update;
+  for (const select of [study, kind, policy]) select.onchange = update;
+  sortBy.onchange = () => setSort(sortBy.value, sortBy.value === 'created');
+  direction.onclick = () => setSort(sort.key, !sort.descending);
+  refreshView = update;
   update();
   content.append(
     card(
-      'All runs',
-      `${inventory.runs.length} saved experiments`,
-      el('div', { class: 'toolbar' }, search, policy),
+      diagnostics ? 'Diagnostic attempts' : 'Sequential experiments',
+      'New studies require no viewer configuration.',
+      el('div', { class: 'toolbar' }, search, study, kind, policy, sortBy, direction),
+      count,
       list,
     ),
   );
 }
+
 async function runPage(runId, signal) {
   const detail = await api(`runs/${escapePath(runId)}`, signal);
   if (signal.aborted) return;
@@ -285,6 +363,13 @@ async function runPage(runId, signal) {
     manifest = detail.manifest;
   content.append(
     head(cfg.name, runId),
+    interpretationCard({
+      kind: 'training',
+      mode: cfg.memory.mode,
+      status: manifest.status,
+      classes: cfg.dataset.subset.n_identities,
+      scores: { validation: { accuracy: detail.summary?.final_val_accuracy } },
+    }),
     stats([
       ['Memory policy', cfg.memory.mode.replaceAll('_', ' '), 'Recorded configuration'],
       ['Classes', cfg.dataset.subset.n_identities, 'Identity classification'],
@@ -336,7 +421,10 @@ async function runPage(runId, signal) {
     }
     const evalId = selector.value;
     try {
-      const data = await api(`runs/${escapePath(runId)}/evaluations/${escapePath(evalId)}`, signal);
+      const data = await api(
+        `runs/${escapePath(runId)}/evaluations/${escapePath(evalId)}`,
+        signal,
+      );
       if (current !== updateId || signal.aborted) return;
       target.replaceChildren(
         card(
@@ -461,7 +549,8 @@ function predictionsPanel(runId, evalId, meta, identities, signal) {
       previous.disabled = offset === 0;
       next.disabled = offset + 50 >= data.total;
     } catch (error) {
-      if (error.name !== 'AbortError' && current === queryId) list.replaceChildren(errorBox(error));
+      if (error.name !== 'AbortError' && current === queryId)
+        list.replaceChildren(errorBox(error));
     }
   };
   const reset = () => {
@@ -540,7 +629,9 @@ async function reportsPage(comparisons, signal) {
   }
   function options() {
     selector.replaceChildren(
-      ...inventory.reports.filter((r) => r.kind === category.value).map((r) => option(r.id, r.id)),
+      ...inventory.reports
+        .filter((r) => r.kind === category.value)
+        .map((r) => option(r.id, r.id)),
     );
     return show();
   }
@@ -597,7 +688,13 @@ function renderReport(kind, d) {
         ),
         table(
           ['Observation', 'A accuracy', 'B accuracy', 'Difference (pp)', 'McNemar p'],
-          d.rows.map((r) => [r.t, pct(r.acc_a), pct(r.acc_b), number(r.diff_pp), number(r.p, 5)]),
+          d.rows.map((r) => [
+            r.t,
+            pct(r.acc_a),
+            pct(r.acc_b),
+            number(r.diff_pp),
+            number(r.p, 5),
+          ]),
         ),
       ),
     );
@@ -702,7 +799,11 @@ function renderReport(kind, d) {
             ],
             (v) => `${number(v)} ms`,
           ),
-          el('p', { class: 'muted' }, `End/start ratio: ${number(d.sustained.throttle_ratio, 3)}`),
+          el(
+            'p',
+            { class: 'muted' },
+            `End/start ratio: ${number(d.sustained.throttle_ratio, 3)}`,
+          ),
         ),
       );
   } else if (kind === 'design-checks' && d.baselines) {
@@ -717,7 +818,11 @@ function renderReport(kind, d) {
           })),
           pct,
         ),
-        el('p', { class: 'notice' }, `Recorded memory gap: ${number(d.gap_pp)} pp. ${d.message}`),
+        el(
+          'p',
+          { class: 'notice' },
+          `Recorded memory gap: ${number(d.gap_pp)} pp. ${d.message}`,
+        ),
       ),
     );
     if (d.window_baselines)
@@ -749,7 +854,10 @@ function renderReport(kind, d) {
 }
 function caches() {
   content.append(
-    head('Trace caches', 'Inspect reusable simulation output without rebuilding or changing it.'),
+    head(
+      'Trace caches',
+      'Inspect reusable simulation output without rebuilding or changing it.',
+    ),
     card(
       'Stored neural recordings',
       'N = images · T = observations · F = readout features',
@@ -776,10 +884,12 @@ async function navigate(refresh = false) {
   controller = new AbortController();
   const { signal } = controller;
   closeEpisode();
+  refreshView = null;
   const [page = 'overview', id] = (location.hash.slice(1) || 'overview').split('/');
   document.querySelector('#section-label').textContent = titles[page] || 'Overview';
   document.querySelectorAll('nav a').forEach((a) => {
-    const active = a.hash === `#${page === 'run' ? 'runs' : page}`;
+    const active =
+      a.hash === `#${page === 'run' ? 'runs' : page === 'experiment' ? 'diagnostics' : page}`;
     a.classList.toggle('active', active);
     if (active) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
@@ -790,8 +900,13 @@ async function navigate(refresh = false) {
     if (current !== generation) return;
     content.replaceChildren();
     if (page === 'overview') await overview(signal);
-    else if (page === 'runs') experiments();
-    else if (page === 'run' && id) await runPage(decodeURIComponent(id), signal);
+    else if (page === 'runs' || page === 'diagnostics') experiments(page === 'diagnostics');
+    else if (page === 'experiment' && id) {
+      const view = await researchPage(decodeURIComponent(id), api, signal);
+      if (current !== generation) return;
+      content.append(view.page);
+      refreshView = view.refresh;
+    } else if (page === 'run' && id) await runPage(decodeURIComponent(id), signal);
     else if (page === 'comparisons' || page === 'evidence')
       await reportsPage(page === 'comparisons', signal);
     else if (page === 'caches') caches();
@@ -808,3 +923,25 @@ async function navigate(refresh = false) {
 window.addEventListener('hashchange', () => navigate());
 document.querySelector('#refresh').onclick = () => navigate(true);
 navigate();
+
+async function pollCatalog() {
+  if (document.hidden || catalogPolling || !inventory) return;
+  catalogPolling = true;
+  const current = generation;
+  try {
+    const latest = await api('catalog');
+    if (current !== generation) return;
+    if (JSON.stringify(latest) !== JSON.stringify(inventory)) {
+      inventory = latest;
+      await refreshView?.();
+    }
+  } catch (error) {
+    document.querySelector('#refresh').title =
+      `Automatic refresh failed: ${error.message}. Click to retry.`;
+  } finally {
+    catalogPolling = false;
+  }
+}
+setInterval(pollCatalog, 5000);
+window.addEventListener('focus', pollCatalog);
+document.addEventListener('visibilitychange', pollCatalog);

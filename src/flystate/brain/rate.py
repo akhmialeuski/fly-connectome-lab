@@ -11,6 +11,7 @@ There is no noise and no tonic drive, so ``x = 0`` is the rest state and every r
 deterministic function of the input.
 """
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -20,9 +21,12 @@ from flybrain import FlyBrain
 from numpy.typing import NDArray
 from scipy import sparse
 
+from flystate.brain.runtime import RestState, RunSummary
+from flystate.experiments.config import BrainConfig, ReadoutConfig
 from flystate.hashing import stable_int
 
 SHUFFLE_NAMESPACE: str = 'degree-preserving-shuffle'
+VOLTAGE: str = 'voltage'
 # The same numba.prange object under a name mypy treats as a callable returning a range.
 PARALLEL_RANGE: Any = numba.prange
 
@@ -134,6 +138,7 @@ class RateReservoir:
         if shuffle_seed is not None:
             matrix = degree_preserving_shuffle(matrix=matrix, seed=shuffle_seed)
         matrix.sort_indices()
+        self._flybrain: FlyBrain = spiking
         self.n: int = spiking.n
         self.edges: int = int(matrix.nnz)
         self.gain: np.float32 = np.float32(gain)
@@ -147,6 +152,16 @@ class RateReservoir:
         self._weights: NDArray[np.float32] = matrix.data.astype(np.float32)
         self.state: NDArray[np.float32] = np.zeros(shape=(self.n, batch_size), dtype=np.float32)
         self._drive: NDArray[np.float32] = np.empty_like(self.state)
+
+    def cells(self, types: Sequence[str]) -> NDArray[np.int64]:
+        """Select sorted neuron indices by superclass or cell type, as flybrain does.
+
+        :param types: Superclass or cell-type names.
+        :type types: Sequence[str]
+        :returns: Sorted int64 neuron indices, shape (K,).
+        :rtype: NDArray[np.int64]
+        """
+        return np.asarray(self._flybrain.cells(types=list(types)), dtype=np.int64)
 
     def reset(self) -> None:
         """Return every episode to the zero rest state."""
@@ -171,3 +186,146 @@ class RateReservoir:
         self.state *= np.float32(1) - self.leak
         self._drive *= self.leak
         self.state += self._drive
+
+
+class RateEpisodeBrain:
+    """Run the graded model behind the trace builder's ``EpisodeBrain`` interface.
+
+    The rest state is zero and the model is deterministic, so episode seeds and warmup have no
+    effect. The only recorded feature block is the graded state, stored under ``voltage``. No
+    spikes exist, so every spike count in a run summary is zero.
+    """
+
+    def __init__(
+        self,
+        brain_dir: Path,
+        brain_cfg: BrainConfig,
+        readout_cfg: ReadoutConfig,
+        batch_size: int,
+        threads: int,
+    ) -> None:
+        """Load the effective graph and select the readout population.
+
+        :param brain_dir: Directory with flybrain ``brain.npz`` and ``weights.npz``.
+        :type brain_dir: Path
+        :param brain_cfg: Configuration with ``backend`` rate and its ``rate`` parameters.
+        :type brain_cfg: BrainConfig
+        :param readout_cfg: Readout population; only the ``voltage`` block is recorded.
+        :type readout_cfg: ReadoutConfig
+        :param batch_size: Positive number of episodes advanced together.
+        :type batch_size: int
+        :param threads: Numba threads for the propagation kernel.
+        :type threads: int
+        :raises ValueError: If the configuration is not a rate one or the readout is empty.
+        """
+        if brain_cfg.backend != 'rate' or brain_cfg.rate is None:
+            raise ValueError('RateEpisodeBrain requires brain.backend rate with brain.rate set.')
+        numba.set_num_threads(threads)
+        self._rate = brain_cfg.rate
+        self._reservoir = RateReservoir(
+            brain_dir=brain_dir,
+            gain=brain_cfg.rate.gain,
+            leak=brain_cfg.rate.leak,
+            batch_size=batch_size,
+        )
+        self._driven: NDArray[np.int64] | None = None
+        self.n: int = self._reservoir.n
+        self.batch_size: int = batch_size
+        self.threads: int = threads
+        self.readout_idx: NDArray[np.int64] = self.cells(superclasses=[readout_cfg.population])
+        if not self.readout_idx.size:
+            raise ValueError(f'Empty readout population: {readout_cfg.population}.')
+
+    def cells(self, superclasses: Sequence[str]) -> NDArray[np.int64]:
+        """Select sorted neuron indices by superclass or cell type.
+
+        :param superclasses: Population names passed to flybrain.
+        :type superclasses: Sequence[str]
+        :returns: Sorted int64 neuron indices, shape (K,).
+        :rtype: NDArray[np.int64]
+        """
+        return self._reservoir.cells(types=superclasses)
+
+    def compute_rest_state(self, seed: int) -> RestState:
+        """Return the zero rest state; the graded model needs no warmup.
+
+        :param seed: Experiment seed, recorded only.
+        :type seed: int
+        :returns: Zero float32 voltages (N,) and no spikes.
+        :rtype: RestState
+        """
+        voltages = np.zeros(shape=self.n, dtype=np.float32)
+        fired = np.empty(shape=0, dtype=np.int64)
+        voltages.flags.writeable = False
+        fired.flags.writeable = False
+        return RestState(v=voltages, fired=fired, warmup_steps=0, seed=seed)
+
+    def begin(self, rest: RestState, sample_ids: Sequence[str], seed: int) -> None:
+        """Start new episodes from the rest state; the deterministic model ignores the seed.
+
+        :param rest: Rest state from ``compute_rest_state``.
+        :type rest: RestState
+        :param sample_ids: At most B episode identifiers.
+        :type sample_ids: Sequence[str]
+        :param seed: Experiment seed, unused by the noise-free model.
+        :type seed: int
+        :raises ValueError: If the episode count exceeds the batch capacity.
+        """
+        if len(sample_ids) > self.batch_size:
+            raise ValueError('Episode count exceeds batch_size.')
+        self.restore_rest(rest=rest)
+
+    def restore_rest(self, rest: RestState) -> None:
+        """Set every episode's state to the rest voltages.
+
+        :param rest: Rest state with float32 voltages, shape (N,).
+        :type rest: RestState
+        :raises ValueError: If the rest voltages do not match the network.
+        """
+        if rest.v.shape != (self.n,) or not np.isfinite(rest.v).all():
+            raise ValueError('Rest voltages must be finite with shape (n,).')
+        self._reservoir.state[:] = rest.v[:, None]
+
+    def run(
+        self, input_idx: NDArray[np.int64], currents: NDArray[np.float32] | None, n_steps: int
+    ) -> RunSummary:
+        """Advance every episode by ``n_steps`` updates with the scaled encoder current.
+
+        :param input_idx: Encoder-driven neuron indices, shape (I,), int64.
+        :type input_idx: NDArray[np.int64]
+        :param currents: Encoder current, shape (I,B), float32, or no drive.
+        :type currents: Optional[NDArray[np.float32]]
+        :param n_steps: Nonnegative number of updates.
+        :type n_steps: int
+        :returns: All-zero spike counts, because the graded model emits no spikes.
+        :rtype: RunSummary
+        :raises ValueError: If the step count is negative or the driven neurons change.
+        """
+        if n_steps < 0:
+            raise ValueError('n_steps must be nonnegative.')
+        if self._driven is None:
+            self._driven = input_idx.copy()
+            if self._rate.driven_leak is not None:
+                self._reservoir.leak[input_idx] = np.float32(self._rate.driven_leak)
+        elif not np.array_equal(self._driven, input_idx):
+            raise ValueError('The driven neurons must stay the same for the whole trace.')
+        inputs = None if currents is None else (currents * np.float32(self._rate.input_scale))
+        for _ in range(n_steps):
+            self._reservoir.step(input_idx=input_idx, inputs=inputs)
+        zeros = np.zeros(shape=self.batch_size, dtype=np.int64)
+        return RunSummary(
+            spikes_total=zeros, active_neurons=zeros, readout_spikes=zeros, input_spikes=zeros
+        )
+
+    def features(self, kinds: Sequence[str]) -> NDArray[np.float32]:
+        """Copy the readout population's graded state, recorded as the ``voltage`` block.
+
+        :param kinds: Exactly ``['voltage']``.
+        :type kinds: Sequence[str]
+        :returns: Float32 matrix of shape (B,R).
+        :rtype: NDArray[np.float32]
+        :raises ValueError: If any other feature block is requested.
+        """
+        if list(kinds) != [VOLTAGE]:
+            raise ValueError('The rate backend records only the voltage block.')
+        return np.ascontiguousarray(self._reservoir.state[self.readout_idx].T)
