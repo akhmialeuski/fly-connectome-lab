@@ -1,0 +1,25 @@
+{
+  "source": "Official CelebA Google Drive files, checked against torchvision published MD5 values",
+  "files": {
+    "img_align_celeba.zip": {
+      "md5": "00d2c5bc6d35e252742224ab0c1e8fcb",
+      "sha256": "46fb89443c578308acf364d7d379fe1b9efb793042c0af734b6112e4fd3a8c74",
+      "bytes": 1443490838
+    },
+    "identity_CelebA.txt": {
+      "md5": "32bd1bd63d3c78cd57e08160ec5ed1e2",
+      "sha256": "c6143857c3e2630ac2da9f782e9c1232e5e59be993a9d44e8a7916c78a6158c0",
+      "bytes": 3424458
+    },
+    "list_landmarks_align_celeba.txt": {
+      "md5": "cc24ecafdb5b50baae59b03474781f8c",
+      "sha256": "6c02a87569907f6db2ba99019085697596730e8129f67a3d61659f198c48d43b",
+      "bytes": 12156055
+    },
+    "list_eval_partition.txt": {
+      "md5": "d32c9cbf5e040fd4025c592c306e6668",
+      "sha256": "fc955bcb3ef8fbdf7d5640d9a8693a8431b5f2ee291a5c1449a1549e7e073fe7",
+      "bytes": 2836386
+    }
+  }
+}

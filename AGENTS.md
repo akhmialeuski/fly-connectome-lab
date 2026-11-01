@@ -63,7 +63,7 @@ docs/              # only when an issue asks for a document
 
 ## Local data directories
 
-All generated data lives under `FLYSTATE_HOME` (environment variable, default: the current working directory). Never write anywhere else and never write into `src/`, `configs/` or `tests/`.
+All generated data lives under `FLYSTATE_HOME` (environment variable, default: the current working directory). Do not write generated working data into `src/`, `configs/` or `tests/`. The explicit archival exception is a deliberate copy of computed evidence into `research/`; normal execution still writes only under `FLYSTATE_HOME`.
 
 ```text
 $FLYSTATE_HOME/data/brain/         flybrain files brain.npz and weights.npz
@@ -73,7 +73,7 @@ $FLYSTATE_HOME/cache/preprocess/   aligned image caches
 $FLYSTATE_HOME/runs/               runs, evaluations, benchmarks, calibrations, design checks, comparisons
 ```
 
-`data/`, `cache/`, `runs/`, `models/` and `uploads/` are git-ignored. Never commit datasets, brain files, caches, runs, model weights or images. Tests set `FLYSTATE_HOME` to `tmp_path`.
+`data/`, `cache/`, `runs/`, `models/` and `uploads/` are git-ignored. The user explicitly authorized versioned computed research evidence under `research/<experiment-family>/<dated-study>/`: copy completed runs, learned readout weights, neural traces, fitted preprocessing metadata, and reports there without changing their original bytes. Use Git LFS for learned NPZ files and large trace payloads. Never commit external datasets, downloaded connectome files, original or transformed images, or download archives. Working data remains ignored; only deliberate documented research snapshots are tracked. Tests set `FLYSTATE_HOME` to `tmp_path`.
 
 ## Data and network rules
 

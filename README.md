@@ -153,7 +153,11 @@ See [REFERENCES.md](REFERENCES.md) for curated references, upstream publications
 
 ## Reproducibility
 
-To keep experiments reproducible and the repository lightweight, datasets, generated traces, model checkpoints, caches, uploaded images, and experimental artifacts should be stored outside Git or in explicitly ignored paths. This repository is intended to track documentation, code, and configuration needed to reproduce experiments, not the resulting bulk data.
+Completed computed evidence is versioned under [research/](research/README.md), with a separate directory for each study. The [first CelebA study](research/sequential-visual-memory/2026-09-20-celeba-poc1/README.md) preserves all five trained models, six neural trace caches, predictions, metrics, configurations, calibration, and reports (about 512 MiB). Large numerical payloads use Git LFS; metadata remains readable JSON, YAML, and Markdown.
+
+Follow the study README to fetch LFS objects, verify the SHA-256 inventory, and restore results into a new `FLYSTATE_HOME` for the viewer. No retraining is needed. External CelebA photographs and downloaded connectome files are excluded: the study records exact source links, versions, byte counts, and checksums, with instructions for obtaining and verifying the original inputs and regenerating photographs.
+
+Normal working data remains outside Git or in ignored paths. Add future completed research campaigns as sibling study directories; preserve earlier evidence unchanged. Research archives are not included in Python distributions.
 
 ## Upstream projects and tools
 

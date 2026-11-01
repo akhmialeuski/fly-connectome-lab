@@ -1,0 +1,1 @@
+{"created_utc":"2026-09-20T07:15:14.013336+00:00","eval_id":"20260920-071514-test","n_classes":20,"n_samples":60,"run_id":"20260920-071344-celeba-smoke-9406ee","schema_version":1,"split":"test","status":"completed","timesteps":16,"versions":{"flystate":"0.1.0.dev0","scikit-learn":"1.9.1"}}

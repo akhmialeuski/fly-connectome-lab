@@ -1,0 +1,18 @@
+07:00:55 [info     ] fit_pixel_baseline             baseline=single_window step=1
+07:02:52 [info     ] fit_pixel_baseline             baseline=single_window step=2
+07:03:56 [info     ] fit_pixel_baseline             baseline=single_window step=3
+07:05:06 [info     ] fit_pixel_baseline             baseline=single_window step=4
+07:07:08 [info     ] fit_pixel_baseline             baseline=single_window step=5
+07:09:00 [info     ] fit_pixel_baseline             baseline=single_window step=6
+07:09:40 [info     ] fit_pixel_baseline             baseline=single_window step=7
+07:10:26 [info     ] fit_pixel_baseline             baseline=single_window step=8
+07:11:55 [info     ] fit_pixel_baseline             baseline=single_window step=9
+07:13:42 [info     ] fit_pixel_baseline             baseline=single_window step=10
+07:14:27 [info     ] fit_pixel_baseline             baseline=single_window step=11
+07:15:17 [info     ] fit_pixel_baseline             baseline=single_window step=12
+07:16:41 [info     ] fit_pixel_baseline             baseline=single_window step=13
+07:18:40 [info     ] fit_pixel_baseline             baseline=single_window step=14
+07:19:46 [info     ] fit_pixel_baseline             baseline=single_window step=15
+07:20:57 [info     ] fit_pixel_baseline             baseline=single_window step=16
+07:23:06 [info     ] fit_pixel_baseline             baseline=all_windows
+07:27:06 [info     ] fit_pixel_baseline             baseline=whole_image
