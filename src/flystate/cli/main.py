@@ -13,6 +13,7 @@ from flystate.cli.doctor import doctor_command
 from flystate.cli.episode import app as episode_app
 from flystate.cli.experiment import app as experiment_app
 from flystate.cli.trace import app as trace_app
+from flystate.cli.train import train_command
 from flystate.log import configure_logging
 from flystate.settings import get_paths
 
@@ -46,6 +47,7 @@ app.add_typer(typer_instance=brain_app, name='brain')
 app.add_typer(typer_instance=dataset_app, name='dataset')
 app.add_typer(typer_instance=episode_app, name='episode')
 app.command(name='doctor')(doctor_command)
+app.command(name='train')(train_command)
 
 
 @app.command(name='paths')
