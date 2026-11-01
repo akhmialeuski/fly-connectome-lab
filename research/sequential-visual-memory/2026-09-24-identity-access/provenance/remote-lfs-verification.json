@@ -1,0 +1,27 @@
+{
+  "branch": "work/identity-access",
+  "bytes_verified": 62971389,
+  "commit": "18d5e11542de07aaf940968746b7e0406ee7dc22",
+  "controls_verified": {
+    "blank_windows_per_case": 3,
+    "cases_verified": 3,
+    "driven_windows_per_case": 120,
+    "images_verified": 40,
+    "input_digests_exact": true,
+    "noise_off_zero": true,
+    "noise_streams_distinct": true,
+    "ordered_membership_exact": true,
+    "paired_noise_indices_exact": true,
+    "paired_rest_exact": true
+  },
+  "cross_seed_rows_verified": 40,
+  "decision_verified": "investigate_signal_geometry_before_dynamics",
+  "files_verified": 32,
+  "gate_passed_verified": false,
+  "inventory_sha256": "974a4449465d98b3c89d3495fe5585743f60efdd2cabf5c986777be746ad4b50",
+  "lfs_npz_restored": 6,
+  "pair_rows_verified": 60060,
+  "query_rows_verified": 3080,
+  "remote": "https://github.com/akhmialeuski/fly-connectome-lab.git",
+  "schema_version": 1
+}
