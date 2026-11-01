@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from flystate.cli.common import CONFIG_ERROR, INTERRUPTED, RUNTIME_ERROR, emit
+from flystate.cli.stability import stability_command
 from flystate.diagnostics.audit import audit_cohort
 from flystate.diagnostics.convergence import diagnose_convergence
 from flystate.diagnostics.probes import run_probe
@@ -17,6 +18,8 @@ from flystate.settings import get_paths
 app = typer.Typer(
     no_args_is_help=True, help='Audit cohorts and run development-only signal probes.'
 )
+
+app.command(name='stability')(stability_command)
 
 
 @app.command(name='run')

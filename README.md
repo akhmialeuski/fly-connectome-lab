@@ -259,3 +259,13 @@ solver, regularization, folds, and preprocessing remain the same. Other solver
 limits remain unchanged. The default cap stays 5,000, and an unconverged full probe
 still fails rather than publishing an accuracy. Preserve the original failed
 attempt and give any retry a new output directory.
+
+### Training-only signal stability
+
+`flystate diagnose stability CONFIG --membership MEMBERSHIP.json --output NEW_PATH --json`
+measures paired image/noise responses and float16 storage loss without fitting a
+classifier. Membership JSON must contain ordered training-only `sample_ids` and
+their canonical `sample_ids_sha256`. The command requires a persistent,
+noise-enabled baseline and its verified trace cache; exact native replay is a
+mandatory gate before noise interventions. See the frozen
+[signal-stability protocol](research/sequential-visual-memory/2026-09-22-signal-stability/README.md).
