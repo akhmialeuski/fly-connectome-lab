@@ -1,0 +1,31 @@
+{
+  "id": "smoke-18-neural-persistent-last-both-pca60-memorization",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-18-neural-persistent-last-both-pca60-memorization",
+    "--json",
+    "--phase",
+    "probe",
+    "--representation",
+    "neural",
+    "--history",
+    "last",
+    "--features",
+    "both",
+    "--components",
+    "60",
+    "--label-mode",
+    "memorization"
+  ],
+  "started_utc": "2026-09-21T15:28:57.121183+00:00",
+  "completed_utc": "2026-09-21T15:29:30.655232+00:00",
+  "exit_code": 0,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763052133",
+  "publication_error": null
+}

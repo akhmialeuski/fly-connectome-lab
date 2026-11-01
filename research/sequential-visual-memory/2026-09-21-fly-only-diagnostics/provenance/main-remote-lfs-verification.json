@@ -1,0 +1,28 @@
+{
+  "commit": "f821470ac263a584eb2a42e05108030d7fbb2630",
+  "remote": "origin",
+  "verification": "Independent Git LFS fetch into a separate object store; all payload hashes and sizes verified against the archived inventory.",
+  "objects": [
+    {
+      "path": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/main-03-neural-persistent-last-both-pca60-true/model/weights.npz",
+      "sha256": "b5a7d36687bb527f693926ec644fa24d8d86b0e6cd9801304e34092ff065fc2b",
+      "bytes": 1375888
+    },
+    {
+      "path": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/main-03-neural-persistent-last-both-pca60-true/train-predictions.parquet",
+      "sha256": "2ce04629e6456071a3e2ff0898ecb116bba80e82543c086e9c9d93f459147c76",
+      "bytes": 1433421
+    },
+    {
+      "path": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/main-04-neural-reset-all-both-pca60-true/model/weights.npz",
+      "sha256": "c75109e5a51bbf199af7cb72fc303b30739d04921c306f9279609a409ad84640",
+      "bytes": 21243568
+    },
+    {
+      "path": "snapshot/runs/diagnostics/2026-09-21-fly-only-diagnostics/main-04-neural-reset-all-both-pca60-true/train-predictions.parquet",
+      "sha256": "f675926ec64071d12bc824af7b69deedf209a1190f64092199b9896fa633b2db",
+      "bytes": 1433421
+    }
+  ],
+  "total_bytes": 25486298
+}

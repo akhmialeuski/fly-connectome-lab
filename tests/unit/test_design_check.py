@@ -99,8 +99,13 @@ class TestStatistics:
 class TestClassifier:
     """Verify fold-local preprocessing, deterministic C selection, and input guards."""
 
-    def test_fold_isolation(self) -> None:
-        """Record projection inputs, fit a classifier, then match every fold and final refit."""
+    @pytest.mark.parametrize('components', [100, None])
+    def test_fold_isolation(self, components: int | None) -> None:
+        """Record projection inputs, fit a classifier, then match every fold and final refit.
+
+        :param components: PCA cap or scaling without PCA.
+        :type components: Optional[int]
+        """
         x = np.random.default_rng(seed=0).normal(size=(24, 5))
         y = np.repeat(a=[0, 1], repeats=12)
         x[:, 0] += y * 10
@@ -108,7 +113,12 @@ class TestClassifier:
             target=fitting, attribute='_projection', wraps=fitting._projection
         ) as spy:
             model, scores = fitting.fit_classifier(
-                x_train=x, y_train=y, pca_components=100, c_grid=[1.0, 0.1], cv_folds=3, seed=0
+                x_train=x,
+                y_train=y,
+                pca_components=components,
+                c_grid=[1.0, 0.1],
+                cv_folds=3,
+                seed=0,
             )
         splits = list(StratifiedKFold(n_splits=3, shuffle=True, random_state=0).split(X=x, y=y))
         assert spy.call_count == 4
@@ -120,16 +130,29 @@ class TestClassifier:
         assert model.named_steps['classifier'].C == 0.1
         assert model.named_steps['classifier'].tol == 1e-4
 
-    def test_nonconvergence(self) -> None:
-        """Surface optimizer failure instead of publishing an unconverged result."""
+    @pytest.mark.parametrize('explicit', [False, True])
+    def test_nonconvergence(self, explicit: bool) -> None:
+        """Surface exhaustion of either the original or explicitly requested iteration budget.
+
+        :param explicit: Supply the cap explicitly instead of changing the legacy default.
+        :type explicit: bool
+        """
         x = np.random.default_rng(seed=1).normal(size=(40, 10))
         y = np.repeat(a=[0, 1], repeats=20)
         with (
-            patch.object(target=fitting, attribute='MAX_LOGISTIC_ITERATIONS', new=1),
+            patch.object(
+                target=fitting, attribute='MAX_LOGISTIC_ITERATIONS', new=5000 if explicit else 1
+            ),
             pytest.raises(expected_exception=ConvergenceWarning),
         ):
             fitting.fit_classifier(
-                x_train=x, y_train=y, pca_components=5, c_grid=[1.0], cv_folds=2, seed=0
+                x_train=x,
+                y_train=y,
+                pca_components=5,
+                c_grid=[1.0],
+                cv_folds=2,
+                seed=0,
+                max_iterations=1 if explicit else None,
             )
 
     @pytest.mark.parametrize(
@@ -147,6 +170,7 @@ class TestClassifier:
             'grid',
             'negative_c',
             'infinite_c',
+            'iterations',
         ],
     )
     def test_invalid_inputs(self, case: str) -> None:
@@ -176,6 +200,7 @@ class TestClassifier:
                 x_train=x,
                 y_train=y,
                 pca_components=0 if case == 'pca' else 2,
+                max_iterations=0 if case == 'iterations' else None,
                 cv_folds=1 if case == 'folds' else 2,
                 c_grid=[]
                 if case == 'grid'

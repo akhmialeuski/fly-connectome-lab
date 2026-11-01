@@ -8,6 +8,13 @@ Instructions for AI coding agents working in this repository. Read this file com
 
 POC 1 — Sequential Visual Memory is implemented. The user has now explicitly authorized a local web interface for exploring and visualizing its results. This extends the earlier POC 1 scope to a read-only results API and browser viewer. The scientific experiment protocol and completed artifacts remain unchanged.
 
+The user also authorized sequential execution of the fly-only research roadmap in
+issue #39. Post protocols, results, failures, and conclusions to the corresponding
+research issues. Start with the diagnostic campaign in #40; use evidence to gate
+later changes to dynamics or plasticity. Do not introduce specialized or pretrained
+vision models. Historical test scores are already inspected and must not serve as
+fresh confirmation. Preserve all previous study artifacts unchanged.
+
 The complete T01-T16 milestone is assigned. Work in dependency order using stacked pull requests, without merging them. Laptop measurements and T16 are included in the assignment. Do not wait for earlier pull requests to merge before implementing their dependants.
 
 ## Hard scope limits for POC 1

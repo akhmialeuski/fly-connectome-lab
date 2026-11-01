@@ -1,0 +1,31 @@
+{
+  "id": "smoke-16-neural-persistent-last-both-pca60-permuted",
+  "command": [
+    "uv",
+    "run",
+    "flystate",
+    "diagnose",
+    "run",
+    "/home/anatolk/data/flystate/runs/20260920-071344-celeba-smoke-9406ee/config.yaml",
+    "--output",
+    "/home/anatolk/data/flystate/runs/diagnostics/2026-09-21-fly-only-diagnostics/smoke-16-neural-persistent-last-both-pca60-permuted",
+    "--json",
+    "--phase",
+    "probe",
+    "--representation",
+    "neural",
+    "--history",
+    "last",
+    "--features",
+    "both",
+    "--components",
+    "60",
+    "--label-mode",
+    "permuted"
+  ],
+  "started_utc": "2026-09-21T15:27:42.866868+00:00",
+  "completed_utc": "2026-09-21T15:28:23.174571+00:00",
+  "exit_code": 0,
+  "issue_comment_url": "https://github.com/akhmialeuski/fly-connectome-lab/issues/40#issuecomment-5763036478",
+  "publication_error": null
+}
