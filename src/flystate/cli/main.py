@@ -8,6 +8,7 @@ import typer
 from flystate import __version__
 from flystate.cli.brain import app as brain_app
 from flystate.cli.common import emit
+from flystate.cli.compare import compare_command
 from flystate.cli.dataset import app as dataset_app
 from flystate.cli.doctor import doctor_command
 from flystate.cli.episode import app as episode_app
@@ -50,6 +51,7 @@ app.add_typer(typer_instance=episode_app, name='episode')
 app.command(name='doctor')(doctor_command)
 app.command(name='train')(train_command)
 app.command(name='evaluate')(evaluate_command)
+app.command(name='compare')(compare_command)
 
 
 @app.command(name='paths')
