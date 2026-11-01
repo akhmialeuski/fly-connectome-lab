@@ -8,6 +8,9 @@ from typing import Any
 import numba
 import numpy as np
 from numpy.typing import NDArray
+from sklearn.decomposition import PCA
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import KFold
 from threadpoolctl import threadpool_limits
 
 from flystate.brain.benchmark import resolve_threads
@@ -98,6 +101,7 @@ def record_rate(
     membership_path: Path,
     gain: float,
     leak: float,
+    driven_leak: float | None,
     input_scale: float,
     steps_per_window: int,
     reset_each_window: bool,
@@ -123,6 +127,8 @@ def record_rate(
     :type gain: float
     :param leak: Update fraction in (0, 1].
     :type leak: float
+    :param driven_leak: Separate update fraction of the driven neurons, or the common leak.
+    :type driven_leak: Optional[float]
     :param input_scale: Multiplier of the encoded current, dimensionless.
     :type input_scale: float
     :param steps_per_window: Synaptic updates per window.
@@ -142,6 +148,7 @@ def record_rate(
         'model': 'x <- (1 - leak) x + leak tanh(gain W_eff x + input_scale * encoded_current)',
         'gain': gain,
         'leak': leak,
+        'driven_leak': leak if driven_leak is None else driven_leak,
         'input_scale': input_scale,
         'steps_per_window': steps_per_window,
         'reset_each_window': reset_each_window,
@@ -167,11 +174,17 @@ def record_rate(
         features, provenance = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
         currents = features[ENCODED_CURRENT].reshape(len(rows), cfg.episodes.steps, -1)
         numba.set_num_threads(threads)
-        reservoir = RateReservoir(brain_dir=paths.brain, gain=gain, leak=leak, batch_size=len(rows))
         with np.load(file=paths.brain / BRAIN_METADATA, allow_pickle=False) as meta:
             candidates = np.flatnonzero(meta['superclass'] == cfg.encoder.target_population)
         encoder = SparseProjectionEncoder(
             cfg=cfg.encoder, window=cfg.episodes.window, candidate_neurons=candidates
+        )
+        reservoir = RateReservoir(
+            brain_dir=paths.brain,
+            gain=gain,
+            leak=leak,
+            batch_size=len(rows),
+            leak_overrides=None if driven_leak is None else {driven_leak: encoder.input_idx},
         )
         populations = {
             name: indices
@@ -344,3 +357,113 @@ def analyze_memory(
         }
         write_json(path=directory / REPORT_FILE, value=report)
     return gate
+
+
+def window_recall(
+    final_state: NDArray[np.float32], window_inputs: NDArray[np.float32], seed: int
+) -> list[float]:
+    """Measure how well the final state linearly predicts each window's input, without labels.
+
+    The final state (N,K) is standardized and reduced to at most 100 principal components. Each
+    window's input (N,T,I) is reduced to 10 principal components fitted over all windows. For
+    every window, a ridge regression (alpha 1) is scored by five-fold held-out R^2.
+
+    :param final_state: Population state after the last window, shape (N,K), float32.
+    :type final_state: NDArray[np.float32]
+    :param window_inputs: Input of every window, shape (N,T,I), float32.
+    :type window_inputs: NDArray[np.float32]
+    :param seed: Seed of the PCA and fold shuffling.
+    :type seed: int
+    :returns: Held-out R^2 per window, length T; negative values mean no recall.
+    :rtype: list[float]
+    """
+    episodes, windows, width = window_inputs.shape
+    state = final_state.astype(np.float64)
+    state = (state - state.mean(axis=0)) / (state.std(axis=0) + np.finfo(np.float64).eps)
+    reduced = PCA(n_components=min(100, episodes - 1, state.shape[1]), random_state=seed)
+    predictors = reduced.fit_transform(state)
+    target_pca = PCA(n_components=min(10, width), random_state=seed)
+    target_pca.fit(window_inputs.reshape(-1, width))
+    recall: list[float] = []
+    for window in range(windows):
+        target = target_pca.transform(window_inputs[:, window])
+        predicted = np.zeros_like(target)
+        for training, held_out in KFold(n_splits=5, shuffle=True, random_state=seed).split(
+            predictors
+        ):
+            model = Ridge(alpha=1.0).fit(predictors[training], target[training])
+            predicted[held_out] = model.predict(predictors[held_out])
+        residual = float(np.sum((target - predicted) ** 2))
+        total = float(np.sum((target - target.mean(axis=0)) ** 2))
+        recall.append(1 - residual / total)
+    return recall
+
+
+def memory_curves(
+    cfg: ExperimentConfig,
+    paths: Paths,
+    output: Path,
+    recordings: list[Path],
+    cohort_path: Path,
+    parent_schedule_path: Path,
+    membership_path: Path,
+    populations: list[str],
+) -> dict[str, Any]:
+    """Compute label-free window-recall curves of final states for several recordings.
+
+    :param cfg: Original experiment configuration.
+    :type cfg: ExperimentConfig
+    :param paths: Working data home.
+    :type paths: Paths
+    :param output: New immutable attempt directory.
+    :type output: Path
+    :param recordings: Completed ``rate-record`` attempts.
+    :type recordings: list[Path]
+    :param cohort_path: T29 committed 280-image cohort document.
+    :type cohort_path: Path
+    :param parent_schedule_path: T29 committed exact CV-fold document.
+    :type parent_schedule_path: Path
+    :param membership_path: Archived original split membership.
+    :type membership_path: Path
+    :param populations: Populations whose final state is analysed.
+    :type populations: list[str]
+    :returns: Window-recall curve per recording and population.
+    :rtype: dict[str, Any]
+    """
+    parameters = {
+        'kind': 'rate_access_memory_curve',
+        'recordings': [str(path) for path in recordings],
+        'populations': populations,
+        'labels_used': False,
+    }
+    with attempt(paths=paths, cfg=cfg, output=output, parameters=parameters) as directory:
+        prepared = prepare_dataset(cfg=cfg, paths=paths)
+        rows = _verify_protocol(
+            cfg=cfg,
+            paths=paths,
+            prepared=prepared,
+            cohort=_read_json(path=cohort_path),
+            schedule=_read_json(path=parent_schedule_path),
+            membership=_read_json(path=membership_path),
+            membership_path=membership_path,
+            cohort_path=cohort_path,
+        )
+        features, _ = _features(cfg=cfg, paths=paths, prepared=prepared, rows=rows)
+        inputs = features[ENCODED_CURRENT].reshape(len(rows), cfg.episodes.steps, -1)
+        curves: dict[str, dict[str, list[float]]] = {}
+        for recording in recordings:
+            if verify_attempt_inventory(directory=recording, paths=paths)['status'] != 'completed':
+                raise ValueError(f'The recording is not completed: {recording}.')
+            source = output_path(path=recording, paths=paths)
+            with np.load(file=source / RESPONSES_FILE, allow_pickle=False) as data:
+                curves[source.name] = {
+                    name: window_recall(
+                        final_state=data[f'{STATE_PREFIX}{name}'][:, -1],
+                        window_inputs=inputs,
+                        seed=cfg.seed,
+                    )
+                    for name in populations
+                }
+        report = {PARAMETERS: parameters, 'window_recall_r2': curves}
+        write_json(path=directory / REPORT_FILE, value=report)
+    return {'output': str(directory), 'recordings': len(curves)}

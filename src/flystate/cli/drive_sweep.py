@@ -114,6 +114,10 @@ def drive_decode_command(
     selection_schedule: Annotated[
         Path, typer.Option('--selection-schedule', help='Committed T30 readout schedule.')
     ],
+    representations: Annotated[
+        list[str] | None,
+        typer.Option('--representation', help='Neural representation to decode; default all.'),
+    ] = None,
     as_json: Annotated[bool, typer.Option(JSON_OPTION, help=JSON_HELP)] = False,
 ) -> None:
     """Decode identity from recorded conditions with the T30 fit-only OOF procedure.
@@ -132,6 +136,8 @@ def drive_decode_command(
     :type membership: Path
     :param selection_schedule: Committed T30 C grid, PCA and convergence schedule.
     :type selection_schedule: Path
+    :param representations: Neural representations to decode, or all.
+    :type representations: Optional[list[str]]
     :param as_json: Emit exactly one result JSON object to stdout.
     :type as_json: bool
     :raises typer.Exit: On invalid config, runtime failure, or interruption.
@@ -146,6 +152,7 @@ def drive_decode_command(
             parent_schedule_path=parent_schedule,
             membership_path=membership,
             selection_schedule_path=selection_schedule,
+            representations=representations,
         )
     except (Exception, KeyboardInterrupt) as error:
         raise _fail(error=error, event='drive_decode_failed', as_json=as_json) from error
