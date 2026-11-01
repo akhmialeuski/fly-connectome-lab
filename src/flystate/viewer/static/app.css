@@ -370,6 +370,18 @@ table {
   text-align: left;
   font-size: 12px;
 }
+.sort-header {
+  all: unset;
+  cursor: pointer;
+}
+.sort-header:focus-visible {
+  outline: 2px solid #087f79;
+  outline-offset: 2px;
+}
+th[aria-sort='ascending'],
+th[aria-sort='descending'] {
+  color: #087f79;
+}
 th {
   color: #70818a;
   text-transform: uppercase;
@@ -614,6 +626,32 @@ dialog::backdrop {
   background: #152e3b;
   width: 100%;
   touch-action: none;
+}
+.colorbar {
+  margin-top: 12px;
+}
+.colorbar-ramp {
+  height: 12px;
+  border-radius: 3px;
+}
+.colorbar-ticks {
+  position: relative;
+  height: 16px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.colorbar-ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.colorbar-ticks span:first-child {
+  transform: none;
+}
+.colorbar-ticks span:last-child {
+  transform: translateX(-100%);
 }
 .heatmap {
   width: 100%;

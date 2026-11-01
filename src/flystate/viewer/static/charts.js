@@ -60,7 +60,12 @@ export function table(headers, rows) {
         el(
           'tr',
           {},
-          headers.map((h) => el('th', { scope: 'col' }, h)),
+          // A header is plain content, or {content, attrs} when the cell needs attributes.
+          headers.map((h) =>
+            h?.content === undefined
+              ? el('th', { scope: 'col' }, h)
+              : el('th', { scope: 'col', ...h.attrs }, h.content),
+          ),
         ),
       ),
       el(
@@ -345,6 +350,64 @@ export function confusion(rows, classes) {
 export function heatColor(value) {
   const t = Math.min(1, Math.max(0, value));
   return `rgb(${Math.round(236 - 225 * t)},${Math.round(246 - 115 * t)},${Math.round(244 - 119 * t)})`;
+}
+// Google's Turbo colormap (polynomial fit), skipping its darkest blue so points stay visible on
+// dark backgrounds; t in [0, 1].
+function turbo(t) {
+  const x = 0.08 + 0.92 * Math.min(1, Math.max(0, t));
+  const poly = (c) => c.reduceRight((acc, k) => acc * x + k, 0);
+  const channel = (c) => Math.round(255 * Math.min(1, Math.max(0, poly(c))));
+  return `rgb(${channel([0.1357, 4.6154, -42.6603, 132.1311, -152.9424, 59.2864])},${channel([
+    0.0914, 2.1942, 4.843, -14.185, 4.2773, 2.8296,
+  ])},${channel([0.1067, 12.6419, -60.582, 110.3628, -89.9031, 27.3482])})`;
+}
+// ColorBrewer RdBu end points with a light neutral center; s in [-1, 1].
+const DIVERGING = [
+  [33, 102, 172],
+  [247, 247, 247],
+  [178, 24, 43],
+];
+function diverging(s) {
+  const u = Math.min(1, Math.max(-1, s));
+  const [from, to, w] = u < 0 ? [DIVERGING[1], DIVERGING[0], -u] : [DIVERGING[1], DIVERGING[2], u];
+  return `rgb(${from.map((c, i) => Math.round(c + (to[i] - c) * w)).join(',')})`;
+}
+/**
+ * Build a color scale for neural values that resists outliers: the range spans the 1st to 99th
+ * percentile. Values of both signs get a diverging map centered on zero, with a signed square
+ * root so the many near-zero values stay distinguishable; other values get a linear Turbo map.
+ * @param {number[]} values Every value the scale must cover.
+ * @returns {{low: number, high: number, diverging: boolean, color: function(number): string,
+ *   gradient: string, ticks: {value: number, position: number}[]}} The clipped range, the map
+ *   kind, a value-to-color function, a CSS gradient for a legend, and legend ticks placed at
+ *   their fraction of the gradient.
+ */
+export function colorScale(values) {
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  const pick = (q) => sorted[Math.min(sorted.length - 1, Math.floor(q * (sorted.length - 1)))];
+  let low = sorted.length ? pick(0.01) : 0,
+    high = sorted.length ? pick(0.99) : 1;
+  if (high <= low) [low, high] = [low - 1e-9, low + 1e-9];
+  const bound = Math.max(Math.abs(low), Math.abs(high));
+  const isDiverging = low < 0 && high > 0 && Math.min(-low, high) >= 0.1 * bound;
+  // Legend position in [0, 1] of a value, and the value at a legend position.
+  const position = isDiverging
+    ? (v) => (1 + Math.sign(v) * Math.sqrt(Math.min(1, Math.abs(v) / bound))) / 2
+    : (v) => Math.min(1, Math.max(0, (v - low) / (high - low)));
+  const valueAt = isDiverging
+    ? (q) => Math.sign(2 * q - 1) * (2 * q - 1) ** 2 * bound
+    : (q) => low + q * (high - low);
+  const paint = isDiverging ? (q) => diverging(2 * q - 1) : turbo;
+  const stops = Array.from({ length: 17 }, (_, i) => paint(i / 16));
+  const positions = [0, 0.25, 0.5, 0.75, 1];
+  return {
+    low: isDiverging ? -bound : low,
+    high: isDiverging ? bound : high,
+    diverging: isDiverging,
+    color: (v) => paint(position(v)),
+    gradient: `linear-gradient(to right, ${stops.join(', ')})`,
+    ticks: positions.map((q) => ({ value: valueAt(q), position: q })),
+  };
 }
 export function histogram(values, title) {
   if (!values.length) return el('p', { class: 'muted' }, 'No timing records.');

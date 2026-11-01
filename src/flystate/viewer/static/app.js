@@ -1,4 +1,11 @@
-import { experimentTable, researchPage } from './research.js';
+import { isSequential, interpretationCard } from './interpretation.js';
+import {
+  DEFAULT_SORT,
+  experimentTable,
+  researchPage,
+  sortEntries,
+  sortFields,
+} from './research.js';
 import { face, identityFace } from './identities.js';
 import {
   accuracySeries,
@@ -28,7 +35,8 @@ const titles = {
   overview: 'Overview',
   runs: 'Experiments',
   run: 'Experiments',
-  experiment: 'Experiments',
+  experiment: 'Diagnostics',
+  diagnostics: 'Diagnostics',
   comparisons: 'Comparisons',
   evidence: 'Evidence library',
   caches: 'Trace caches',
@@ -93,8 +101,8 @@ async function overview(signal) {
     stats([
       [
         'Experiments',
-        number(inventory.experiments.length),
-        'Automatically discovered attempts',
+        number(inventory.experiments.filter(isSequential).length),
+        'Sequential training runs',
       ],
       [
         'Completed',
@@ -111,12 +119,17 @@ async function overview(signal) {
     warnings(inventory.warnings),
   );
   if (!runs.length) {
-    const register = el('div', {}, experimentTable(inventory.experiments));
+    const register = el('div', {}, experimentTable(inventory.experiments.filter(isSequential)));
     content.append(
-      card('Experiment register', 'All recorded attempts, including diagnostics.', register),
+      card(
+        'Experiment register',
+        'Sequential image-patch experiments. Diagnostic controls are in Diagnostics.',
+        register,
+      ),
     );
-    refreshView = () => register.replaceChildren(experimentTable(inventory.experiments));
-    if (!inventory.experiments.length)
+    refreshView = () =>
+      register.replaceChildren(experimentTable(inventory.experiments.filter(isSequential)));
+    if (!inventory.experiments.some(isSequential))
       content.append(
         empty('No experiments found in FLYSTATE_HOME. New attempts appear automatically.'),
       );
@@ -151,8 +164,9 @@ async function overview(signal) {
     ),
     plot,
   );
-  const register = el('div', {}, experimentTable(inventory.experiments));
-  refreshView = () => register.replaceChildren(experimentTable(inventory.experiments));
+  const register = el('div', {}, experimentTable(inventory.experiments.filter(isSequential)));
+  refreshView = () =>
+    register.replaceChildren(experimentTable(inventory.experiments.filter(isSequential)));
   content.append(
     curveCard,
     card(
@@ -240,11 +254,13 @@ async function overview(signal) {
   intervals.onchange = change;
   await update();
 }
-function experiments() {
+function experiments(diagnostics = false) {
   content.append(
     head(
-      'Experiment register',
-      'All manifest-backed attempts are discovered automatically, including running and failed experiments.',
+      diagnostics ? 'Diagnostic register' : 'Experiment register',
+      diagnostics
+        ? 'Probes, audits, and numerical checks. These are not sequential-memory training runs.'
+        : 'Sequential image-patch experiments. Open a run to inspect episodes and memory state.',
     ),
   );
   const search = el('input', {
@@ -255,8 +271,27 @@ function experiments() {
   const study = el('select', { 'aria-label': 'Experiment study' });
   const kind = el('select', { 'aria-label': 'Experiment kind' });
   const policy = el('select', { 'aria-label': 'Memory mode' });
+  const sortBy = el('select', { 'aria-label': 'Sort by' });
+  const direction = el('button', { type: 'button', 'aria-label': 'Sort direction' });
   const list = el('div'),
     count = el('p', { class: 'muted' });
+  // The chosen order survives refreshes and visits; storage may be unavailable in private mode.
+  const storageKey = `flystate.sort.${diagnostics ? 'diagnostics' : 'runs'}`;
+  let sort = { ...DEFAULT_SORT };
+  try {
+    sort = { ...sort, ...JSON.parse(localStorage.getItem(storageKey) || '{}') };
+  } catch {
+    // Keep the default order.
+  }
+  function setSort(key, descending = sort.key === key ? !sort.descending : key === 'created') {
+    sort = { key, descending };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(sort));
+    } catch {
+      // The order still applies for this page view.
+    }
+    update();
+  }
   function choices(select, values, label) {
     const selected = select.value;
     select.replaceChildren(
@@ -268,22 +303,23 @@ function experiments() {
     select.value = [...select.options].some((item) => item.value === selected) ? selected : '';
   }
   const update = () => {
+    const entries = inventory.experiments.filter((row) => isSequential(row) !== diagnostics);
     choices(
       study,
-      inventory.experiments.map((row) => row.study),
+      entries.map((row) => row.study),
       'All studies',
     );
     choices(
       kind,
-      inventory.experiments.map((row) => row.kind),
+      entries.map((row) => row.kind),
       'All experiment kinds',
     );
     choices(
       policy,
-      inventory.experiments.map((row) => row.mode),
+      entries.map((row) => row.mode),
       'All memory modes',
     );
-    const filtered = inventory.experiments.filter(
+    const filtered = entries.filter(
       (row) =>
         (!study.value || row.study === study.value) &&
         (!kind.value || row.kind === kind.value) &&
@@ -292,20 +328,28 @@ function experiments() {
           .toLowerCase()
           .includes(search.value.toLowerCase()),
     );
+    const fields = sortFields(entries);
+    sortBy.replaceChildren(...fields.map((field) => option(field.key, `Sort: ${field.label}`)));
+    sortBy.value = fields.some((field) => field.key === sort.key) ? sort.key : DEFAULT_SORT.key;
+    direction.textContent = sort.descending ? '↓ Descending' : '↑ Ascending';
     list.replaceChildren(
-      filtered.length ? experimentTable(filtered) : empty('No matching experiments.'),
+      filtered.length
+        ? experimentTable(sortEntries(filtered, fields, sort), sort, (key) => setSort(key))
+        : empty('No matching experiments.'),
     );
-    count.textContent = `${filtered.length} of ${inventory.experiments.length} experiments · updates automatically every 5 seconds`;
+    count.textContent = `${filtered.length} of ${entries.length} ${diagnostics ? 'diagnostics' : 'experiments'} · updates automatically every 5 seconds`;
   };
   search.oninput = update;
   for (const select of [study, kind, policy]) select.onchange = update;
+  sortBy.onchange = () => setSort(sortBy.value, sortBy.value === 'created');
+  direction.onclick = () => setSort(sort.key, !sort.descending);
   refreshView = update;
   update();
   content.append(
     card(
-      'All runs',
+      diagnostics ? 'Diagnostic attempts' : 'Sequential experiments',
       'New studies require no viewer configuration.',
-      el('div', { class: 'toolbar' }, search, study, kind, policy),
+      el('div', { class: 'toolbar' }, search, study, kind, policy, sortBy, direction),
       count,
       list,
     ),
@@ -319,6 +363,13 @@ async function runPage(runId, signal) {
     manifest = detail.manifest;
   content.append(
     head(cfg.name, runId),
+    interpretationCard({
+      kind: 'training',
+      mode: cfg.memory.mode,
+      status: manifest.status,
+      classes: cfg.dataset.subset.n_identities,
+      scores: { validation: { accuracy: detail.summary?.final_val_accuracy } },
+    }),
     stats([
       ['Memory policy', cfg.memory.mode.replaceAll('_', ' '), 'Recorded configuration'],
       ['Classes', cfg.dataset.subset.n_identities, 'Identity classification'],
@@ -837,7 +888,8 @@ async function navigate(refresh = false) {
   const [page = 'overview', id] = (location.hash.slice(1) || 'overview').split('/');
   document.querySelector('#section-label').textContent = titles[page] || 'Overview';
   document.querySelectorAll('nav a').forEach((a) => {
-    const active = a.hash === `#${['run', 'experiment'].includes(page) ? 'runs' : page}`;
+    const active =
+      a.hash === `#${page === 'run' ? 'runs' : page === 'experiment' ? 'diagnostics' : page}`;
     a.classList.toggle('active', active);
     if (active) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
@@ -848,7 +900,7 @@ async function navigate(refresh = false) {
     if (current !== generation) return;
     content.replaceChildren();
     if (page === 'overview') await overview(signal);
-    else if (page === 'runs') experiments();
+    else if (page === 'runs' || page === 'diagnostics') experiments(page === 'diagnostics');
     else if (page === 'experiment' && id) {
       const view = await researchPage(decodeURIComponent(id), api, signal);
       if (current !== generation) return;
